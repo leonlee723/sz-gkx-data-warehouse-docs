@@ -2,7 +2,7 @@
 
 ## 1. 主体名称与边界
 
-**Schema version：5.11.0。** 本文件是下游 Doris ADS 逻辑结构与业务命名的唯一真实来源；
+**Schema version：6.0.1。** 本文件是下游 Doris ADS 逻辑结构与业务命名的唯一真实来源；
 可执行物理 DDL 包括 `sql/doris/` 下的 Talent、Institution 基线文件及版本化
 `ads_schema_*` 迁移文件；新增公共学科维表的 DDL 为
 [`sql/doris/ads_schema_1_7_0_publication_profiles.sql`](sql/doris/ads_schema_1_7_0_publication_profiles.sql)；
@@ -29,7 +29,7 @@ ORCID 经历及机构扩展迁移为
 机构代表论文和代表专利 Top 20 迁移为
 [`sql/doris/ads_schema_5_1_0_institution_achievement.sql`](sql/doris/ads_schema_5_1_0_institution_achievement.sql)。
 基础研究问题 ADS 迁移由固定 Iceberg Stage Schema 生成至
-`sql/doris/ads_schema_5_11_0_research_problem.generated.sql`，发布说明见
+`sql/doris/ads_schema_5_16_0_research_problem.generated.sql`，发布说明见
 [`docs/research_problem_ads_v1.md`](docs/research_problem_ads_v1.md)。
 机构首次观察进入 Topic 迁移为
 [`sql/doris/ads_schema_1_12_0_institution_topic_entry.sql`](sql/doris/ads_schema_1_12_0_institution_topic_entry.sql)。
@@ -42,6 +42,8 @@ ORCID 经历及机构扩展迁移为
 删除。
 人才学术力分项指标迁移为
 [`sql/doris/ads_schema_2_1_0_talent_academic_capability.sql`](sql/doris/ads_schema_2_1_0_talent_academic_capability.sql)。
+人才拼音逆推中文候选名迁移为
+[`sql/doris/ads_schema_5_17_0_talent_name_candidate.sql`](sql/doris/ads_schema_5_17_0_talent_name_candidate.sql)。
 人才产业技术活动 MVP 迁移为
 [`sql/doris/ads_schema_2_2_0_talent_industry_activity.sql`](sql/doris/ads_schema_2_2_0_talent_industry_activity.sql)。
 技术商业价值与人才产业力模拟迁移为
@@ -78,10 +80,14 @@ ORCID 经历及机构扩展迁移为
 [`sql/doris/ads_schema_4_6_0_technology.sql`](sql/doris/ads_schema_4_6_0_technology.sql)，
 既有表字段与表注释回填为
 [`sql/doris/ads_schema_4_6_0_technology_comments.sql`](sql/doris/ads_schema_4_6_0_technology_comments.sql)。
+技术点中英文名称全文索引迁移为
+[`sql/doris/ads_schema_6_0_1_technology_name_search_indexes.sql`](sql/doris/ads_schema_6_0_1_technology_name_search_indexes.sql)。
 技术图谱年度演进、Louvain簇群和代表路径迁移为
 [`sql/doris/ads_schema_4_7_0_technology_graph.sql`](sql/doris/ads_schema_4_7_0_technology_graph.sql)，
 既有表字段与表注释回填为
 [`sql/doris/ads_schema_4_7_0_technology_graph_comments.sql`](sql/doris/ads_schema_4_7_0_technology_graph_comments.sql)。
+论文证据颠覆性技术候选基线迁移为
+[`sql/doris/ads_schema_5_18_0_technology_disruption.sql`](sql/doris/ads_schema_5_18_0_technology_disruption.sql)。
 人才主画像当前机构四级位置 ID 冗余迁移为
 [`sql/doris/ads_schema_4_8_0_talent_current_institution_location.sql`](sql/doris/ads_schema_4_8_0_talent_current_institution_location.sql)。
 人才本人论文被本人关联专利引用指标迁移为
@@ -116,7 +122,7 @@ ORCID 经历及机构扩展迁移为
 ## 2. 公共约束
 
 - 数据库：`gkx_technology_analysis_dev`；存储引擎：Apache Doris OLAP。
-- 当前 122 张表均为 `UNIQUE KEY` + Merge-on-Write 当前状态表；事实与画像表按其主体 ID
+- 当前 125 张表均为 `UNIQUE KEY` + Merge-on-Write 当前状态表；事实与画像表按其主体 ID
   HASH 分桶，低基数机构类型维表使用 1 个桶。
 - 所有平台主体 ID 使用 `VARCHAR(64)`，与任何单一来源 ID 解耦；外部 ID 通过持久 identity
   bridge 映射，不由来源 ID、姓名、批次顺序或行号推导。
@@ -186,7 +192,7 @@ ORCID 经历及机构扩展迁移为
 | `ads_geo_yearly_discipline_metrics` | 一个位置一年一个Topic一行 | `location_id, statistics_year, topic_id` | 1.6.0已发布 |
 | `ads_geo_yearly_institution_type_metrics` | 一个位置一年一种机构类型一行 | `location_id, statistics_year, institution_type_id` | 1.6.0已发布 |
 | `ads_geo_yearly_index` | 一个位置一年一种指数一行 | `location_id, statistics_year, index_code` | 1.6.0预留空表 |
-| `ads_technology_profile` | 一个候选技术节点一行 | `technology_node_id` | 4.6.0新增并发布 |
+| `ads_technology_profile` | 一个技术点一行 | `technology_node_id` | 4.6.0新增；6.0.0确认为ETO Cluster技术点 |
 | `ads_technology_graph_edge` | 一条候选技术关系一行 | `edge_id` | 4.6.0新增并发布 |
 | `ads_technology_graph_node` | 一个可视化技术节点一行 | `technology_node_id` | 4.7.0新增，携带主簇群与演进摘要 |
 | `ads_technology_community` | 一个图算法技术簇群一行 | `community_id` | 4.7.0新增并发布 |
@@ -214,6 +220,8 @@ ORCID 经历及机构扩展迁移为
 | `ads_technology_bottleneck_assessment` | 技术在一个阶段的堵点评估 | `assessment_id, stage_code, bottleneck_code` | 4.6.0发布证据缺口诊断 |
 | `ads_technology_bottleneck_evidence` | 堵点评估的一条外部证据 | `assessment_id, stage_code, evidence_id` | 4.6.0建表；当前无数据 |
 | `ads_technology_data_coverage` | 技术节点的一个数据域覆盖状态 | `technology_node_id, domain_code` | 4.6.0新增并发布 |
+| `ads_technology_disruption_assessment` | 一个技术点的一个颠覆性代理模型评估 | `assessment_id` | 5.18.0新增；论文证据基线 |
+| `ads_technology_disruption_paper_evidence` | 一次颠覆性候选或高影响观察评估的一篇代表论文证据 | `assessment_id, paper_id` | 5.18.0新增 |
 | `ads_research_problem_release` | 一个基础问题发布批次 | `release_id` | 5.2.0新增 |
 | `ads_research_problem_overview_snapshot` | 一个总览统计日 | `snapshot_date` | 5.2.0新增 |
 | `ads_research_problem_profile` | 一个基础研究问题 | `problem_id` | 5.2.0新增 |
@@ -236,7 +244,7 @@ ORCID 经历及机构扩展迁移为
 | `ads_research_problem_event` | 一个问题的一条时间轴事件 | `event_id` | 5.2.0新增 |
 | `ads_research_problem_provenance` | 一个问题一个来源域的溯源记录 | `provenance_id` | 5.2.0新增 |
 | `ads_research_problem_change_log` | 一个问题的一条状态变更 | `change_id` | 5.2.0新增 |
-| `ads_research_problem_monthly_metrics` | 一个问题一个月份；当前为空 | `problem_id, statistics_month` | 5.3.0新增；来源仅有年粒度 |
+| `ads_research_problem_monthly_metrics` | 一个问题一个连续观测月份的直接证据月度事实 | `problem_id, statistics_month` | 5.16.0写入真实日期聚合与月度热度 |
 | `ads_research_problem_monthly_estimate` | 一个问题一个月份一个估算指标 | `problem_id, statistics_month, metric_name` | 5.5.0新增；与月度事实严格隔离 |
 | `ads_research_problem_development_snapshot` | 一个问题一个发展模型版本 | `problem_id, model_version` | 5.3.0新增 |
 | `ads_research_problem_heat_component` | 一个问题一个热度分项 | `problem_id, model_version, component_code` | 5.3.0新增 |
@@ -245,7 +253,8 @@ ORCID 经历及机构扩展迁移为
 | `ads_research_problem_region_institution` | 一个问题在一个地区的一家机构 | `problem_id, location_id, institution_id` | 5.3.0新增 |
 | `ads_research_problem_competition_rank` | 一个问题一个范围一个主体一个排名维度 | `problem_id, competition_scope, subject_id, ranking_dimension` | 5.3.0新增 |
 | `ads_research_problem_funding_evidence` | 一个问题关联项目的资金证据 | `problem_id, project_id` | 5.3.0新增 |
-| `ads_research_problem_policy_evidence` | 一个问题关联一项政策；当前为空 | `problem_id, policy_id` | 5.3.0新增；等待政策DWD |
+| `ads_research_problem_policy_evidence` | 一个问题关联一项官方政策证据 | `problem_id, policy_id` | 5.12.0接入真实政策DWD并发布 |
+| `ads_research_problem_policy_yearly_metrics` | 一个问题在一个年份、政策层级和支持类型的统计 | `problem_id, statistics_year, policy_level, support_type` | 5.12.0新增并发布 |
 | `ads_research_problem_potential_dimension` | 一次潜力评估的一个维度 | `assessment_id, dimension_code` | 5.3.0新增 |
 | `ads_research_problem_potential_assessment` | 一个问题的一次潜力评估 | `assessment_id` | 5.3.0新增 |
 | `ads_research_problem_potential_evidence` | 一个潜力维度的一条证据 | `assessment_id, dimension_code, evidence_id` | 5.3.0新增 |
@@ -254,9 +263,13 @@ ORCID 经历及机构扩展迁移为
 | `ads_research_problem_recommendation` | 一条问题推荐结果 | `recommendation_id` | 5.3.0新增 |
 | `ads_research_problem_recommendation_evidence` | 一条推荐的一条证据 | `recommendation_id, evidence_id` | 5.3.0新增 |
 | `ads_research_problem_deployment` | 一个问题一个部署版本 | `problem_id, deployment_version` | 5.4.0新增；待补录部署决策 |
-| `ads_research_problem_direction` | 一个问题的一条候选或正式研究方向 | `direction_id` | 5.4.0新增；候选项待人工审核 |
-| `ads_research_problem_institution_match` | 一个问题与一家深圳机构的匹配版本 | `problem_id, institution_id, model_version` | 5.4.0新增；只预置证据候选 |
-| `ads_research_problem_strategic_advice` | 一条问题或学科范围的战略建议 | `advice_id` | 5.4.0新增；待补录战略分析 |
+| `ads_research_problem_direction` | 一个问题的一条研究方向；同一问题允许多条 | `direction_id` | 5.12.1按操作方批准策略全部发布为APPROVED |
+| `ads_research_problem_institution_match` | 一个问题与一家深圳机构的匹配版本 | `problem_id, institution_id, model_version` | 5.14.0补充同证据论文署名机构人才事实 |
+| `ads_research_problem_institution_achievement` | 一个问题、机构与一项经机构关系验证的成果 | `achievement_relation_id` | 5.13.0新增 |
+| `ads_research_problem_institution_discipline_metrics` | 一家机构在一个问题学科Topic下的成果聚合 | `institution_id, topic_id, model_version` | 5.13.0新增 |
+| `ads_research_problem_scope_potential_dimension` | 一个Topic/Field/Domain范围的一个潜力维度 | `scope_type, scope_id, dimension_code, model_version` | 5.15.0新增并发布 |
+| `ads_research_problem_scope_strategy` | 一个Topic/Field/Domain范围的一条战略优先级结果 | `scope_type, scope_id, strategy_version` | 5.15.0新增并发布 |
+| `ads_research_problem_strategic_advice` | 一条问题或学科范围的战略建议 | `advice_id` | 5.15.0补充正式Topic/Field/Domain建议 |
 | `ads_research_problem_update_signal` | 一个问题的一条增量变化信号 | `signal_id` | 5.4.0新增；等待跨发布比较 |
 | `ads_research_problem_collaboration_recommendation` | 一个问题的一个潜在合作领域推荐 | `recommendation_id` | 5.11.0新增并发布 |
 
@@ -275,15 +288,16 @@ ORCID 经历及机构扩展迁移为
 | 身份 | `openalex_author_id` | `VARCHAR(64)` | OpenAlex Author ID，来源映射便利列，不作为平台主键 |
 | 身份 | `orcid` | `VARCHAR(32)` | ORCID |
 | 姓名 | `name` | `VARCHAR(512)` | ETL去除空串后优先中文，其次英文和原始姓名 |
-| 姓名 | `name_zh` | `VARCHAR(512)` | 标准中文姓名 |
+| 姓名 | `name_zh` | `VARCHAR(512)` | 有确切来源的标准中文姓名；拼音逆推结果不得写入 |
+| 姓名 | `name_zh_candidate` | `VARCHAR(512)` | 拼音逆推的当前中文候选名；不是已核验事实，前端必须标记“推测” |
 | 姓名 | `name_en` | `VARCHAR(512)` | 标准英文姓名 |
 | 姓名 | `name_original` | `VARCHAR(512)` | 上游原始姓名 |
 | 姓名 | `name_pinyin` | `VARCHAR(512)` | 中文姓名全拼，如 shi yigong |
 | 姓名 | `name_pinyin_compact` | `VARCHAR(512)` | 无空格拼音，如 shiyigong |
 | 姓名 | `name_initials` | `VARCHAR(64)` | 拼音首字母，如 syg |
 | 姓名 | `name_aliases` | `ARRAY<STRING>` | 姓名别名集合 |
-| 姓名 | `name_zh_source` | `VARCHAR(64)` | 中文姓名来源 |
-| 姓名 | `name_zh_confidence` | `DECIMAL(5,4)` | 中文名置信度0至1，ETL校验 |
+| 姓名 | `name_zh_source` | `VARCHAR(64)` | 当前中文值来源；拼音逆推固定为`PINYIN_INFERENCE`，未来确切来源填写具体来源类型 |
+| 姓名 | `name_zh_confidence` | `DECIMAL(5,4)` | 候选排序分0至1，不表示姓名为真的概率 |
 | 基础资料 | `gender` | `TINYINT` | 0未知 1男 2女 9未说明 |
 | 基础资料 | `birth_year` | `SMALLINT` | 出生年份 |
 | 基础资料 | `avatar_url` | `VARCHAR(2048)` | 头像地址 |
@@ -382,6 +396,13 @@ ORCID 经历及机构扩展迁移为
 `location_display` 按国家、省州、城市顺序去空、去重后以 ` / ` 连接。未解析机构位置不得使用经历
 自由文本兜底，相关字段保持 NULL。四级位置 ID 必须逐值复制机构画像同名字段，不得由名称、代码或
 层级关系临时推导；省级或区县级来源不足时对应字段保持 NULL。
+
+姓名治理采用最小双字段隔离：只有取得可追溯确切来源时才能填写`name_zh`；仅由英文名或拼音逆推得到
+的结果写入`name_zh_candidate`，并将`name_zh_source`写为`PINYIN_INFERENCE`。未来确切来源可使用
+`INSTITUTION_OFFICIAL_PROFILE`、`PERSONAL_OFFICIAL_PAGE`、`AUTHOR_PROVIDED`或`MANUAL_VERIFIED`等明确
+类型覆盖来源标识并填写`name_zh`。`name`默认展示字段不自动采用候选名，避免把推测姓名冒充事实；
+需要展示候选的客户端必须同时读取`name_zh_candidate`和`name_zh_source`并显式标记“推测”。姓名候选
+不得参与人才身份合并、论文署名确认或Author–Inventor对齐。
 
 `discipline_domains/fields/subfields/topics` 均为对象数组，每项固定含 `id`、`name`（中文）和
 `name_en`（英文）；四级中文名称来自 `technology_v2.v_openalex_*_bilingual` 视图。
@@ -2478,8 +2499,8 @@ Topic 的去重论文出现次数降序排名；第一名为 Primary Topic。并
 
 `ads_geo_yearly_metrics` 按 `location_id, statistics_year` 保存洲、国家、省和城市年度汇总。
 论文指标来自发布 MVP core，实际年份覆盖 2015–2026；2000–2014 的论文字段为 NULL 且
-`paper_coverage_status='NOT_AVAILABLE'`。项目按 `effective_start_year` 统计。人才存量字段当前
-保持 NULL，`talent_coverage_status='NOT_READY'`；流动字段已按严格观察事件发布，独立使用
+`paper_coverage_status='NOT_AVAILABLE'`。项目按 `effective_start_year` 统计。`talent_count` 已按
+发布 MVP core 论文署名机构的同期位置证据发布；其余人才存量字段保持 NULL。流动字段已按严格观察事件发布，独立使用
 `mobility_coverage_status='PARTIAL'`。`institution_count` 是当年有论文或启动项目的
 去重活跃机构数，不是按成立年份推算的存续机构数；`new_institution_count` 才按成立年份统计。
 
@@ -2496,7 +2517,7 @@ Topic 的去重论文出现次数降序排名；第一名为 Primary Topic。并
 | `project_fractional_count` | `DECIMAL(20,8)` | 是 | 按项目在同一位置层级命中的位置数等权分摊后的项目数 |
 | `direct_project_count` | `BIGINT` | 是 | 至少有直接项目—机构关系的项目数 |
 | `inferred_project_count` | `BIGINT` | 是 | 仅由受资助论文作者机构兜底推断的项目数 |
-| `talent_count` | `BIGINT` | 是 | 当年关联该位置的去重人才数；当前未发布 |
+| `talent_count` | `BIGINT` | 是 | 2015–2026 年发布 MVP core 中，通过论文署名机构在该位置被观察到的年度去重发布人才数；2000–2014 为 NULL |
 | `talent_participation_count` | `BIGINT` | 是 | 未按人才去重的年度位置参与次数；当前未发布 |
 | `new_talent_count` | `BIGINT` | 是 | 当年首次在该位置观察到的人才数；当前未发布 |
 | `institution_count` | `BIGINT` | 是 | 当年有论文或启动项目的去重活跃机构并集数 |
@@ -2509,13 +2530,25 @@ Topic 的去重论文出现次数降序排名；第一名为 Primary Topic。并
 | `paper_coverage_status` | `VARCHAR(32)` | 否 | 论文指标覆盖状态；当前使用 `COMPLETE / NOT_AVAILABLE` |
 | `project_coverage_status` | `VARCHAR(32)` | 否 | 项目指标覆盖状态；当前发布值为 `COMPLETE` |
 | `institution_coverage_status` | `VARCHAR(32)` | 否 | 机构指标覆盖状态；当前发布值为 `PARTIAL` |
-| `talent_coverage_status` | `VARCHAR(32)` | 否 | 人才指标覆盖状态；当前发布值为 `NOT_READY` |
+| `talent_coverage_status` | `VARCHAR(32)` | 否 | 人才指标覆盖状态；2015–2026 为 `PARTIAL`，2000–2014 为 `NOT_AVAILABLE` |
 | `mobility_coverage_status` | `VARCHAR(32)` | 否 | 流动指标覆盖状态；`PARTIAL` 表示仅统计严格识别的已观测事件 |
 | `location_resolved_ratio` | `DECIMAL(9,6)` | 是 | 进入聚合口径的事实中成功解析到平台位置的比例；当前未发布 |
 | `metrics_as_of_date` | `DATE` | 是 | 指标事实统计截止日 |
 | `metric_definition_version` | `VARCHAR(64)` | 是 | 指标口径版本 |
 | `data_version` | `BIGINT` | 否 | 同一逻辑 Key 的单调版本 |
 | `update_time` | `DATETIME(3)` | 否 | UTC 生成时间 |
+
+`talent_count` 当前使用 `geo_yearly_observed_talent_mvp_v1`：从固定发布的 100,000 名 MVP 人才—
+论文—署名机构事实出发，以论文发表年和署名机构已解析位置为同期证据，在
+`location_id, statistics_year` 内按人才来源 ID 去重。它与 20.3 的 Primary Topic 人才指标共用
+人才范围和位置证据，但必须直接从人才事实重新去重，禁止跨 Topic 求和。一个人才可在同年计入多个
+真实署名位置以及叶子位置的祖先位置，故跨位置或层级相加也不代表全局去重人数。
+
+2015–2026 有已发布位置—年度 Key 但无匹配人才证据时写 0；2000–2014 写 NULL。`PARTIAL` 表示
+当前仅覆盖固定 MVP core 论文观察口径，尚未纳入 ORCID 年度任职区间和完整年度人才位置模型。
+2026 为截至 `metrics_as_of_date=2026-09-18` 的未结束年度累计值。本指标不表示居住、入职、在岗或
+人才流动；`talent_participation_count` 和 `new_talent_count` 仍保持 NULL。执行与门禁见
+[`docs/geo_ads_yearly_talent_v1.md`](docs/geo_ads_yearly_talent_v1.md)。
 
 ### 20.3 `ads_geo_yearly_discipline_metrics`
 
@@ -2877,14 +2910,15 @@ Key重复、Topic孤儿、人才孤儿、覆盖状态、数值范围、Top 20排
 5. 迁移后核对 `information_schema`、行数、Key 唯一性和关键字段非空率。
 6. 更新核验报告；不得用 `CREATE IF NOT EXISTS` 冒充旧表升级。
 
-## 24. 候选技术分析 ADS（4.6.0）
+## 24. 技术点分析 ADS（4.6.0；6.0.0身份口径修订）
 
 ### 24.1 身份、中文字段与边界
 
-当前 ETO `research_cluster_id` 是候选技术簇，不是已治理 Technology。4.6.0 为每个 Cluster
-确定性生成 `tcn_<32 hex>` 的 `technology_node_id`，设置
-`node_identity_type='RESEARCH_CLUSTER_CANDIDATE'`、`tech_id=NULL` 和
-`mapping_status='UNMAPPED'`。只有审核映射进入新的 mapping release 后才能填写正式 `tech_id`。
+6.0.0按产品确认口径，将每个入选 ETO `research_cluster_id` 直接认定为一个技术点，并为其确定性生成
+`tcn_<32 hex>` 的 `technology_node_id`。`technology_node_id` 是本模块唯一技术点主键，
+`research_cluster_id` 仅保留为ETO来源血缘，`node_identity_type`固定为
+`ETO_RESEARCH_CLUSTER_TECHNOLOGY`。本模块不再连接上一版本正式Technology目录，删除易产生歧义的
+`tech_id`和`mapping_status`字段。
 
 `ads_technology_profile` 保存技术名称、说明和关键词的 `original/en/zh` 三组字段，以及翻译状态、
 版本、来源和审核状态。当前尚无统一审核中文翻译，`_zh` 必须为 NULL/空数组，不得复制英文冒充中文。
@@ -3030,7 +3064,6 @@ REGULATORY_OR_STANDARDIZATION、INDUSTRIALIZATION和MARKET_SCALE。
 | 缺失项 | 影响功能 | 需要补充的最小事实 |
 |---|---|---|
 | 审核中文翻译 | 全部中文展示 | 名称、说明、关键词译文，翻译版本、来源、审核人和状态 |
-| 正式Cluster—Technology映射 | 正式技术目录 | mapping release、tech_id、类型、置信度、证据和审核信息 |
 | 顶级会议/期刊名单 | 热点发现 | Venue稳定ID、级别、学科、有效期和来源版本 |
 | 全文/摘要语义短语 | 智能热点提取 | document ID、phrase、年份、模型、置信度、位置和语义cluster |
 | 产品与应用落地 | 典型案例 | 产品/试点/部署ID、企业、客户、地点、阶段、日期、URL和审核状态 |
@@ -3039,7 +3072,7 @@ REGULATORY_OR_STANDARDIZATION、INDUSTRIALIZATION和MARKET_SCALE。
 | 标准与监管 | 阶段和堵点 | 标准/审批ID、状态、适用技术、机构、日期和来源 |
 | 供应链关系 | 转化堵点 | 企业角色、上下游产品/部件、方向、地区、有效期和证据 |
 | 专家知识与验证 | 堵点归因 | 阶段、堵点、原因、严重度、建议、专家/机构、审核状态和版本 |
-| 产业分类映射扩展 | 产业分析 | tech_id/Cluster到IPC/CPC/产业节点的正式审核映射 |
+| 产业分类映射扩展 | 产业分析 | `technology_node_id`到IPC/CPC/产业节点的版本化映射 |
 | 更完整时间序列 | 热点和阶段 | 固定观察窗全量引用、专利、企业和市场年度事实 |
 
 ### 24.11 发布、恢复与验证
@@ -3082,15 +3115,14 @@ set +a
 
 #### 24.12.1 `ads_technology_profile`
 
-候选技术节点画像；当前身份为研究簇候选而非正式技术目录。逻辑 Key：`technology_node_id`。
+技术点画像；每个入选ETO Research Cluster按当前产品口径认定为一个技术点。逻辑 Key：
+`technology_node_id`。
 
 | 字段组 | 字段 | Doris 类型 | 说明 |
 |---|---|---|---|
-| 身份与关联 | `technology_node_id` | `VARCHAR(64) NOT NULL` | 确定性候选技术节点ID |
+| 身份与关联 | `technology_node_id` | `VARCHAR(64) NOT NULL` | 确定性技术点ID |
 | 身份与关联 | `research_cluster_id` | `VARCHAR(64)` | 来源ETO研究簇ID |
-| 状态与口径 | `node_identity_type` | `VARCHAR(32)` | 节点身份类型；当前为研究簇候选 |
-| 身份与关联 | `tech_id` | `VARCHAR(64)` | 正式技术目录ID；未审核映射时为空 |
-| 状态与口径 | `mapping_status` | `VARCHAR(32)` | 正式技术映射状态 |
+| 状态与口径 | `node_identity_type` | `VARCHAR(32)` | 固定为`ETO_RESEARCH_CLUSTER_TECHNOLOGY` |
 | 展示与说明 | `technology_name_original` | `STRING` | 技术原始名称 |
 | 展示与说明 | `technology_name_en` | `STRING` | 技术英文名称 |
 | 展示与说明 | `technology_name_zh` | `STRING` | 审核中文技术名称；当前可为空 |
@@ -3164,7 +3196,7 @@ set +a
 | 展示与说明 | `paper_title_original` | `STRING` | 论文原始标题 |
 | 展示与说明 | `paper_title_en` | `STRING` | 论文英文标题 |
 | 展示与说明 | `paper_title_zh` | `STRING` | 论文中文标题；无审核译文时为空 |
-| 时间 | `publication_year` | `SMALLINT` | 公开或发表年份 |
+| 时间 | `publication_year` | `INT` | 公开或发表年份 |
 | 身份与关联 | `primary_topic_id` | `VARCHAR(64)` | 论文Primary Topic ID |
 | 指标 | `cited_by_count` | `BIGINT` | 截至统计日累计被引次数 |
 | 指标 | `fwci` | `DOUBLE` | 论文领域加权引用影响力 |
@@ -3192,7 +3224,7 @@ set +a
 | 时间 | `priority_date` | `DATE` | 最早优先权日 |
 | 时间 | `filing_date` | `DATE` | 申请日 |
 | 时间 | `publication_date` | `DATE` | 公开日 |
-| 时间 | `publication_year` | `SMALLINT` | 公开或发表年份 |
+| 时间 | `publication_year` | `INT` | 公开或发表年份 |
 | 时间 | `grant_date` | `DATE` | 授权日 |
 | 展示与说明 | `patent_title_original` | `STRING` | 专利原始标题 |
 | 展示与说明 | `patent_title_en` | `STRING` | 专利英文标题 |
@@ -3226,8 +3258,8 @@ set +a
 | 指标 | `paper_count` | `BIGINT` | 去重论文数 |
 | 指标 | `patent_count` | `BIGINT` | 去重专利publication数 |
 | 指标 | `project_count` | `BIGINT` | 去重关联科研项目数 |
-| 时间 | `first_evidence_year` | `SMALLINT` | 首次观察到关系证据的年份 |
-| 时间 | `latest_evidence_year` | `SMALLINT` | 最近观察到关系证据的年份 |
+| 时间 | `first_evidence_year` | `INT` | 首次观察到关系证据的年份 |
+| 时间 | `latest_evidence_year` | `INT` | 最近观察到关系证据的年份 |
 | 指标 | `institution_rank` | `BIGINT` | 节点内机构确定性排名 |
 | 状态与口径 | `has_paper_evidence` | `BOOLEAN` | 是否具有论文署名机构证据 |
 | 状态与口径 | `has_patent_evidence` | `BOOLEAN` | 是否具有确认专利机构证据 |
@@ -3283,7 +3315,7 @@ set +a
 | 字段组 | 字段 | Doris 类型 | 说明 |
 |---|---|---|---|
 | 身份与关联 | `technology_node_id` | `VARCHAR(64) NOT NULL` | 确定性候选技术节点ID |
-| 时间 | `statistics_year` | `SMALLINT NOT NULL` | 统计年份 |
+| 时间 | `statistics_year` | `INT NOT NULL` | 统计年份 |
 | 指标 | `paper_count` | `BIGINT` | 去重论文数 |
 | 指标 | `total_observed_paper_count` | `BIGINT` | 同年全部候选节点观察论文数 |
 | 指标 | `paper_share` | `DECIMAL(18,12)` | 节点论文数占同年观察论文数比例 |
@@ -3318,8 +3350,8 @@ set +a
 | 指标 | `keyword_rank` | `INT` | 关键词在节点内的稳定排名 |
 | 状态与口径 | `extraction_method` | `VARCHAR(64)` | 信号提取方法 |
 | 状态与口径 | `trend_method` | `VARCHAR(64)` | 年度趋势计算方法；当前为标签代理 |
-| 时间 | `first_observed_year` | `SMALLINT` | 首次观察年份 |
-| 时间 | `latest_observed_year` | `SMALLINT` | 最近观察年份 |
+| 时间 | `first_observed_year` | `INT` | 首次观察年份 |
+| 时间 | `latest_observed_year` | `INT` | 最近观察年份 |
 | 指标 | `evidence_paper_count` | `BIGINT` | 支持信号的论文数 |
 | 状态与口径 | `translation_status` | `VARCHAR(32)` | 翻译完成状态 |
 | 版本与审计 | `translation_version` | `VARCHAR(64)` | 翻译规则或模型版本 |
@@ -3415,7 +3447,7 @@ set +a
 | 状态与口径 | `evidence_type` | `VARCHAR(32)` | 论文、专利、项目或外部证据类型 |
 | 身份与关联 | `source_entity_id` | `VARCHAR(64)` | 来源实体ID |
 | 展示与说明 | `evidence_title` | `STRING` | 证据标题 |
-| 时间 | `evidence_year` | `SMALLINT` | 证据年份 |
+| 时间 | `evidence_year` | `INT` | 证据年份 |
 | 指标 | `evidence_rank` | `BIGINT` | 证据排名 |
 | 展示与说明 | `evidence_summary` | `STRING` | 证据摘要 |
 | 指标 | `evidence_direction` | `VARCHAR(32)` | 证据方向 |
@@ -3461,7 +3493,7 @@ set +a
 | 状态与口径 | `evidence_type` | `VARCHAR(32)` | 论文、专利、项目或外部证据类型 |
 | 身份与关联 | `source_entity_id` | `VARCHAR(64)` | 来源实体ID |
 | 展示与说明 | `evidence_title` | `STRING` | 证据标题 |
-| 时间 | `evidence_year` | `SMALLINT` | 证据年份 |
+| 时间 | `evidence_year` | `INT` | 证据年份 |
 | 展示与说明 | `evidence_summary` | `STRING` | 证据摘要 |
 | 指标 | `evidence_direction` | `VARCHAR(32)` | 证据方向 |
 | 指标 | `evidence_quality` | `VARCHAR(64)` | 证据质量等级 |
@@ -3479,7 +3511,7 @@ set +a
 |---|---|---|---|
 | 身份与关联 | `technology_node_id` | `VARCHAR(64) NOT NULL` | 确定性候选技术节点ID |
 | 身份与关联 | `location_id` | `VARCHAR(64) NOT NULL` | 平台位置ID；当前区域粒度为城市 |
-| 时间 | `statistics_year` | `SMALLINT NOT NULL` | 统计年份 |
+| 时间 | `statistics_year` | `INT NOT NULL` | 统计年份 |
 | 身份与关联 | `country_location_id` | `VARCHAR(64)` | 平台国家位置ID |
 | 身份与关联 | `province_location_id` | `VARCHAR(64)` | 平台省级位置ID |
 | 身份与关联 | `city_location_id` | `VARCHAR(64)` | 平台城市位置ID |
@@ -3513,8 +3545,8 @@ set +a
 | 指标 | `paper_count` | `BIGINT` | 去重论文数 |
 | 指标 | `patent_count` | `BIGINT` | 去重专利publication数 |
 | 指标 | `project_count` | `BIGINT` | 去重关联科研项目数 |
-| 时间 | `first_evidence_year` | `SMALLINT` | 首次观察到关系证据的年份 |
-| 时间 | `latest_evidence_year` | `SMALLINT` | 最近观察到关系证据的年份 |
+| 时间 | `first_evidence_year` | `INT` | 首次观察到关系证据的年份 |
+| 时间 | `latest_evidence_year` | `INT` | 最近观察到关系证据的年份 |
 | 版本与审计 | `metrics_as_of_date` | `DATE` | 指标统计截止日 |
 | 版本与审计 | `metric_definition_version` | `VARCHAR(64)` | 指标口径版本 |
 | 版本与审计 | `data_version` | `BIGINT NOT NULL` | 同一业务Key的单调数据版本 |
@@ -3641,6 +3673,127 @@ set +a
 | 版本与审计 | `metric_definition_version` | `VARCHAR(64)` | 指标口径版本 |
 | 版本与审计 | `data_version` | `BIGINT NOT NULL` | 同一业务Key的单调数据版本 |
 | 版本与审计 | `update_time` | `DATETIME(3) NOT NULL` | UTC生成时间 |
+
+### 24.13 论文证据颠覆性技术候选基线（5.18.0）
+
+本版本新增的“颠覆性”只表示需要进一步复核的技术候选，不是技术替代、产业颠覆、市场成功或专家认定
+结论。发布模型`paper_disruption_proxy_v1_3`读取同一不可变Technology ADS发布中的候选技术画像、代表论文
+和热点评分快照，不读取联网数据，不调用LLM，也不修改既有4.6.0结果。
+
+每个候选技术先聚合代表论文的被引、FWCI、高影响论文和论文—专利连接，再将以下指标转换为固定
+19,430个节点总体内的0—100百分位：
+
+```text
+disruption_proxy_score = 0.25 * citation_impact_score
+                       + 0.25 * field_normalized_impact_score
+                       + 0.20 * breakthrough_paper_score
+                       + 0.15 * patent_linkage_score
+                       + 0.15 * research_growth_score
+```
+
+其中引用影响使用代表论文`ln(1+cited_by_count)`均值，领域归一影响使用平均FWCI，高影响论文固定为
+`fwci >= 3.0`，专利连接使用`is_patent_linked_seed`占比并以关联专利数稳定排序，科研增长复用固定
+2020—2022对照期和2023—2025近期窗的论文份额增长百分位。
+
+至少5篇代表论文、近期至少3篇论文，并具有引用与FWCI覆盖时才能进入正式评分。综合分不低于80、
+引用影响和领域归一影响均不低于70，且专利连接或科研增长至少一项不低于80，标记为
+`DISRUPTIVE_CANDIDATE`；综合分不低于70的其余合格节点标记`HIGH_IMPACT_WATCH`。门槛未满足固定为
+`INSUFFICIENT_EVIDENCE`，其余为`NOT_FLAGGED`。首轮预检模型`paper_disruption_proxy_v1`使用85分与
+60分辅助门槛，未产生候选；v1.2进一步将NULL显式置于百分位最低端，但85分门槛仍高于真实总体最高
+综合分81.100160。因此不覆盖任一预检结果，而以v1.3将综合门槛校准为80并保持辅助信号门槛80。
+阈值、输入Snapshot、模型版本和生成时间全部固定在
+发布配置中；修改任何口径必须创建新模型和新数据版本。
+
+v1.3曾发布`DISRUPTIVE_CANDIDATE` 2条和`HIGH_IMPACT_WATCH` 90条。5.18.1依据操作方明确业务决定，
+在新模型`paper_disruption_proxy_v1_4_operator_promoted`中把两类统一标记为
+`DISRUPTIVE_CANDIDATE`：最低证据门槛保持不变，综合分不低于70即进入候选，不再保留独立观察标签。
+v1.4实际发布19,430条评估：`DISRUPTIVE_CANDIDATE` 92条、`NOT_FLAGGED` 3,179条、
+`INSUFFICIENT_EVIDENCE` 16,159条；92个候选共有1,026条逐篇论文证据。该提升属于操作方批准的展示/业务
+分类，不表示新增了市场替代、产业格局变化或专家验证证据；前端仍必须显示代理口径与复核提示。
+6.0.0以相同公式和门槛发布`paper_disruption_proxy_v1_5_eto_technology_identity`，固定读取
+`technology_ads_v2_20261026`，把评估对象正式解释为当前技术点清单中的技术点；评分和92条候选集合不变。
+
+#### 24.13.1 `ads_technology_disruption_assessment`
+
+逻辑Key：`assessment_id`。每个候选技术节点、模型版本生成一个确定性评估ID。
+
+| 字段组 | 字段 | Doris类型 | 说明 |
+|---|---|---|---|
+| 身份 | `assessment_id` | `VARCHAR(64) NOT NULL` | 评估确定性ID |
+| 身份 | `technology_node_id` | `VARCHAR(64)` | 候选技术节点ID |
+| 展示 | `technology_name_original` | `STRING` | 评估时固定的原始名称 |
+| 版本 | `model_version` | `VARCHAR(64)` | 固定模型版本 |
+| 结论 | `disruption_status` | `VARCHAR(32)` | 候选、观察、未标记或证据不足 |
+| 指标 | `disruption_proxy_score` | `DECIMAL(9,6)` | 论文证据代理综合分，不是概率 |
+| 指标 | `disruption_rank` | `BIGINT` | 合格节点内稳定排名；证据不足为空 |
+| 分项 | `citation_impact_score` | `DECIMAL(9,6)` | 对数引用均值百分位 |
+| 分项 | `field_normalized_impact_score` | `DECIMAL(9,6)` | 平均FWCI百分位 |
+| 分项 | `breakthrough_paper_score` | `DECIMAL(9,6)` | 高影响论文占比百分位 |
+| 分项 | `patent_linkage_score` | `DECIMAL(9,6)` | 论文—专利连接百分位 |
+| 分项 | `research_growth_score` | `DECIMAL(9,6)` | 科研增长百分位 |
+| 证据 | `representative_paper_count` | `BIGINT` | 代表论文数 |
+| 证据 | `citation_covered_paper_count` | `BIGINT` | 引用计数覆盖论文数 |
+| 证据 | `total_citation_count` | `BIGINT` | 代表论文累计被引之和 |
+| 证据 | `avg_fwci`, `max_fwci` | `DECIMAL(18,6)` | 平均/最高FWCI |
+| 证据 | `high_impact_paper_count`, `high_impact_paper_ratio` | `BIGINT/DECIMAL` | 高影响论文数与占比 |
+| 证据 | `patent_linked_paper_count`, `related_patent_count` | `BIGINT` | 专利连接论文和关联专利数 |
+| 证据 | `patent_linked_paper_ratio` | `DECIMAL(9,6)` | 专利连接论文占比 |
+| 窗口 | `baseline_paper_count`, `recent_paper_count` | `BIGINT` | 对照期与近期论文数 |
+| 状态 | `assessment_status` | `VARCHAR(64)` | 是否满足最低论文证据门槛 |
+| 状态 | `assessment_method` | `VARCHAR(64)` | 固定论文证据代理方法 |
+| 边界 | `interpretation_note` | `STRING` | 页面必须展示的解释边界 |
+| 审计 | `metrics_as_of_date`, `metric_definition_version` | `DATE/VARCHAR` | 统计截止日与口径版本 |
+| 审计 | `data_version`, `update_time` | `BIGINT/DATETIME(3)` | 数据版本与生成时间 |
+
+### 24.14 技术点名称全文索引（6.0.1）
+
+Doris Serving层为`ads_technology_profile`的中英文名称建立两个倒排全文索引，不改变表字段、行数据、
+逻辑Key或`data_version`：
+
+| 字段 | 索引 | 分词与用途 |
+|---|---|---|
+| `technology_name_en` | `idx_technology_profile_name_en` | English分词、小写归一、英文名称全文检索 |
+| `technology_name_zh` | `idx_technology_profile_name_zh` | 中文细粒度分词、中文名称全文检索 |
+
+英文索引使用`parser=english`；中文索引使用`parser=chinese`和
+`parser_mode=fine_grained`。两者均启用`lower_case=true`、`stopwords=none`、
+`support_phrase=true`和字典压缩，供Doris `MATCH_ANY`、`MATCH_ALL`及`MATCH_PHRASE`查询使用。
+迁移显式执行`BUILD INDEX`，使迁移前已存在的历史行进入索引。
+
+已有环境执行：
+
+```bash
+set -a
+source .env
+set +a
+./scripts/compose.sh exec -T -e MYSQL_PWD="$DORIS_PASSWORD" doris-fe \
+  mysql --protocol=TCP -h127.0.0.1 -P9030 -uroot \
+  < sql/doris/ads_schema_6_0_1_technology_name_search_indexes.sql
+```
+
+#### 24.13.2 `ads_technology_disruption_paper_evidence`
+
+逻辑Key：`assessment_id, paper_id`。只保存`DISRUPTIVE_CANDIDATE`和`HIGH_IMPACT_WATCH`的逐篇代表
+论文证据；未进入本表不表示论文不存在。
+
+| 字段组 | 字段 | Doris类型 | 说明 |
+|---|---|---|---|
+| 身份 | `assessment_id`, `technology_node_id`, `paper_id` | `VARCHAR(64)` | 评估、技术节点与论文ID |
+| 展示 | `paper_title_original` | `STRING` | 论文原始标题 |
+| 时间 | `publication_year` | `SMALLINT` | 发表年份 |
+| 影响 | `cited_by_count`, `fwci` | `BIGINT/DOUBLE` | 累计被引与FWCI |
+| 转化 | `is_patent_linked_seed`, `related_patent_count` | `BOOLEAN/BIGINT` | 论文—专利连接事实 |
+| 选择 | `representative_rank`, `selection_method` | `BIGINT/VARCHAR` | 节点内排名与选择方法 |
+| 角色 | `evidence_role` | `VARCHAR(64)` | 代表、高影响、专利连接或二者兼具 |
+| 审计 | `metrics_as_of_date`, `metric_definition_version` | `DATE/VARCHAR` | 统计截止日与口径版本 |
+| 审计 | `data_version`, `update_time` | `BIGINT/DATETIME(3)` | 数据版本与生成时间 |
+
+执行入口：
+
+```bash
+uv run python -m app.technology_disruption.cli run \
+  --config config/technology_disruption_ads_v1_4.json --execute
+```
 
 ## 25. 动态技术图谱、簇群与演进路径（4.7.0）
 
@@ -4039,12 +4192,13 @@ ADS先物化到 `iceberg.technology_graph_ads_v1_20261016`，再幂等加载到D
 
 | 表 | 逻辑 Key | 核心字段 |
 |---|---|---|
-| `ads_research_problem_monthly_metrics` | `problem_id, statistics_month` | 月度论文、引用、专利、项目、资金、人才、机构、热度和3月增长；当前零行，`unavailable_reason=SOURCE_HAS_YEAR_GRAIN_ONLY` |
+| `ads_research_problem_monthly_metrics` | `problem_id, statistics_month` | 直接论文、专利、可用项目日期、首次人才/机构、月度活动分、平滑热度和增长率；引用增量与月度资金仍为空 |
 | `ads_research_problem_development_snapshot` | `problem_id, model_version` | 首次/最近活跃年、观察活跃年数、最长连续活跃年、峰值年、衰减起点、最近增长率、发展阶段 |
 | `ads_research_problem_heat_component` | `problem_id, model_version, component_code` | 论文增长、学术影响、人才扩散、机构扩散、专利、项目及资金分项、权重与贡献 |
 
-生命周期当前只声明 `YEARLY_OBSERVATION`。`continuous_active_months` 与
-`continuous_decline_months` 必须为空，直到取得真实月度事实。
+`ads_research_problem_development_snapshot`的既有生命周期字段仍按`YEARLY_OBSERVATION`发布；5.16.0不在
+该年度快照中回填`continuous_active_months/continuous_decline_months`。需要真实月度活跃、衰减或增长
+时应直接查询`ads_research_problem_monthly_metrics`，不得继续使用LLM估算字段冒充事实。
 
 ### 27.3 国际、国内和深圳竞争格局
 
@@ -4158,45 +4312,49 @@ ADS先物化到 `iceberg.technology_graph_ads_v1_20261016`，再幂等加载到D
 
 ### 28.3 `ads_research_problem_institution_match`
 
-逻辑Key：`problem_id, institution_id, model_version`。当前642行只选取已有深圳DISTRICT证据的机构候选。
+逻辑Key：`problem_id, institution_id, model_version`。当前包含问题级深圳证据候选及无直接问题证据时的
+深圳全局回退候选。每个问题按成果贡献规则确定且仅确定一家主导单位。
 
 | 字段组 | 字段 | 类型 | 当前口径 |
 |---|---|---|---|
 | Key | `problem_id/institution_id/model_version` | `VARCHAR(256)` | 问题、机构与匹配版本联合Key |
-| 机构 | `institution_name/institution_type_id` | `STRING` | 名称已填；类型待补 |
+| 机构 | `institution_name/institution_type_id` | `STRING` | 名称及固定机构画像Snapshot中的稳定类型代码 |
 | 地区 | `district_location_id/is_shenzhen` | `STRING/BOOLEAN` | 深圳区级位置及深圳标记 |
 | 证据 | `paper_count/patent_count/project_count` | `BIGINT` | 已有问题—机构科研证据计数 |
-| 证据 | `talent_count` | `BIGINT` | 问题—机构去重人才数；当前NULL |
-| 能力 | `academic_capability_score` | `DECIMAL(9,6)` | 学术能力匹配分；当前NULL |
-| 能力 | `talent_capability_score` | `DECIMAL(9,6)` | 人才能力匹配分；当前NULL |
-| 能力 | `technology_transfer_score` | `DECIMAL(9,6)` | 技术转化能力分；当前NULL |
-| 能力 | `collaboration_score/infrastructure_score` | `DECIMAL(9,6)` | 协作与基础设施分；当前NULL |
-| 匹配 | `overall_match_score/match_level/match_rank` | `DECIMAL/STRING/BIGINT` | 综合匹配结果；当前NULL |
-| 建议 | `recommended_role/recommendation_reason` | `STRING` | 牵头、参与、协作角色及理由；当前NULL |
+| 证据 | `talent_count` | `BIGINT` | 问题证据论文中署名该机构的去重人才数；已计算，未命中为0 |
+| 证据 | `direct_talent_count/proxy_talent_count` | `BIGINT` | 按问题人才`DIRECT/PROXY`证据等级拆分的去重人才数 |
+| 证据 | `talent_evidence_type` | `STRING` | 固定为`PROBLEM_EVIDENCE_WORK_AUTHOR_AFFILIATION` |
+| 能力 | `academic_capability_score` | `DECIMAL(9,6)` | DeepSeek学术能力匹配分 |
+| 能力 | `talent_capability_score` | `DECIMAL(9,6)` | DeepSeek人才能力匹配分 |
+| 能力 | `technology_transfer_score` | `DECIMAL(9,6)` | DeepSeek技术转化能力分 |
+| 能力 | `collaboration_score/infrastructure_score` | `DECIMAL(9,6)` | DeepSeek协作与基础设施分 |
+| 匹配 | `overall_match_score/match_level/match_rank` | `DECIMAL/STRING/BIGINT` | 模型综合匹配结果及排名 |
+| 建议 | `recommended_role/recommendation_reason` | `STRING` | 每问题恰好一家`LEAD`；理由记录贡献计数、排名和原模型理由 |
 | 证据 | `evidence_ids` | `ARRAY<STRING>` | 后续匹配证据ID |
-| 状态 | `candidate_source` | `STRING` | 当前`EXISTING_SHENZHEN_EVIDENCE` |
-| 状态 | `match_status` | `STRING` | 当前`EVIDENCE_CANDIDATE_ONLY`，不是推荐结论 |
-| 审核 | `review_status/reviewer/reviewed_at` | `STRING/STRING/DATETIME` | 当前待补录审核 |
+| 状态 | `candidate_source` | `STRING` | 成果直接证据、人才署名直接证据或明确标记的全局回退候选 |
+| 状态 | `match_status` | `STRING` | `FORMAL_RECOMMENDATION_CONTRIBUTION_LEAD` |
+| 审核 | `review_status/reviewer/reviewed_at` | `STRING/STRING/DATETIME` | 贡献规则正式审核信息 |
 | 治理 | `metrics_as_of_date/metric_definition_version/data_version/update_time` | `DATE/STRING/BIGINT/DATETIME` | 通用统计与发布版本 |
 
 ### 28.4 `ads_research_problem_strategic_advice`
 
-逻辑Key：`advice_id`。`scope_type/scope_id`允许后续扩展问题、Topic、Field或Domain级建议；当前为406条
-问题级骨架。
+逻辑Key：`advice_id`。当前包含406条问题级模型建议和480条范围级确定性建议：Topic 450条、Field
+26条、Domain 4条。范围级建议只为证据充足的范围发布；仅含1至2个问题的1,043个Topic保留范围指标，
+不生成正式建议。
 
 | 字段组 | 字段 | 类型 | 当前口径 |
 |---|---|---|---|
 | Key | `advice_id` | `VARCHAR(256) NOT NULL` | 稳定建议ID |
 | 范围 | `scope_type/scope_id/problem_id/advice_version` | `STRING` | 建议范围、对象与版本 |
 | 展示 | `scope_name_zh/advice_title_zh/advice_summary_zh` | `STRING` | 范围名称及建议内容 |
-| 行动 | `recommended_action_zh` | `STRING` | 可执行布局行动；当前NULL |
-| 优先级 | `strategic_priority_score/strategic_priority_level` | `DECIMAL/STRING` | 正式战略优先级；当前NULL |
-| 分项 | `policy_alignment_score/layout_gap_score` | `DECIMAL(9,6)` | 政策契合与布局缺口；当前NULL |
+| 行动 | `recommended_action_zh` | `STRING` | 问题级模型行动或范围级规则模板行动 |
+| 优先级 | `strategic_priority_score/strategic_priority_level` | `DECIMAL/STRING` | 正式战略优先级 |
+| 分项 | `policy_alignment_score/layout_gap_score` | `DECIMAL(9,6)` | 政策契合与布局缺口；政策无证据时保持NULL |
 | 参考 | `potential_score/hotspot_score` | `DECIMAL(9,6)` | 已有潜力与热点参考分 |
-| 建议 | `recommended_horizon/recommended_institution_ids` | `STRING/ARRAY<STRING>` | 建议周期及机构；当前待补 |
+| 建议 | `recommended_horizon/recommended_institution_ids` | `STRING/ARRAY<STRING>` | 建议周期及推荐机构 |
 | 证据 | `evidence_ids` | `ARRAY<STRING>` | 战略建议证据ID |
-| 方法 | `advice_method` | `STRING` | 当前`PENDING_STRATEGIC_ANALYSIS` |
-| 审核 | `review_status/reviewer/reviewed_at` | `STRING/STRING/DATETIME` | 当前待补录审核 |
+| 方法 | `advice_method` | `STRING` | 问题级为证据约束模型判断；范围级为`DETERMINISTIC_SCOPE_AGGREGATION_FROM_PROBLEM_EVIDENCE_V1` |
+| 审核 | `review_status/reviewer/reviewed_at` | `STRING/STRING/DATETIME` | 范围级为`APPROVED_RULE_BASED`及系统审核溯源 |
 | 治理 | `metrics_as_of_date/metric_definition_version/data_version/update_time` | `DATE/STRING/BIGINT/DATETIME` | 通用统计与发布版本 |
 
 ### 28.5 `ads_research_problem_update_signal`
@@ -4232,7 +4390,7 @@ generated time，且不得改变原始论文、专利、项目、资金或年度
 
 ### 29.1 月度估算隔离
 
-`ads_research_problem_monthly_metrics` 继续作为真实月度事实表并保持0行。新增
+`ads_research_problem_monthly_metrics`自5.16.0起保存直接事件日期聚合的真实月度事实；5.5.0新增的
 `ads_research_problem_monthly_estimate`，逻辑 Key 为
 `problem_id, statistics_month, metric_name`：
 
@@ -4258,7 +4416,7 @@ generated time，且不得改变原始论文、专利、项目、资金或年度
 | 表 | 5.5.0 写入内容 | 状态与边界 |
 |---|---|---|
 | `ads_research_problem_deployment` | 战略优先级、理由、推荐/牵头机构、建议投入等级 | `AUTO_APPROVED_LLM` |
-| `ads_research_problem_direction` | `APPROVED/REVISED/REJECTED`、正式名称与审核理由 | 审核主体为模型；不是人工审核 |
+| `ads_research_problem_direction` | 1,556条方向全部写为`APPROVED`并置为正式方向；审核理由保留原模型状态与理由 | 操作方批量批准；原模型判断继续保留在固定AI Seed中供审计 |
 | `ads_research_problem_institution_match` | 五维能力分、综合分、角色与理由 | 直接证据候选和全局回退候选分开标识 |
 | `ads_research_problem_strategic_advice` | 政策契合、布局缺口、行动建议和周期 | 证据约束模型判断 |
 | `ads_research_problem_update_signal` | 新问题及热度变化信号 | 真实前值、当前值和变化率仍为空 |
@@ -4272,8 +4430,9 @@ generated time，且不得改变原始论文、专利、项目、资金或年度
 
 ### 29.3 仍为空的事实
 
-缺少来源金额的项目真实金额、CNY换算金额与汇率日期、真实政策文档、真实月度事实、预测回测误差和
-向量embedding继续保持NULL或空表。模型只可提供独立估算/判断字段，不能回填这些事实字段。
+缺少来源金额的项目真实金额、逐项目历史汇率、逐月引用事件、月度拨款事实、预测回测误差和向量
+embedding继续保持NULL。官方政策和直接事件月度事实已由后续5.12.0与5.16.0版本补充；模型估算仍与
+事实字段隔离。
 
 详细执行与治理说明见
 [`docs/research_problem_deepseek_inference_v1.md`](docs/research_problem_deepseek_inference_v1.md)。
@@ -4539,3 +4698,524 @@ ORDER BY c.recommendation_rank, c.recommendation_id;
 65.270464。48行（涉及45个问题）的`evidence_ids`为空，表示方向论文证据与问题—机构实体证据均未提供；
 这些记录仍有完整模型输入hash与生成时间，但前端必须显示“无实体证据，仅模型判断/全局候选”，不能据此
 声称存在论文、项目或机构参与事实。Iceberg与Doris行数一致，逻辑Key重复数和字段边界异常均为0。
+
+## 33. 基础研究问题官方政策证据与政策导向（5.12.0）
+
+5.12.0以`policy_dwd_v1_20261023`的官方政策文档和条款替换5.5.0生成的合成政策语境。来源范围为
+国家、广东省和深圳市政策，采集截止日为2026-10-22；当前语料不含深圳各区独立政策集合。问题—政策
+关系采用中文二元词组召回候选，再由DeepSeek在候选政策和候选条款ID内进行证据约束判定。发布门槛为
+`relation_confidence >= 0.65`，没有通过门槛的关系不写入，禁止为提高覆盖率强制匹配。
+
+### 33.1 `ads_research_problem_policy_evidence`
+
+一条记录表示一个问题与一份官方政策的匹配证据，逻辑Key为`problem_id, policy_id`。前端政策详情、
+政策来源说明和政策导向下钻应查询此表。
+
+| 字段组 | 字段 | 用途 |
+|---|---|---|
+| 关联 | `problem_id, policy_id, clause_id` | 问题、政策文档及命中条款ID |
+| 政策身份 | `policy_title, document_number, policy_level` | 政策标题、文号及`NATIONAL/GUANGDONG/SHENZHEN`层级 |
+| 发布主体 | `issuing_organization_name, issuing_organizations, location_id` | 第一发布机构、完整机构数组和地域ID |
+| 时间 | `publication_date, document_date, statistics_date, statistics_year, statistics_date_source` | 原始日期及统计采用日期；统计日期优先文档日期，其次发布日期 |
+| 有效性 | `effective_date, expiry_date, validity_status` | 生效、失效及`ACTIVE/REPLACED`状态 |
+| 支持关系 | `support_type, relation_type, matched_terms` | 支持类型、`DIRECT_SUPPORT/FIELD_SUPPORT`和匹配词 |
+| 模型判断 | `relation_method, relation_confidence, alignment_score, match_reason_zh` | 固定混合召回+证据判断方法、0—1置信度、0—100契合分及理由 |
+| 证据 | `evidence_excerpt, canonical_url, verification_status, evidence_completeness, full_text_available` | 条款摘录、官方URL、核验和正文可得性 |
+| 来源边界 | `is_synthetic, source_type, unavailable_reason` | 固定`false/OFFICIAL_POLICY_DOCUMENT`；缺日期或只有通知时说明原因 |
+| 模型溯源 | `inference_provider, inference_model, inference_prompt_version, inference_input_hash, inference_generated_at` | DeepSeek判定的完整版本与输入溯源 |
+| 治理 | `review_status, policy_collection_end_date, metrics_as_of_date, metric_definition_version, data_version, update_time` | 固定自动证据约束审核状态及发布版本 |
+
+按问题查看正式政策证据：
+
+```sql
+SELECT
+    e.problem_id,
+    e.policy_id,
+    e.policy_title,
+    e.policy_level,
+    e.issuing_organizations,
+    e.statistics_date,
+    e.validity_status,
+    e.support_type,
+    e.relation_type,
+    e.alignment_score,
+    e.relation_confidence,
+    e.evidence_excerpt,
+    e.canonical_url,
+    e.verification_status
+FROM iceberg.research_problem_ads_v7_20261023
+    .ads_research_problem_policy_evidence e
+WHERE e.problem_id = :problem_id
+ORDER BY e.alignment_score DESC, e.statistics_date DESC, e.policy_id;
+```
+
+### 33.2 `ads_research_problem_policy_yearly_metrics`
+
+本表粒度为`problem_id, statistics_year, policy_level, support_type`，用于“政策支持数量和时间分布”。
+
+| 字段 | 用途 |
+|---|---|
+| `policy_count` | 该组合内去重政策数 |
+| `active_policy_count/replaced_policy_count` | 当前有效与已被替代政策数 |
+| `direct_support_policy_count` | `DIRECT_SUPPORT`去重政策数 |
+| `issuing_organization_count` | 去重第一发布机构数 |
+| `avg_relation_confidence/avg_alignment_score` | 平均匹配置信度与平均契合分 |
+| `first_policy_date/latest_policy_date` | 组内最早和最新统计日期 |
+| `policy_ids` | 可下钻的政策ID数组 |
+| `coverage_status` | 固定`PARTIAL_OFFICIAL_POLICY_CORPUS`，表示当前语料不是政策全量库 |
+
+时间分布查询：
+
+```sql
+SELECT
+    statistics_year,
+    policy_level,
+    support_type,
+    sum(policy_count) AS policy_count,
+    sum(active_policy_count) AS active_policy_count,
+    sum(direct_support_policy_count) AS direct_support_policy_count,
+    avg(avg_alignment_score) AS avg_alignment_score
+FROM iceberg.research_problem_ads_v7_20261023
+    .ads_research_problem_policy_yearly_metrics
+WHERE problem_id = :problem_id
+GROUP BY statistics_year, policy_level, support_type
+ORDER BY statistics_year, policy_level, support_type;
+```
+
+### 33.3 政策导向雷达维度
+
+从`ads_research_problem_potential_dimension`筛选`dimension_code='POLICY_ALIGNMENT'`。有官方证据时，
+`dimension_score`按政策数量35%、层级权威性20%、时效15%、年份连续性15%、问题契合度15%组合，
+`score_method='OFFICIAL_POLICY_EVIDENCE_COMPOSITE_V1'`、
+`evidence_status='PARTIAL_OFFICIAL_POLICY_EVIDENCE'`。没有匹配证据时`dimension_score`保持NULL，
+`evidence_status='NO_MATCHED_OFFICIAL_POLICY'`；潜力总分仅按可用维度权重重新归一，不能把NULL展示为0分。
+
+```sql
+SELECT
+    d.problem_id,
+    d.dimension_score AS policy_alignment_score,
+    d.dimension_weight,
+    d.evidence_status,
+    d.score_method
+FROM iceberg.research_problem_ads_v7_20261023
+    .ads_research_problem_potential_dimension d
+WHERE d.dimension_code = 'POLICY_ALIGNMENT'
+  AND d.problem_id = :problem_id;
+```
+
+### 33.4 当前数据结果和展示边界
+
+- 政策DWD共有93份文档、93条条款和19条来源注册记录：国家27、广东29、深圳37。
+- 82份政策具有可用于时间统计的日期，11份缺日期；87份为`ACTIVE`，6份为`REPLACED`；85份有正文，
+  8份只有通知或元数据。
+- 406个问题全部完成候选判定，发布39条关系，覆盖35个问题和8份政策；371个问题没有达到门槛的
+  官方政策证据，政策导向维度保持NULL。
+- 39条关系中，国家3、广东14、深圳22；`DIRECT_SUPPORT`1条、`FIELD_SUPPORT`38条。
+- 政策导向得分仅覆盖35个问题，范围52.725399—80.410714，均值63.582292。
+- 语料采集状态为`PARTIAL`。政策数只能表述为“当前已采集官方政策语料中的匹配数量”，不能表述为
+  政府发布的全部相关政策数量；缺失的深圳区级政策和后续新增政策需通过新发布版本补充。
+
+Iceberg使用`research_problem_ads_v7_20261023`，Doris使用`gkx_technology_analysis_dev`；两端政策证据
+和年度统计均为39行且逻辑Key重复数为0。运行与核验详情见
+[`docs/research_problem_official_policy_v1.md`](docs/research_problem_official_policy_v1.md)。
+
+## 34. 基础研究问题方向批量批准（5.12.1）
+
+根据操作方明确批准，`ads_research_problem_direction`的1,556条方向在新发布中统一写为
+`review_status='APPROVED'`、`is_official=true`，审核主体为`OPERATOR:BULK_APPROVAL`。固定AI Seed中的
+原始模型状态APPROVED 885、REVISED 660、REJECTED 11不改写；新表的`review_reason_zh`同时保存原模型
+状态、原理由和批准策略，`inference_*`字段继续指向原模型判断。
+
+该表粒度是“一问题的一方向”，不是“一问题一行”。406个问题各有3至6条方向：3条136个问题、4条
+213个、5条46个、6条11个，合计1,556条。`ads_research_problem_deployment.approved_direction_ids`同步
+包含全部方向；潜在方向推荐不再排除原REJECTED方向。Iceberg发布为
+`research_problem_ads_v8_20261023`，Doris `data_version=202610230201`，旧发布保持不变。
+
+## 35. 基础研究问题机构主导单位规则（5.12.2）
+
+`ads_research_problem_institution_match`使用固定Snapshot
+`institution_ads_mvp_v1_stage.ads_institution_profile@8133436263903776083`补齐全部候选机构的
+`institution_type_id`。每个问题必须且只能有一家`recommended_role='LEAD'`：只有一家候选机构时直接作为
+主导单位；有多家候选机构时，按论文数、专利数和项目数之和降序选择。问题级直接证据使用
+`paper_count/patent_count/project_count`，全局回退候选使用对应的`global_candidate_*`计数；两类口径不混写。
+
+当最高贡献计数相同时，使用
+`xxhash64(problem_id || institution_id || 'research_problem_contribution_lead_selection_v1')`稳定抽取一家，
+避免相同发布输入在重跑时产生不同主导单位。原模型判定为`LEAD`但未被规则选中的机构改记为
+`CORE_PARTNER`，其他非主导角色保持模型结果。`recommendation_reason`同时记录机构类型、关联机构数、贡献
+计数、贡献排名及原模型理由。
+
+新发布使用Iceberg `research_problem_ads_v9_20261023`和Doris
+`data_version=202610230301`；旧发布与固定机构画像Snapshot均不改写。
+
+## 36. 基础研究问题中文搜索索引（5.12.3）
+
+Doris Serving层为基础研究问题建立8个倒排索引，不改变Iceberg表、行数据或`data_version`：
+
+| 表.字段 | 索引 | 分词与用途 |
+|---|---|---|
+| `ads_research_problem_profile.canonical_title_zh` | `idx_rp_profile_title_zh` | 中文细粒度分词，标题全文检索 |
+| `ads_research_problem_profile.problem_statement_zh` | `idx_rp_profile_statement_zh` | 中文细粒度分词，问题陈述检索 |
+| `ads_research_problem_profile.knowledge_gap_zh` | `idx_rp_profile_gap_zh` | 中文细粒度分词，知识缺口检索 |
+| `ads_research_problem_profile.research_background_zh` | `idx_rp_profile_background_zh` | 中文细粒度分词，研究背景检索 |
+| `ads_research_problem_profile.current_research_summary_zh` | `idx_rp_profile_summary_zh` | 中文细粒度分词，研究摘要检索 |
+| `ads_research_problem_keyword.keyword_zh` | `idx_rp_keyword_zh` | 中文细粒度分词，关键词全文检索 |
+| `ads_research_problem_keyword.keyword_key` | `idx_rp_keyword_key` | 不分词，规范关键词精确过滤 |
+| `ads_research_problem_keyword.keyword_type` | `idx_rp_keyword_type` | 不分词，关键词类型精确过滤 |
+
+中文索引统一使用`parser=chinese`、`parser_mode=fine_grained`、`support_phrase=true`，支持Doris
+`MATCH_ANY`、`MATCH_ALL`和`MATCH_PHRASE`查询。`LIKE`仍可用于兼容查询，但Doris全文倒排索引由`MATCH`
+操作符使用。迁移文件为
+[`sql/doris/ads_schema_5_12_3_research_problem_search_indexes.sql`](sql/doris/ads_schema_5_12_3_research_problem_search_indexes.sql)。
+
+本发布完成字段级分词和历史数据索引构建；跨字段权重融合、同义词、拼写纠错、搜索高亮和前端交互仍由
+下游科研数据发掘平台实现。
+
+## 37. 基础研究问题项目资金人民币归一（5.12.4）
+
+使用操作方提供的固定最新中间价，把具有有效原币金额的项目统一换算为人民币。汇率口径为
+“1单位原币对应人民币元数”；JPY原始报价`100 JPY = 4.2793 CNY`已规范化为
+`1 JPY = 0.042793 CNY`。汇率基准日期记录为`2026-10-23`，来源标识为
+`OPERATOR_PROVIDED_LATEST_MID_RATE`，换算策略为`FIXED_SNAPSHOT_CNY_PER_CURRENCY_UNIT_V1`。
+
+| 币种 | CNY/原币单位 |
+|---|---:|
+| USD | 6.7180 |
+| EUR | 7.5140 |
+| JPY | 0.042793 |
+| CHF | 8.1710 |
+| CAD | 4.7804 |
+| AUD | 4.6982 |
+
+`ads_research_problem_funding_evidence.funding_amount_cny`按项目逐笔换算并保留4位小数；
+`ads_research_problem_yearly_metrics.funding_amount_cny`和
+`ads_research_problem_profile.funding_amount_cny`分别汇总逐笔人民币金额。原币金额与币种保持不变，
+`exchange_rate`、`exchange_rate_date`和`normalization_status`保留本次换算依据。
+
+`ads_research_problem_region_yearly_metrics.funding_amount_cny`仍为空：当前项目资金缺少可靠的机构或地区
+分摊依据，禁止把项目总额复制到多个参与地区。该固定快照只提供名义金额横向换算，不代表历史项目发生
+年份的购买力或当年汇率。
+
+新发布使用Iceberg `research_problem_ads_v10_20261023`和Doris
+`data_version=202610230401`；旧发布保持不变。
+
+## 38. 基础研究问题机构成果与重点学科（5.13.0）
+
+5.13.0新增两张物化ADS表，把“机构与问题相关”进一步约束为“机构与具体成果存在可追溯关系”。只处理
+`ads_research_problem_institution_match.candidate_source='EXISTING_SHENZHEN_EVIDENCE'`的机构—问题对；
+全局深圳回退推荐机构不计为实际参与机构。
+
+### 38.1 `ads_research_problem_institution_achievement`
+
+逻辑Key：`achievement_relation_id`，由`problem_id + institution_id + achievement_type + achievement_id`
+稳定生成。同一成果支持多个问题时保留多条问题级关系。
+
+| 字段组 | 字段 | 类型 | 说明 |
+|---|---|---|---|
+| Key | `achievement_relation_id` | `VARCHAR(256)` | 问题—机构—成果稳定关系ID |
+| 问题与机构 | `problem_id/institution_id/model_version` | `VARCHAR` | 问题、平台机构及机构匹配版本 |
+| 机构展示 | `institution_name/institution_type_id/district_location_id` | `VARCHAR` | 机构名称、类型和深圳区级位置 |
+| 推荐语境 | `recommended_role/candidate_source` | `VARCHAR` | 主导/伙伴角色；本表只接受已有深圳证据候选 |
+| 成果Key | `achievement_type` | `VARCHAR` | `PAPER`、`PATENT`或`PROJECT` |
+| 成果Key | `achievement_id/source_achievement_id` | `VARCHAR` | 平台成果ID与OpenAlex/Google来源ID |
+| 成果展示 | `achievement_title/achievement_date/achievement_year` | `VARCHAR/DATE/INT` | 成果名称及时间 |
+| 问题证据 | `problem_evidence_level` | `VARCHAR` | 成果对问题的`DIRECT/PROXY`证据等级 |
+| 机构证据 | `institution_role` | `VARCHAR` | 论文署名机构、确认受让机构或项目机构角色 |
+| 机构证据 | `institution_evidence_type` | `VARCHAR` | 署名、confirmed assignee、直接项目机构或受资助论文机构兜底 |
+| 机构证据 | `institution_evidence_count/relation_confidence` | `BIGINT/DECIMAL` | 署名作者数、assignee事实数或项目论文证据数，以及来源匹配置信度 |
+| 排序指标 | `citation_count/funding_amount_cny` | `BIGINT/DECIMAL` | 论文引用数或项目人民币金额；不适用时为空 |
+| 排序指标 | `representative_rank` | `BIGINT` | 同一问题、机构、成果类型内的代表成果排序 |
+| 溯源 | `source_relation_id/source_relation_snapshot_id` | `VARCHAR` | 具体成果—机构关系ID及固定Snapshot |
+| 边界 | `ownership_scope_note` | `VARCHAR` | 明示论文署名、项目关系或“确认受让人不等于当前权利人”等边界 |
+| 治理 | `metrics_as_of_date/metric_definition_version/data_version/update_time` | 公共类型 | 统计截止、口径和发布版本 |
+
+三类成果关联固定为：
+
+```text
+问题论文.openalex_work_id
+  -> dwd_work_authorship_institution.work_id
+  -> entity_source_identity
+  -> 平台 institution_id
+
+问题专利.google_patent_publication_id
+  -> dwd_patent_institution_google.publication_id
+  -> confirmed platform_institution_id
+
+问题项目.project_id
+  -> ads_project_institution.project_id
+  -> institution_id
+```
+
+禁止仅按`problem_id`把问题下全部成果归给所有问题机构。专利关系只消费`resolution_status='confirmed'`；
+Google来源不能区分当前权利人，因此不得把本表解释为当前专利所有权。
+
+### 38.2 `ads_research_problem_institution_discipline_metrics`
+
+逻辑Key：`institution_id, topic_id, model_version`。本表只聚合上一张已验证成果关系，不直接聚合推荐候选。
+
+| 字段组 | 字段 | 类型 | 说明 |
+|---|---|---|---|
+| Key | `institution_id/topic_id/model_version` | `VARCHAR` | 机构、Topic与机构匹配版本 |
+| 展示 | `institution_name/institution_type_id` | `VARCHAR` | 机构名称与类型 |
+| 学科 | `topic_name_zh/topic_name_en/subfield_id/field_id/domain_id` | `VARCHAR` | Topic双语名称及完整上级学科ID |
+| 参与规模 | `problem_count/direct_problem_count` | `BIGINT` | 经成果关系确认的问题数及DIRECT问题数 |
+| 成果规模 | `paper_count/patent_count/project_count` | `BIGINT` | 去重论文、专利和项目数 |
+| 时间 | `first_achievement_year/latest_achievement_year` | `INT` | 最早与最近成果年份 |
+| 明细入口 | `problem_ids` | `ARRAY<STRING>` | 本机构该Topic下的去重问题ID |
+| 代表成果 | `representative_achievement_ids` | `ARRAY<STRING>` | 最多20个代表成果ID |
+| 排名 | `discipline_rank` | `BIGINT` | 机构内部重点Topic排名 |
+| 口径 | `participation_basis` | `VARCHAR` | 固定为`VERIFIED_ACHIEVEMENT_RELATION` |
+| 治理 | `metrics_as_of_date/metric_definition_version/data_version/update_time` | 公共类型 | 统计截止、口径和发布版本 |
+
+机构参与问题数必须从成果明细表执行`count(DISTINCT problem_id)`，不能对多个Topic的`problem_count`
+直接求和，因为同一个问题可以属于多个Topic。新发布使用Iceberg
+`research_problem_ads_v11_20261023`和Doris `data_version=202610231001`；旧发布保持不变。
+
+直接读取`ads_research_problem_institution_match`时必须按当前`data_version`过滤。Doris Unique Key只会
+覆盖逻辑Key相同的记录，旧发布中逻辑Key不同的历史候选仍可能保留；5.13.0两张新表由固定v11 Iceberg
+输入物化，不受这些历史候选影响。
+
+实际发布`ads_research_problem_institution_achievement`4,586行，覆盖65家机构、163个问题和642个
+已有深圳证据机构—问题对，其中论文2,877行、项目1,709行。当前固定confirmed专利机构Snapshot与
+这些机构—问题对不存在成果交集，因此专利成果为0行；不能用问题级`patent_count`替代具体专利—机构
+证据。`ads_research_problem_institution_discipline_metrics`发布5,492行，覆盖65家机构和865个Topic。
+
+## 39. 基础研究问题机构人才事实（5.14.0）
+
+`ads_research_problem_institution_match.talent_count`使用问题人才和论文署名机构的同成果交集计算：
+
+```text
+ads_research_problem_talent(problem_id, talent_id, openalex_author_id, evidence_work_ids)
+  -> UNNEST(evidence_work_ids)
+  -> dwd_work_authorship_institution(work_id, author_id, institution_id)
+  -> entity_source_identity
+  -> platform institution_id
+```
+
+只有同一名作者在同一篇问题证据论文上署名目标机构时才计入，并按
+`problem_id, institution_id, talent_id`去重。不得把机构画像中的全部人才数复制到每一个问题；人才曾在
+其他论文或其他年份关联该机构，不足以证明该机构通过该人才参与当前问题。
+
+新增字段：
+
+| 表.字段 | 类型 | 说明 |
+|---|---|---|
+| `ads_research_problem_institution_match.talent_count` | `BIGINT` | DIRECT和PROXY证据人才去重并集；未命中为0，不再为NULL |
+| `ads_research_problem_institution_match.direct_talent_count` | `BIGINT` | DIRECT问题证据人才数 |
+| `ads_research_problem_institution_match.proxy_talent_count` | `BIGINT` | PROXY问题证据人才数 |
+| `ads_research_problem_institution_match.talent_evidence_type` | `STRING` | 固定计算口径标识 |
+
+原全局回退候选若取得上述同论文人才署名证据，`candidate_source`改记为
+`EXISTING_SHENZHEN_TALENT_EVIDENCE`；其全局论文、专利和项目计数仍保留在`global_candidate_*`字段，
+不会伪装成问题级成果计数。人才数不进入现有主导单位贡献排名，避免和论文贡献重复放大；主导单位仍按
+论文、专利、项目计数之和确定。
+
+实际发布2,586个机构—问题匹配，覆盖406个问题和65家机构；`talent_count`空值0行，725个机构—问题对
+人才数大于0，机构—问题人才计数合计2,673，单对最大52。按来源分为已有成果证据642对、人才署名证据
+417对、无直接问题证据全局回退1,527对。406个问题全部有机构候选，其中348个问题有多家机构可横向
+比较，58个问题只有一家候选机构。
+
+新发布使用Iceberg `research_problem_ads_v12_20261023`和Doris
+`data_version=202610231101`。Doris该表当前只保留本版本2,586行；此前642条
+`data_version=202610200201`历史记录已按操作方要求删除。
+
+## 40. Topic/Field/Domain战略优先级物化（5.15.0）
+
+5.15.0把问题级潜力、热点、政策和布局缺口按OpenAlex学科层级物化为可直接供条形图、雷达图、
+层级树和战略建议面板读取的正式结果。聚合采用问题等权、仅对可用值求平均；未知政策证据保持NULL，
+不按0分处理。范围级结果是确定性指标聚合和规则模板，不是新增的大模型预测。
+
+### 40.1 `ads_research_problem_scope_potential_dimension`
+
+逻辑Key：`scope_type, scope_id, dimension_code, model_version`。每个Topic、Field和Domain固定五个维度：
+`ACADEMIC_IMPACT`、`TECHNOLOGY_TRANSFER`、`FUNDING_INTENSITY`、`COLLABORATION_BREADTH`、
+`POLICY_ALIGNMENT`。
+
+| 表.字段 | 类型 | 说明 |
+|---|---|---|
+| `ads_research_problem_scope_potential_dimension.scope_type` | `VARCHAR(256)` | `TOPIC/FIELD/DOMAIN` |
+| `ads_research_problem_scope_potential_dimension.scope_id` | `VARCHAR(256)` | 范围ID |
+| `ads_research_problem_scope_potential_dimension.dimension_code` | `VARCHAR(256)` | 五维潜力代码 |
+| `ads_research_problem_scope_potential_dimension.model_version` | `VARCHAR(256)` | 固定`research_problem_scope_potential_v1` |
+| `ads_research_problem_scope_potential_dimension.scope_name_zh/scope_name_en` | `STRING` | 范围中英文名称 |
+| `ads_research_problem_scope_potential_dimension.parent_scope_type/parent_scope_id` | `STRING` | Topic指向Field、Field指向Domain；Domain为空 |
+| `ads_research_problem_scope_potential_dimension.dimension_score` | `DECIMAL(9,6)` | 范围内有值问题的维度均值；无证据为NULL |
+| `ads_research_problem_scope_potential_dimension.dimension_weight` | `DECIMAL(9,6)` | 沿用问题级维度权重 |
+| `ads_research_problem_scope_potential_dimension.problem_count` | `BIGINT` | 范围内去重问题数 |
+| `ads_research_problem_scope_potential_dimension.scored_problem_count` | `BIGINT` | 该维度有值的问题数 |
+| `ads_research_problem_scope_potential_dimension.dimension_coverage_rate` | `DECIMAL(9,6)` | `scored_problem_count/problem_count` |
+| `ads_research_problem_scope_potential_dimension.dimension_score_p50` | `DECIMAL(9,6)` | 有值问题维度分中位数 |
+| `ads_research_problem_scope_potential_dimension.source_problem_ids` | `ARRAY<STRING>` | 参与聚合的全部问题ID |
+| `ads_research_problem_scope_potential_dimension.evidence_status` | `STRING` | `AVAILABLE/PARTIAL/NO_EVIDENCE` |
+| `ads_research_problem_scope_potential_dimension.aggregation_method` | `STRING` | 固定`EQUAL_PROBLEM_WEIGHT_AVAILABLE_ONLY_V1` |
+| `ads_research_problem_scope_potential_dimension.metrics_as_of_date/metric_definition_version/data_version/update_time` | `DATE/STRING/BIGINT/DATETIME` | 统计日、口径与发布版本 |
+
+实际发布7,615行：1,493个Topic、26个Field、4个Domain各五行。除政策维度外四个维度覆盖率均为100%；
+政策维度有值范围为254个Topic、21个Field和4个Domain，平均问题覆盖率分别为9.2151%、8.4799%和
+8.9343%。
+
+### 40.2 `ads_research_problem_scope_strategy`
+
+逻辑Key：`scope_type, scope_id, strategy_version`。综合优先级基础权重为潜力35%、热点30%、政策20%、
+布局缺口15%；缺失分项从分母移除并对剩余权重归一，不把未知政策当0。潜力总分只纳入范围覆盖率至少
+60%的维度。排名在各`scope_type`内独立计算。
+
+| 表.字段 | 类型 | 说明 |
+|---|---|---|
+| `ads_research_problem_scope_strategy.scope_type/scope_id/strategy_version` | `VARCHAR(256)` | 范围、范围ID与`scope_strategy_v1` |
+| `ads_research_problem_scope_strategy.scope_name_zh/scope_name_en` | `STRING` | 范围中英文名称 |
+| `ads_research_problem_scope_strategy.parent_scope_type/parent_scope_id` | `STRING` | 上级学科范围 |
+| `ads_research_problem_scope_strategy.problem_count` | `BIGINT` | 范围内去重问题数 |
+| `ads_research_problem_scope_strategy.high_priority_problem_count` | `BIGINT` | 问题级高优先级数量 |
+| `ads_research_problem_scope_strategy.potential_score/hotspot_score` | `DECIMAL(9,6)` | 范围潜力与热点聚合分 |
+| `ads_research_problem_scope_strategy.policy_alignment_score/policy_coverage_rate` | `DECIMAL(9,6)` | 政策契合均值及问题覆盖率 |
+| `ads_research_problem_scope_strategy.layout_gap_score` | `DECIMAL(9,6)` | 范围布局缺口均值 |
+| `ads_research_problem_scope_strategy.strategic_priority_score/strategic_priority_level` | `DECIMAL(9,6)/STRING` | 归一加权优先级分及`HIGH/MEDIUM/LOW` |
+| `ads_research_problem_scope_strategy.scope_rank` | `BIGINT` | 同层级优先级排名 |
+| `ads_research_problem_scope_strategy.priority_dimension` | `STRING` | 加权贡献最大的潜力维度 |
+| `ads_research_problem_scope_strategy.top_problem_ids` | `ARRAY<STRING>` | 按问题级优先级、潜力排序的前20个问题 |
+| `ads_research_problem_scope_strategy.source_problem_ids` | `ARRAY<STRING>` | 范围内全部问题ID |
+| `ads_research_problem_scope_strategy.recommended_institution_ids` | `ARRAY<STRING>` | 按直接证据问题数、覆盖问题数和事实成果排序的前10家机构 |
+| `ads_research_problem_scope_strategy.evidence_coverage_rate` | `DECIMAL(9,6)` | 五维按权重汇总的证据覆盖率 |
+| `ads_research_problem_scope_strategy.evidence_status` | `STRING` | `AVAILABLE/PARTIAL_EVIDENCE/INSUFFICIENT_SCOPE_SUPPORT` |
+| `ads_research_problem_scope_strategy.calculation_method` | `STRING` | 固定优先级计算口径标识 |
+| `ads_research_problem_scope_strategy.metrics_as_of_date/metric_definition_version/data_version/update_time` | `DATE/STRING/BIGINT/DATETIME` | 统计日、口径与发布版本 |
+
+实际发布1,523行：Topic 1,493、Field 26、Domain 4。全部名称、综合分、问题数组和推荐机构数组均有值，
+且`source_problem_ids`元素数与`problem_count`一致。450个至少含3个问题的Topic、全部26个Field及4个
+Domain可正式发布建议；其余1,043个Topic标记`INSUFFICIENT_SCOPE_SUPPORT`。
+
+### 40.3 范围级正式战略建议
+
+`ads_research_problem_strategic_advice`新增480条范围建议，`advice_method`固定为
+`DETERMINISTIC_SCOPE_AGGREGATION_FROM_PROBLEM_EVIDENCE_V1`，`review_status`为
+`APPROVED_RULE_BASED`，`evidence_ids`记录Top问题ID。问题级406条模型建议保持不变，总计886行。
+范围建议由`ads_research_problem_scope_strategy`一一派生；低支持Topic不生成建议，避免单个问题被包装为
+稳定的学科战略结论。
+
+新发布使用Iceberg `research_problem_ads_v13_20261023`和Doris
+`data_version=202610231201`，基础问题ADS由48张扩展为50张。50张表逐表对账一致，逻辑Key重复数和
+语义边界非法数均为0。
+
+## 41. 基础研究问题真实月度事实与月度热度（5.16.0）
+
+`ads_research_problem_monthly_metrics`按`problem_id, statistics_month`保存真实日期支持的直接证据月度
+事实。月份网格从每个问题首次直接事件月开始，连续生成到`metrics_as_of_date`之前最后一个完整自然月；
+当前统计日为2026-10-19，因此观测截止月为2026-09。该表不读取
+`ads_research_problem_monthly_estimate`，模型估算不得写入任何真实计数字段。
+
+### 41.1 字段与来源
+
+| 表.字段 | 类型 | 说明 |
+|---|---|---|
+| `ads_research_problem_monthly_metrics.problem_id/statistics_month` | `VARCHAR(256)` | 问题ID和`YYYY-MM`月份，联合逻辑Key |
+| `ads_research_problem_monthly_metrics.paper_count` | `BIGINT` | 当月发布日期非空的DIRECT问题论文数 |
+| `ads_research_problem_monthly_metrics.patent_count` | `BIGINT` | 当月公开日期非空的DIRECT问题专利数 |
+| `ads_research_problem_monthly_metrics.project_count` | `BIGINT` | 当月开始日期非空的DIRECT问题项目数；项目日期不全时是已观察下界 |
+| `ads_research_problem_monthly_metrics.new_talent_count` | `BIGINT` | OpenAlex作者首次出现在该问题DIRECT论文中的月份人数 |
+| `ads_research_problem_monthly_metrics.new_institution_count` | `BIGINT` | OpenAlex机构首次出现在该问题DIRECT论文中的月份机构数 |
+| `ads_research_problem_monthly_metrics.new_citation_count` | `BIGINT` | 当前NULL；没有逐月引用事件 |
+| `ads_research_problem_monthly_metrics.funding_amount_original/funding_currency/funding_amount_cny` | `DECIMAL/STRING` | 当前NULL；项目总额不能冒充月度拨款 |
+| `ads_research_problem_monthly_metrics.paper_activity_score` | `DECIMAL(9,6)` | 论文月度分项分，0—100 |
+| `ads_research_problem_monthly_metrics.patent_activity_score` | `DECIMAL(9,6)` | 专利月度分项分，0—100 |
+| `ads_research_problem_monthly_metrics.project_activity_score` | `DECIMAL(9,6)` | 已观察项目月度分项分，0—100 |
+| `ads_research_problem_monthly_metrics.talent_activity_score` | `DECIMAL(9,6)` | 新增人才月度分项分，0—100 |
+| `ads_research_problem_monthly_metrics.institution_activity_score` | `DECIMAL(9,6)` | 新增机构月度分项分，0—100 |
+| `ads_research_problem_monthly_metrics.activity_score` | `DECIMAL(9,6)` | 五项分量的覆盖率重加权综合活动分 |
+| `ads_research_problem_monthly_metrics.hotspot_score` | `DECIMAL(9,6)` | 当前及前两月活动分平滑形成的月度热度 |
+| `ads_research_problem_monthly_metrics.month_growth_rate` | `DECIMAL(18,8)` | 活动分相对上月增长率 |
+| `ads_research_problem_monthly_metrics.growth_rate_3m` | `DECIMAL(18,8)` | 最近3月平均活动分相对前3月平均活动分增长率 |
+| `ads_research_problem_monthly_metrics.direct_project_count/dated_direct_project_count` | `BIGINT` | 问题全部DIRECT项目数和有可用开始日期数 |
+| `ads_research_problem_monthly_metrics.project_date_coverage_rate` | `DECIMAL(9,6)` | 有日期DIRECT项目数/全部DIRECT项目数；无DIRECT项目时为1 |
+| `ads_research_problem_monthly_metrics.project_count_is_lower_bound` | `BOOLEAN` | 项目日期不完整时为true |
+| `ads_research_problem_monthly_metrics.paper_coverage_status/patent_coverage_status/project_coverage_status` | `STRING` | 各成果日期覆盖状态 |
+| `ads_research_problem_monthly_metrics.metric_scope` | `STRING` | 固定`DIRECT_EVIDENCE`，不得与年度簇代理指标混用 |
+| `ads_research_problem_monthly_metrics.calculation_method` | `STRING` | 固定`DIRECT_ENTITY_EVENT_MONTHLY_AGGREGATION_V1` |
+| `ads_research_problem_monthly_metrics.activity_score_method` | `STRING` | 固定`MONTH_CROSS_SECTION_LOG_MAX_NORMALIZED_REWEIGHTED_V1` |
+| `ads_research_problem_monthly_metrics.hotspot_score_method` | `STRING` | 固定`ROLLING_3M_WEIGHTED_ACTIVITY_50_30_20_V1` |
+| `ads_research_problem_monthly_metrics.observation_start_month/observation_end_month` | `STRING` | 问题连续月份网格起止月 |
+| `ads_research_problem_monthly_metrics.coverage_status` | `STRING` | 固定`PARTIAL_REAL_MONTHLY_FACT` |
+| `ads_research_problem_monthly_metrics.unavailable_reason` | `STRING` | 引用、资金以及项目日期缺口说明 |
+
+### 41.2 月度分项归一化
+
+对月份`m`中的每个指标`i`，在当月已经进入观测窗口的问题总体中进行`log1p`最大值归一：
+
+```text
+component_score(i, problem, month)
+  = 100 * ln(1 + value(i, problem, month))
+        / ln(1 + max_value(i, month))
+```
+
+若当月该指标最大值为0，分项分固定为0。该处理降低单月高计数长尾影响，同时保留同一月份内的问题相对
+强度；因此分数用于同月横向比较和单问题连续趋势，不应解释为跨数据版本的绝对物理量。
+
+### 41.3 月度活动分
+
+基础权重为论文30%、专利25%、项目10%、新增人才20%、新增机构15%。令`r`为
+`project_date_coverage_rate`，月度活动分为：
+
+```text
+activity_score
+  = (0.30 * paper_activity_score
+     + 0.25 * patent_activity_score
+     + 0.10 * r * project_activity_score
+     + 0.20 * talent_activity_score
+     + 0.15 * institution_activity_score)
+    / (0.90 + 0.10 * r)
+```
+
+项目日期覆盖不足时，项目贡献和有效权重同步按`r`降低；没有DIRECT项目属于已知零值，`r=1`且项目分为
+0。论文、专利、新增人才和新增机构均使用直接证据，不用PROXY关联扩大计数。
+
+### 41.4 月度热度
+
+月度热度对活动分做三个月非对称平滑，突出当前月并抑制单月尖峰：
+
+```text
+hotspot_score(month)
+  = 0.50 * activity_score(month)
+  + 0.30 * activity_score(month - 1)
+  + 0.20 * activity_score(month - 2)
+```
+
+问题观测初期缺少前1月或前2月时，只对实际存在月份的权重重新归一。例如首月热度等于首月活动分，
+第二个月按`0.50/0.80`和`0.30/0.80`计算。`hotspot_score`范围为0—100。
+
+### 41.5 增长率边界
+
+`month_growth_rate=(本月活动分-上月活动分)/上月活动分`；`growth_rate_3m`比较最近三个月与此前三个月
+的活动分均值。只有基期活动分或基期三个月均值不低于1时才计算相对增长；前后均为0时写0；基期低于1
+而当前为正时写NULL，避免接近零基数产生极端增长倍数。三个月增长还要求前后两个窗口都完整包含3个月。
+
+### 41.6 查询示例
+
+```sql
+SELECT
+    problem_id,
+    statistics_month,
+    paper_count,
+    patent_count,
+    project_count,
+    new_talent_count,
+    new_institution_count,
+    activity_score,
+    hotspot_score,
+    month_growth_rate,
+    growth_rate_3m,
+    project_date_coverage_rate,
+    project_count_is_lower_bound,
+    coverage_status
+FROM iceberg.research_problem_ads_v14_20261024
+    .ads_research_problem_monthly_metrics
+WHERE problem_id = :problem_id
+ORDER BY statistics_month;
+```
+
+本次实际写入91,520行，覆盖406/406个问题，观测范围1929-03至2026-09；累计论文1,294、专利
+10,135、项目228、新增人才11,641、新增机构5,603。`month_growth_rate`有值86,338行，
+`growth_rate_3m`有值77,178行。项目覆盖状态按问题为：无DIRECT项目149、日期全部可用4、部分可用44、
+完全无可用日期209。活动分范围0—94.982833，月度热度范围0—72.222222。
+
+新发布使用Iceberg `research_problem_ads_v14_20261024`和Doris
+`data_version=202610240101`；两端月度表均为91,520行，逻辑Key重复和字段边界异常均为0。

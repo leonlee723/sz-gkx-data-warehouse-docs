@@ -6,6 +6,196 @@
 - MINOR：向后兼容地新增表、字段或指标。
 - PATCH：不改变接口的说明、约束或索引修正。
 
+## 6.0.1 — 2026-10-26
+
+- 为`ads_technology_profile.technology_name_en`新增英文分词倒排全文索引
+  `idx_technology_profile_name_en`。
+- 为`ads_technology_profile.technology_name_zh`新增中文细粒度分词倒排全文索引
+  `idx_technology_profile_name_zh`。
+- 两个索引均显式构建历史数据，支持Doris `MATCH_ANY`、`MATCH_ALL`和`MATCH_PHRASE`；不修改行数据、
+  技术点身份、逻辑Key或`data_version`。
+
+## 6.0.0 — 2026-10-26
+
+- 根据产品方确认，将入选的19,430个ETO Research Cluster直接认定为当前技术分析模块的技术点；
+  `technology_node_id`成为唯一技术点主键，`research_cluster_id`仅保留来源血缘。
+- `ads_technology_profile.node_identity_type`固定为`ETO_RESEARCH_CLUSTER_TECHNOLOGY`。
+- 删除上一版本正式Technology目录遗留的`tech_id`和`mapping_status`字段；本模块不再等待Cluster到
+  `dwd_technology`映射。该字段删除属于不兼容变更，因此提升主版本号。
+- 新增独立Iceberg发布配置`config/technology_ads_v2.json`；固定输入Snapshot与原19,430技术点范围
+  不变，只修订身份口径和输出契约，不修改ETO或DWS来源数据。
+- 技术ADS中的论文、专利、机构、年度和证据年份字段由Doris `SMALLINT`扩为`INT`，与Iceberg
+  `INTEGER`一致，规避Doris 4.1在nullable Iceberg整数写入SMALLINT时的错误转换；业务值不变。
+- 既有颠覆性结果继续以`technology_node_id`关联技术点；92条
+  `DISRUPTIVE_CANDIDATE`是论文证据代理候选，不因此升级为市场颠覆或专家确认结论。
+- 颠覆性模型发布`paper_disruption_proxy_v1_5_eto_technology_identity`固定读取6.0.0 Technology ADS
+  Snapshot；公式和70分业务门槛不变，只将来源身份口径切换为当前技术点清单。
+
+## 5.18.1 — 2026-10-26
+
+- 根据操作方明确要求，新发布`paper_disruption_proxy_v1_4_operator_promoted`将v1.3中的2条
+  `DISRUPTIVE_CANDIDATE`和90条`HIGH_IMPACT_WATCH`统一标记为`DISRUPTIVE_CANDIDATE`。
+- 最低证据门槛、五维公式、NULL最低排序和固定输入Snapshot均不改变；业务候选综合门槛统一为70，
+  不再在当前发布中保留独立`HIGH_IMPACT_WATCH`层级。
+- 本次是经操作方批准的业务标签提升，不代表取得新论文、市场、产业替代、技术新颖性或专家审核
+  证据。`assessment_method`和`interpretation_note`继续明确这是论文证据代理判断。
+- 新结果写入独立Iceberg `technology_disruption_ads_v1_4_20261026`，Doris使用
+  `model_version='paper_disruption_proxy_v1_4_operator_promoted'`区分历史模型；旧版本不覆盖、不删除。
+
+## 5.18.0 — 2026-10-26
+
+- 新增`ads_technology_disruption_assessment`，对19,430个候选技术节点建立可复算的论文证据颠覆性
+  代理基线；正式发布模型为`paper_disruption_proxy_v1_3`，不得解释为颠覆概率、市场替代或专家结论。
+- 综合分使用代表论文对数引用影响25%、平均FWCI 25%、高FWCI论文占比20%、论文—专利连接15%和
+  2020—2022对照期至2023—2025近期论文份额增长15%。所有分项先在固定候选总体中转换为百分位。
+- 最低证据门槛为至少5篇代表论文、近期至少3篇论文，并至少具有一篇引用计数和一篇FWCI记录；不满足
+  时固定标记`INSUFFICIENT_EVIDENCE`，不得因缺失值被识别为颠覆性候选。
+- 首轮预检模型以85为综合门槛且未产生候选；v1.2修正百分位NULL排序后真实总体最高分81.100160，仍
+  未产生候选。两版均保留独立Iceberg发布用于审计。正式v1.3将综合门槛校准为80，同时把专利连接或
+  科研增长辅助门槛提高到80；两个论文影响分项仍须不低于70。满足全部门槛时标记
+  `DISRUPTIVE_CANDIDATE`；综合分不低于70的其余合格节点标记`HIGH_IMPACT_WATCH`。
+- 新增`ads_technology_disruption_paper_evidence`，只为颠覆性候选和高影响观察节点保存逐篇代表论文、
+  被引、FWCI、论文—专利连接、节点内排名与证据角色，支持详情页解释和复核。
+- 固定输入为Iceberg `technology_ads_v1_20261016`的Profile、Paper和Hotspot Snapshot；正式结果写入
+  独立`technology_disruption_ads_v1_3_20261026`，不修改预检发布、既有Technology ADS或来源数据。
+- v1.3实际发布19,430条评估和1,026条逐篇论文证据：颠覆性候选2条、高影响观察90条、未标记3,179条、
+  证据不足16,159条；Iceberg与Doris逐表行数一致，重复Key和语义异常均为0。两个候选的对照期论文数
+  均为0，必须披露低基期限制并进入人工复核，不得直接作为确定性产业结论。
+
+## 5.17.0 — 2026-10-24
+
+- `ads_talent_profile`新增可空`name_zh_candidate`，专门保存英文名或拼音逆推的当前中文候选名；
+  `name_zh`继续只表示有确切来源的标准中文姓名。
+- 复用既有`name_zh_source`记录来源：拼音逆推固定使用`PINYIN_INFERENCE`，未来确切来源填写具体来源
+  类型。候选名不自动进入默认`name`，也不得用于身份合并或事实关系确认。
+- 新增可恢复的DeepSeek批量逆推链路：相同规范化姓名只调用一次，默认每请求25个唯一姓名、16线程，
+  逐姓名原子缓存并校验输入hash、返回Key及汉字格式；模型分数强制封顶0.65。
+- 候选发布采用Doris partial-column UPSERT，只更新候选名、来源、候选排序分和版本字段，不修改
+  `name_zh`、来源数据或既有Iceberg Snapshot。
+- 2026-10-25完成100,000名人才、73,804个唯一规范化姓名的推断和发布；DeepSeek截断或漏回Key的
+  批次自动递归二分至单姓名重试。最终候选、`PINYIN_INFERENCE`来源和唯一人才均为100,000行，
+  `name_zh`仍为0行，候选排序分范围0.0300—0.6500，`data_version=202610240201`。
+
+## 5.16.0 — 2026-10-24
+
+- `ads_research_problem_monthly_metrics`由空契约表升级为真实直接证据月度事实表，从每个问题的首个直接
+  事件月生成到统计截止日前最后一个完整月的连续月份网格。
+- 月度事实按直接论文发布日期、直接专利公开日期和有日期的直接项目启动日期聚合；人才和机构按其在
+  问题直接论文中的首次观察月份计数。LLM月度分布继续仅保存在`monthly_estimate`，不进入真实字段。
+- 月度活动分对论文、专利、项目、新增人才和新增机构进行同月截面`log1p`最大值归一，基础权重分别为
+  30%、25%、10%、20%、15%；项目维度按真实开始日期覆盖率降低贡献与有效权重。
+- 月度热度使用当前月、前1月、前2月活动分的50%/30%/20%平滑；缺少历史月份时仅对已有权重归一。
+  环比和三个月增长仅在基期活动分不低于1时计算，避免接近零基数产生极端增长率。
+- 已发布Iceberg `research_problem_ads_v14_20261024`和Doris `data_version=202610240101`：月度事实
+  91,520行，覆盖406个问题、1929-03至2026-09；论文1,294、专利10,135、项目228条事件对账一致。
+  Iceberg与Doris逐表行数一致，月度逻辑Key重复和字段边界异常均为0。
+
+## 5.15.0 — 2026-10-23
+
+- 新增`ads_research_problem_scope_potential_dimension`，把406个问题的五维潜力按问题等权、可用值参与的
+  口径聚合到Topic、Field和Domain，并显式记录问题数、有效问题数、覆盖率、中位数及来源问题ID。
+- 新增`ads_research_problem_scope_strategy`，物化学科层级的潜力、热点、政策契合、布局缺口、综合战略
+  优先级、同层排名、Top问题和推荐机构。综合分按35%潜力、30%热点、20%政策、15%布局缺口计算；
+  缺失分项剔除后对可用权重归一，未知政策不按0处理。
+- 实际发布1,523个学科范围：1,493个Topic、26个Field、4个Domain；五维明细7,615行。除政策维度外
+  四维覆盖100%；政策有值范围为254个Topic、21个Field和4个Domain。
+- `ads_research_problem_strategic_advice`新增480条正式范围建议（Topic 450、Field 26、Domain 4），
+  使用确定性规则模板并标记`APPROVED_RULE_BASED`；原406条问题级模型建议保持不变，总计886条。
+- 仅含1至2个问题的1,043个Topic保留指标但标记`INSUFFICIENT_SCOPE_SUPPORT`，不生成正式建议。
+- 新发布使用Iceberg `research_problem_ads_v13_20261023`和Doris
+  `data_version=202610231201`，由48张扩展为50张基础问题ADS表；逐表行数一致，重复Key和语义非法项均为0。
+
+## 5.14.0 — 2026-10-23
+
+- 为`ads_research_problem_institution_match`补充事实型`talent_count`，只统计问题证据论文中作者与目标
+  机构在同一论文上的署名关系，并按问题、机构、人才去重。
+- 新增`direct_talent_count`、`proxy_talent_count`和`talent_evidence_type`；未命中明确写0，四个字段均
+  无NULL。
+- 417个原全局回退机构—问题对取得同论文人才署名证据，改标
+  `candidate_source='EXISTING_SHENZHEN_TALENT_EVIDENCE'`；原全局成果计数仍保留在`global_candidate_*`，
+  不冒充问题级成果计数。
+- 人才数不进入主导单位贡献排名；主导单位规则继续只使用论文、专利、项目贡献，避免人才与论文重复计权。
+- 实际2,586个机构—问题对中725个人才数大于0，机构—问题人才计数合计2,673、单对最大52；覆盖406个
+  问题和65家机构，348个问题有多家机构可比较。
+- Doris旧版本`data_version=202610200201`的642条记录已精确删除并核验剩余0条。
+- 新发布使用Iceberg `research_problem_ads_v12_20261023`和Doris
+  `data_version=202610231101`，仍为48张基础问题ADS表。
+
+## 5.13.0 — 2026-10-23
+
+- 新增`ads_research_problem_institution_achievement`，通过论文署名机构、confirmed专利受让机构和
+  项目机构关系，物化问题—机构—具体成果证据，禁止仅按问题ID把成果批量归属给所有相关机构。
+- 新增`ads_research_problem_institution_discipline_metrics`，按机构和Topic聚合去重问题、论文、专利、
+  项目数量、成果年份、明细ID与机构内部重点学科排名。
+- 只将`candidate_source='EXISTING_SHENZHEN_EVIDENCE'`计作机构实际参与；全局深圳回退候选继续只用于
+  推荐，不进入参与问题数、重点学科或代表成果。
+- 专利只使用固定Snapshot中`resolution_status='confirmed'`的关系，并明确不解释为当前专利所有权；
+  项目关系区分直接机构关系与受资助论文作者机构兜底。
+- 实际发布成果关系4,586条，覆盖65家机构、163个问题和642个已有深圳证据的机构—问题对：论文2,877条、
+  项目1,709条；当前固定confirmed专利机构Snapshot与这些机构—问题对无交集，因此专利成果为0条，
+  不使用问题级专利计数伪造机构专利归属。机构—Topic聚合5,492条，覆盖865个Topic。
+- 新发布使用Iceberg `research_problem_ads_v11_20261023`和Doris
+  `data_version=202610231001`，由46张扩展为48张基础问题ADS表。
+
+## 5.12.4 — 2026-10-23
+
+- 使用操作方提供的USD、EUR、JPY、CHF、CAD、AUD固定最新中间价，将252条有效项目金额换算为人民币；
+  JPY按`100 JPY = 4.2793 CNY`规范化为`1 JPY = 0.042793 CNY`。
+- 回填`ads_research_problem_funding_evidence.funding_amount_cny`、
+  `ads_research_problem_yearly_metrics.funding_amount_cny`和
+  `ads_research_problem_profile.funding_amount_cny`，并记录汇率、基准日期与归一化状态。
+- 汇率日期暂按操作日`2026-10-23`记录，来源标识为`OPERATOR_PROVIDED_LATEST_MID_RATE`；这是固定快照
+  名义金额换算，不是逐项目年份历史汇率或购买力折算。
+- 区域年度资金仍不回填，避免在没有项目—机构金额分摊证据时把项目总额重复归属多个地区。
+- 新发布使用Iceberg `research_problem_ads_v10_20261023`和Doris
+  `data_version=202610230401`，旧发布保持不变。
+
+## 5.12.3 — 2026-10-23
+
+- 为`ads_research_problem_profile`的中文标题、问题陈述、知识缺口、研究背景和研究摘要建立中文细粒度
+  分词倒排索引，启用短语查询支持。
+- 为`ads_research_problem_keyword.keyword_zh`建立中文分词倒排索引，并为`keyword_key`、
+  `keyword_type`建立不分词倒排索引，支持规范关键词和类型过滤。
+- 对已有历史数据显式执行`BUILD INDEX`；本次只改变Doris物理索引，不改变Iceberg数据、表字段、逻辑Key
+  或`data_version=202610230301`。
+- 全文查询使用`MATCH_ANY/MATCH_ALL/MATCH_PHRASE`；普通`LIKE`不等同于分词索引检索。
+
+## 5.12.2 — 2026-10-23
+
+- `ads_research_problem_institution_match.institution_type_id`从固定机构画像Snapshot补齐，2,586条记录均有
+  稳定机构类型代码。
+- 每个问题按论文、专利、项目计数之和选择唯一主导单位；单机构问题直接主导，多机构问题按贡献降序，
+  最高值并列时使用带规则版本的稳定哈希抽取，保证幂等重跑结果一致。
+- 问题直接证据字段与全局回退候选字段继续隔离。原模型`LEAD`若未被贡献规则选中则改为
+  `CORE_PARTNER`，其余角色和所有模型能力评分保持不变。
+- 合作领域推荐优先把正式主导单位纳入前三家推荐机构。新发布使用Iceberg
+  `research_problem_ads_v9_20261023`和Doris `data_version=202610230301`，旧发布保持不变。
+
+## 5.12.1 — 2026-10-23
+
+- 根据操作方明确批准，将`ads_research_problem_direction`的1,556条研究方向全部发布为
+  `review_status='APPROVED'`、`is_official=true`；原DeepSeek的885条APPROVED、660条REVISED和
+  11条REJECTED判断继续保存在固定AI Seed中，并写入方向审核理由供追溯，不改写原始模型输出。
+- 部署清单的`approved_direction_ids`、潜在方向推荐和合作领域推荐不再排除原REJECTED方向；每个问题
+  仍保留3至6条独立方向，表粒度保持“一问题的一方向”，不是“一问题一行”。
+- 新发布使用Iceberg `research_problem_ads_v8_20261023`和更高Doris
+  `data_version=202610230201`；旧发布保持不变。
+
+## 5.12.0 — 2026-10-23
+
+- 新增国家、广东省、深圳市官方政策基础数据DWD，并以固定Snapshot接入基础问题ADS。政策来源文件
+  全程只读，保留来源URL、发布机构、文号、有效状态、日期、核验状态及条款原文。
+- `ads_research_problem_policy_evidence`由5.5.0的AI合成政策语境改为官方政策证据：候选召回后由
+  DeepSeek进行受约束判定，只允许返回候选政策和候选条款ID，置信度低于0.65的结果不发布。
+- 新增`ads_research_problem_policy_yearly_metrics`，按问题、统计年份、政策层级和支持类型聚合政策数、
+  有效/被替代政策数、直接支持数、发布机构数、置信度、契合分和日期范围。
+- 政策导向维度改用`OFFICIAL_POLICY_EVIDENCE_COMPOSITE_V1`，综合政策数量、层级权威性、时效、
+  年份连续性和问题契合度。无官方匹配证据的问题保持NULL并标记`NO_MATCHED_OFFICIAL_POLICY`，
+  不以AI生成语料填充。
+- 已发布Iceberg `research_problem_ads_v7_20261023`和Doris `data_version=202610230101`：官方政策证据
+  39条，覆盖35/406个问题和8份政策；年度聚合39条。Iceberg与Doris逐表行数一致，46张问题ADS表
+  重复Key和27项语义边界校验均为0。
+
 ## 5.11.0 — 2026-10-22
 
 - 新增`ads_research_problem_collaboration_recommendation`，把已正式发布的DeepSeek研究方向审核结果与
@@ -439,6 +629,23 @@
   `./scripts/publish_talent_similarity_topic_mvp_v1.sh`、
   `docs/talent_similarity_topic_mvp_v1.md` 和
   `reports/talent_similarity_topic_mvp_v1/post_run_verification.md`。
+
+## 2026-10-24 地区年度人才数发布（无物理 Schema 变更）
+
+- 为 `ads_geo_yearly_metrics.talent_count` 发布 `geo_yearly_observed_talent_mvp_v1`：限定已发布
+  100,000 名 MVP 人才，以固定 MVP core 论文的发表年和署名机构已解析位置为同期证据，在
+  `location_id, statistics_year` 内按人才去重。
+- 本指标直接从人才—论文—署名机构事实重新去重，禁止把
+  `ads_geo_yearly_discipline_metrics.talent_count` 跨 Topic 相加；同一人才跨 Topic 会重复。
+- 2015–2026 的已发布 Key 无匹配证据时写 0，状态为 `PARTIAL`；2000–2014 写 NULL，状态为
+  `NOT_AVAILABLE`。`talent_participation_count` 和 `new_talent_count` 继续保持 NULL。
+- 采用 2015–2026 分年 Iceberg CTAS，固定所有输入 Snapshot；Doris 以局部列 Stream Load 和
+  `data_version=202610240102` 更新，保留既有论文、项目、机构和流动字段，并对发布前后非目标指标
+  汇总执行一致性门禁。
+- 没有新增、删除或改型字段，ADS Schema version 不因本次数据发布提升。执行入口为
+  `./scripts/publish_geo_yearly_talent_v1.sh`，口径与校验见
+  `docs/geo_ads_yearly_talent_v1.md`，实际结果见
+  `reports/geo_ads_yearly_talent_v1/post_run_verification.md`。
 
 ## 2026-10-14 地区年度 Primary Topic 人才数发布（无物理 Schema 变更）
 
