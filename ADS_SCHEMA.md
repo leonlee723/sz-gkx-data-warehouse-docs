@@ -5458,15 +5458,82 @@ PostgreSQL任务状态更新。实际结果和检查见
 一行一个集群，逻辑主键为`cluster_code`。保存集群名称、组别、产业名称数组、Subfield/Topic数、去重
 论文/专利数以及分数计数。专利数只表示`CITED_SCIENCE_TOPIC`被引科学基础关联，不表示专利内容产业。
 
+| 字段组 | 字段 | Doris类型 | 说明 |
+|---|---|---|---|
+| Key | `cluster_code` | `VARCHAR(32) NOT NULL` | 来源稳定集群编码；逻辑主键，例如`CL-SEI-01` |
+| 集群快照 | `cluster_name_zh` | `VARCHAR(256) NOT NULL` | 集群中文名称；仅用于展示，不作为身份键 |
+| 集群快照 | `cluster_note_zh` | `VARCHAR(512)` | CSV括号说明；来源缺失时为NULL |
+| 集群快照 | `group_name` | `VARCHAR(32) NOT NULL` | 来源组别，当前为`战新`或`未来` |
+| 产业成员 | `industry_names` | `ARRAY<STRING> NOT NULL` | 集群内产业名称去重、稳定排序数组；不使用来源产业编码建立身份 |
+| 产业成员 | `industry_member_count` | `BIGINT NOT NULL` | DWD中该集群的来源成员行数；保留来源重复名称行，因此可大于`industry_names`长度 |
+| 映射覆盖 | `subfield_count` | `BIGINT NOT NULL` | 已批准Cluster—Subfield关系数 |
+| 映射覆盖 | `topic_count` | `BIGINT NOT NULL` | 由已批准Subfield关系继承的去重Topic关系数 |
+| 论文关联 | `paper_count` | `BIGINT NOT NULL` | `dws_sz_gkx_industry_cluster_paper`中该集群的去重MVP core论文数 |
+| 论文关联 | `fractional_paper_count` | `DECIMAL(20,8) NOT NULL` | 论文跨命中集群按最大映射权重归一后的分数计数之和；同一论文跨全部集群权重合计为1 |
+| 专利关联 | `patent_count` | `BIGINT NOT NULL` | 通过`CITED_SCIENCE_TOPIC`关联到该集群的去重平台专利数 |
+| 专利关联 | `fractional_patent_count` | `DECIMAL(20,8) NOT NULL` | 单件专利按Topic证据权重与集群映射权重计算并跨集群归一后的分数计数之和 |
+| 发布版本 | `cluster_release_id` | `VARCHAR(64) NOT NULL` | 不可变产业集群来源发布ID |
+| 发布版本 | `mapping_release_id` | `VARCHAR(64) NOT NULL` | 不可变Cluster—Subfield/Topic映射发布ID |
+| 统计版本 | `metric_definition_version` | `VARCHAR(64) NOT NULL` | 聚合与成果传播算法版本，当前为`sz_gkx_industry_subfield_inheritance_v1` |
+| 公共版本 | `data_version` | `BIGINT NOT NULL` | 当前状态行的单调数据版本 |
+| 公共版本 | `update_time` | `DATETIME(3) NOT NULL` | UTC生成时间 |
+
+`paper_count`和`patent_count`分别在各集群内去重，但同一成果可以进入多个集群，不能跨集群直接求和
+解释为全局去重成果数。需要可加总口径时使用对应`fractional_*_count`；分数计数用于归属分摊，不表示
+成果质量、产业贡献、经济价值或因果影响。
+
 ### 43.2 `ads_sz_gkx_industry_cluster_subfield`
 
 一行一个集群—Subfield关系，逻辑主键为`cluster_code, subfield_id`。关系类型为
 `CORE/SUPPORTING/APPLICATION`，固定规则按操作方授权直接发布为`approved`。
 
+| 字段组 | 字段 | Doris类型 | 说明 |
+|---|---|---|---|
+| Key | `cluster_code` | `VARCHAR(32) NOT NULL` | 产业集群稳定编码；逻辑主键之一 |
+| Key | `subfield_id` | `VARCHAR(64) NOT NULL` | 平台统一Subfield ID；逻辑主键之一，可关联`ads_discipline_subfield.subfield_id` |
+| 集群快照 | `cluster_name_zh` | `VARCHAR(256) NOT NULL` | 集群中文名称快照 |
+| 来源身份 | `openalex_subfield_id` | `VARCHAR(32) NOT NULL` | OpenAlex来源Subfield ID，只用于来源审计 |
+| 学科快照 | `subfield_name_zh` | `VARCHAR(512) NOT NULL` | 已发布Subfield中文名称快照 |
+| 学科快照 | `subfield_name_en` | `VARCHAR(512)` | Subfield英文或来源原始名称快照 |
+| 关系语义 | `relation_type` | `VARCHAR(32) NOT NULL` | `CORE`核心范围、`SUPPORTING`支撑范围或`APPLICATION`应用范围 |
+| 关系语义 | `mapping_weight` | `DECIMAL(9,6) NOT NULL` | 固定映射权重：`CORE=1.0`、`SUPPORTING=0.65`、`APPLICATION=0.45` |
+| 映射治理 | `mapping_method` | `VARCHAR(64) NOT NULL` | 当前固定`FIXED_SUBFIELD_RULE_AUTO_APPROVED` |
+| 映射治理 | `review_status` | `VARCHAR(24) NOT NULL` | 当前固定`approved`；依据操作方对本发布规则的批量自动批准授权 |
+| 发布版本 | `cluster_release_id` | `VARCHAR(64) NOT NULL` | 不可变产业集群来源发布ID |
+| 发布版本 | `mapping_release_id` | `VARCHAR(64) NOT NULL` | 不可变映射发布ID；规则变化必须使用新值 |
+| 公共版本 | `data_version` | `BIGINT NOT NULL` | 当前状态行的单调数据版本 |
+| 公共版本 | `update_time` | `DATETIME(3) NOT NULL` | UTC生成时间 |
+
+同一Subfield可以关联多个集群；同一集群也可以关联多个Subfield。`mapping_weight`只用于本体系内成果
+跨集群分摊，不是模型置信度、人工评分、产业相关概率或Subfield内部Topic的质量权重。
+
 ### 43.3 `ads_sz_gkx_industry_cluster_topic`
 
 一行一个集群—Topic关系，逻辑主键为`cluster_code, topic_id`。Topic严格继承已发布Subfield关系，
 保存OpenAlex来源ID、平台ID、中英文名、所属Subfield、关系类型、权重及不可变映射版本。
+
+| 字段组 | 字段 | Doris类型 | 说明 |
+|---|---|---|---|
+| Key | `cluster_code` | `VARCHAR(32) NOT NULL` | 产业集群稳定编码；逻辑主键之一 |
+| Key | `topic_id` | `VARCHAR(64) NOT NULL` | 平台统一Topic ID；逻辑主键之一，可关联`ads_discipline_topic.topic_id` |
+| 集群快照 | `cluster_name_zh` | `VARCHAR(256) NOT NULL` | 集群中文名称快照 |
+| 来源身份 | `openalex_topic_id` | `VARCHAR(32) NOT NULL` | OpenAlex来源Topic ID，只用于来源审计 |
+| Topic快照 | `topic_name_zh` | `VARCHAR(512) NOT NULL` | 已发布Topic中文名称快照 |
+| Topic快照 | `topic_name_en` | `VARCHAR(512)` | Topic英文或来源原始名称快照 |
+| 父级学科 | `subfield_id` | `VARCHAR(64) NOT NULL` | 平台统一Subfield ID，可关联`ads_discipline_subfield.subfield_id` |
+| 父级学科 | `openalex_subfield_id` | `VARCHAR(32) NOT NULL` | Topic来源记录所属的OpenAlex Subfield ID |
+| 关系语义 | `relation_type` | `VARCHAR(32) NOT NULL` | 原样继承Cluster—Subfield的`CORE/SUPPORTING/APPLICATION` |
+| 关系语义 | `mapping_weight` | `DECIMAL(9,6) NOT NULL` | 原样继承Cluster—Subfield固定权重 |
+| 映射治理 | `mapping_method` | `VARCHAR(64) NOT NULL` | 当前固定`SUBFIELD_INHERITANCE_AUTO_APPROVED` |
+| 映射治理 | `review_status` | `VARCHAR(24) NOT NULL` | 当前固定`approved`；不是逐Topic人工审核结果 |
+| 发布版本 | `cluster_release_id` | `VARCHAR(64) NOT NULL` | 不可变产业集群来源发布ID |
+| 发布版本 | `mapping_release_id` | `VARCHAR(64) NOT NULL` | 不可变映射发布ID，与父级Subfield关系一致 |
+| 公共版本 | `data_version` | `BIGINT NOT NULL` | 当前状态行的单调数据版本 |
+| 公共版本 | `update_time` | `DATETIME(3) NOT NULL` | UTC生成时间 |
+
+本表不是逐Topic语义模型或专家判断结果。只要Topic属于已映射Subfield，就继承对应集群关系；因此适合
+产业集群范围召回和下游候选筛选，精度低于逐Topic审核。完整论文、专利关系分别查询Iceberg
+`dws_sz_gkx_industry_cluster_paper`和`dws_sz_gkx_industry_cluster_patent`，不在Doris重复保存全量明细。
 
 发布入口：
 
