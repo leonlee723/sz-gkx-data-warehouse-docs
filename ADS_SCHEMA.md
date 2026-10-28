@@ -2,7 +2,7 @@
 
 ## 1. 主体名称与边界
 
-**Schema version：6.0.1。** 本文件是下游 Doris ADS 逻辑结构与业务命名的唯一真实来源；
+**Schema version：6.5.0。** 本文件是下游 Doris ADS 逻辑结构与业务命名的唯一真实来源；
 可执行物理 DDL 包括 `sql/doris/` 下的 Talent、Institution 基线文件及版本化
 `ads_schema_*` 迁移文件；新增公共学科维表的 DDL 为
 [`sql/doris/ads_schema_1_7_0_publication_profiles.sql`](sql/doris/ads_schema_1_7_0_publication_profiles.sql)；
@@ -44,6 +44,8 @@ ORCID 经历及机构扩展迁移为
 [`sql/doris/ads_schema_2_1_0_talent_academic_capability.sql`](sql/doris/ads_schema_2_1_0_talent_academic_capability.sql)。
 人才拼音逆推中文候选名迁移为
 [`sql/doris/ads_schema_5_17_0_talent_name_candidate.sql`](sql/doris/ads_schema_5_17_0_talent_name_candidate.sql)。
+候选中文姓名全文索引迁移为
+[`sql/doris/ads_schema_6_0_2_talent_name_candidate_search_index.sql`](sql/doris/ads_schema_6_0_2_talent_name_candidate_search_index.sql)。
 人才产业技术活动 MVP 迁移为
 [`sql/doris/ads_schema_2_2_0_talent_industry_activity.sql`](sql/doris/ads_schema_2_2_0_talent_industry_activity.sql)。
 技术商业价值与人才产业力模拟迁移为
@@ -94,6 +96,24 @@ ORCID 经历及机构扩展迁移为
 [`sql/doris/ads_schema_4_9_0_talent_research_to_patent.sql`](sql/doris/ads_schema_4_9_0_talent_research_to_patent.sql)。
 机构学科画像项目数回填与核验入口为
 [`sql/doris/ads_schema_4_9_1_institution_discipline_project_count.sql`](sql/doris/ads_schema_4_9_1_institution_discipline_project_count.sql)。
+Topic论文全球国家当前快照迁移为
+[`sql/doris/ads_schema_6_1_0_topic_country_snapshot.sql`](sql/doris/ads_schema_6_1_0_topic_country_snapshot.sql)，
+固定窗口、分数计数、发布与地图查询说明见
+[`docs/topic_country_snapshot_v1.md`](docs/topic_country_snapshot_v1.md)。
+专利分析总览、覆盖率及交叉指标迁移为
+[`sql/doris/ads_schema_6_2_0_patent_analysis.sql`](sql/doris/ads_schema_6_2_0_patent_analysis.sql)，
+专利—Topic明细及核心专利代理排名迁移为
+[`sql/doris/ads_schema_6_3_0_patent_topic_patent.sql`](sql/doris/ads_schema_6_3_0_patent_topic_patent.sql)，
+固定输入、Topic语义、发布与限制说明见
+[`docs/patent_analysis_v1.md`](docs/patent_analysis_v1.md)。
+项目中文名称全文索引迁移为
+[`sql/doris/ads_schema_6_3_2_project_name_zh_search_index.sql`](sql/doris/ads_schema_6_3_2_project_name_zh_search_index.sql)。
+项目默认名称与原始描述的多语言全文索引迁移为
+[`sql/doris/ads_schema_6_3_3_project_multilingual_search_indexes.sql`](sql/doris/ads_schema_6_3_3_project_multilingual_search_indexes.sql)。
+深圳GKX产业集群独立体系迁移为
+[`sql/doris/ads_schema_6_5_0_sz_gkx_industry.sql`](sql/doris/ads_schema_6_5_0_sz_gkx_industry.sql)。
+项目金额人民币归一及范围过滤索引迁移为
+[`sql/doris/ads_schema_6_4_0_project_amount_cny.sql`](sql/doris/ads_schema_6_4_0_project_amount_cny.sql)。
 逻辑文档与可执行 DDL 必须同版本变更，版本历史记录在
 [`ADS_SCHEMA_RELEASE_NOTES.md`](ADS_SCHEMA_RELEASE_NOTES.md)。
 
@@ -122,7 +142,7 @@ ORCID 经历及机构扩展迁移为
 ## 2. 公共约束
 
 - 数据库：`gkx_technology_analysis_dev`；存储引擎：Apache Doris OLAP。
-- 当前 125 张表均为 `UNIQUE KEY` + Merge-on-Write 当前状态表；事实与画像表按其主体 ID
+- 当前 139 张表均为 `UNIQUE KEY` + Merge-on-Write 当前状态表；事实与画像表按其主体 ID
   HASH 分桶，低基数机构类型维表使用 1 个桶。
 - 所有平台主体 ID 使用 `VARCHAR(64)`，与任何单一来源 ID 解耦；外部 ID 通过持久 identity
   bridge 映射，不由来源 ID、姓名、批次顺序或行号推导。
@@ -160,6 +180,16 @@ ORCID 经历及机构扩展迁移为
 | `ads_paper_profile` | 一篇发布 MVP core 论文一行 | `paper_id` | 1.7.0新增并发布 |
 | `ads_patent_profile` | 一件 MVP Google Patent publication 一行 | `patent_id` | 1.7.0新增并发布 |
 | `ads_patent_cited_paper` | 一件专利引用一篇发布 MVP core 论文一行 | `patent_id, paper_id` | 1.7.0新增并发布 |
+| `ads_patent_analysis_summary` | 一个分析运行一行 | `run_id` | 6.2.0新增并发布 |
+| `ads_patent_analysis_topic` | 一个运行的一个Topic在一个统计期间一行 | `run_id, topic_id, relation_type, period_key` | 6.2.0新增并发布；Topic为被引论文Primary Topic |
+| `ads_patent_analysis_topic_patent` | 一个运行的一个Topic与一件专利一行 | `run_id, topic_id, patent_id` | 6.3.0新增并发布；核心专利为证据强度代理Top 100 |
+| `ads_patent_analysis_jurisdiction` | 一个运行的一个公开辖区在一个统计期间一行 | `run_id, jurisdiction_code, period_key` | 6.2.0新增并发布 |
+| `ads_patent_analysis_institution` | 一个运行的一个已确认受让机构一行 | `run_id, institution_id, period_key` | 6.2.0新增并发布 |
+| `ads_patent_analysis_institution_edge` | 一个运行的一对共同受让机构一行 | `run_id, source_institution_id, target_institution_id, relation_type` | 6.2.0新增并发布 |
+| `ads_patent_analysis_ipc` | 一个运行的一个IPC来源代码或部类一行 | `run_id, classification_code, classification_level, period_key` | 6.2.0新增并发布 |
+| `ads_patent_analysis_inventor` | 一个运行的一个来源姓名Key一行 | `run_id, inventor_key, period_key` | 6.2.0新增并发布；Top 10000 |
+| `ads_patent_analysis_cross_metric` | 一个运行的一对分析维度及一个指标一行 | `run_id, dimension_x_type, dimension_x_id, dimension_y_type, dimension_y_id, metric_code` | 6.2.0新增；6.3.1发布完整Topic×辖区矩阵 |
+| `ads_patent_analysis_coverage` | 一个运行的一个数据域覆盖率一行 | `run_id, data_domain` | 6.2.0新增并发布 |
 | `ads_institution_type` | 一个机构类型一行 | `institution_type_id` | 已发布，含 OpenAlex 类型及 unknown 兜底类型 |
 | `ads_location` | 一个平台位置一行 | `location_id` | 已发布 |
 | `ads_location_external_id` | 一个外部位置编码映射一行 | `id_namespace, external_id` | 已发布 |
@@ -180,6 +210,9 @@ ORCID 经历及机构扩展迁移为
 | `ads_institution_technology_power` | 一个具有 MVP core 论文证据的机构一行 | `institution_id` | 1.13.0新增并发布；四指标科研技术力 MVP 评分 |
 | `ads_industry` | 一个产业分类体系的一个节点一行 | `taxonomy_id, industry_id` | 1.11.0新增并发布 |
 | `ads_institution_industry` | 一个机构在一个分类体系的一个产业节点一行 | `institution_id, taxonomy_id, industry_id` | 1.11.0新增；5.0.0发布assignee与发明人任职证据并集 |
+| `ads_sz_gkx_industry_cluster` | 深圳GKX独立体系的一个产业集群一行 | `cluster_code` | 6.5.0新增并发布 |
+| `ads_sz_gkx_industry_cluster_subfield` | 一个集群关联一个Subfield一行 | `cluster_code, subfield_id` | 6.5.0自动批准并发布 |
+| `ads_sz_gkx_industry_cluster_topic` | 一个集群关联一个Topic一行 | `cluster_code, topic_id` | 6.5.0按Subfield继承并发布 |
 | `ads_talent_industry_activity` | 一名人才在一个分类体系的一个产业节点一行 | `talent_id, taxonomy_id, industry_id` | 2.2.0新增并发布 |
 | `ads_technology_commercial_value_simulation` | 一个固定目录技术的一个模拟版本一行 | `catalog_release_id, tech_id, simulation_version` | 2.3.0新增并发布；仅限模拟 |
 | `ads_talent_industry_capability_simulation` | 一名人才在一个产业节点的一个模拟版本一行 | `talent_id, taxonomy_id, industry_id, simulation_version` | 4.1.0统一为全量覆盖模拟；仅限模拟 |
@@ -190,6 +223,7 @@ ORCID 经历及机构扩展迁移为
 | `ads_talent_yearly_location` | 一名人才一年一个观察位置一行 | `talent_id, statistics_year, location_id` | 4.5.0已发布 |
 | `ads_geo_yearly_metrics` | 一个位置一个自然年一行 | `location_id, statistics_year` | 1.6.0已发布 |
 | `ads_geo_yearly_discipline_metrics` | 一个位置一年一个Topic一行 | `location_id, statistics_year, topic_id` | 1.6.0已发布 |
+| `ads_topic_country_snapshot` | 一个Topic在一个国家/地区的当前完整年度论文分布快照 | `topic_id, country_location_id` | 6.1.0新增并发布 |
 | `ads_geo_yearly_institution_type_metrics` | 一个位置一年一种机构类型一行 | `location_id, statistics_year, institution_type_id` | 1.6.0已发布 |
 | `ads_geo_yearly_index` | 一个位置一年一种指数一行 | `location_id, statistics_year, index_code` | 1.6.0预留空表 |
 | `ads_technology_profile` | 一个技术点一行 | `technology_node_id` | 4.6.0新增；6.0.0确认为ETO Cluster技术点 |
@@ -403,6 +437,8 @@ ORCID 经历及机构扩展迁移为
 类型覆盖来源标识并填写`name_zh`。`name`默认展示字段不自动采用候选名，避免把推测姓名冒充事实；
 需要展示候选的客户端必须同时读取`name_zh_candidate`和`name_zh_source`并显式标记“推测”。姓名候选
 不得参与人才身份合并、论文署名确认或Author–Inventor对齐。
+`name_zh_candidate`使用中文细粒度倒排全文索引，查询采用Doris `MATCH_ANY`、`MATCH_ALL`或
+`MATCH_PHRASE`；命中候选名仍不改变其`PINYIN_INFERENCE`推测属性。
 
 `discipline_domains/fields/subfields/topics` 均为对象数组，每项固定含 `id`、`name`（中文）和
 `name_en`（英文）；四级中文名称来自 `technology_v2.v_openalex_*_bilingual` 视图。
@@ -2392,6 +2428,32 @@ Grant ID 只通过 identity bridge 映射。开始年优先采用来源 `start_y
 受资助论文最早发表年，并通过 `start_year_source` 和 `start_year_is_inferred` 明示推测性质。
 `funder_project_id` 使用 `STRING` 原样保留来源中可能拼接的多个资助方项目编号，不截断。
 `talent_count` 从发布的 `ads_talent_project` 按 `project_id` 去重计算；已确认没有发布关系时写 0。
+`name_zh` 使用中文细粒度倒排全文索引，中文项目名称回填后可使用 Doris `MATCH_ANY`、
+`MATCH_ALL` 或 `MATCH_PHRASE` 检索；索引不改变名称来源、项目身份或数据版本。
+`name` 与 `description` 承载来源原文，允许中文、英文、日文及混合语言，统一使用 ICU 多语言
+倒排全文索引；应用不得假定这两个字段只有英文。变更分词器必须重建对应索引。
+
+项目金额保留来源`amount`和`currency`，同时发布`amount_cny`及逐行汇率审计字段：
+
+| 字段 | Doris类型 | 说明 |
+|---|---|---|
+| `amount_cny` | `DECIMAL(24,4)` | 固定汇率快照换算的人民币名义金额；来源金额非正、币种缺失或汇率缺失时为空 |
+| `amount_cny_exchange_rate` | `DECIMAL(18,8)` | 1单位原币对应人民币元数 |
+| `amount_cny_exchange_rate_date` | `DATE` | 该币种汇率快照日期 |
+| `amount_cny_exchange_rate_source` | `VARCHAR(64)` | 操作方提供的汇率来源类型 |
+| `amount_cny_normalization_status` | `VARCHAR(40)` | `CONVERTED_TO_CNY_FIXED_RATE/INVALID_AMOUNT/CURRENCY_MISSING/FX_RATE_MISSING`；没有来源金额时为空 |
+| `amount_cny_conversion_policy` | `VARCHAR(64)` | 当前为`FIXED_SNAPSHOT_CNY_PER_CURRENCY_UNIT_V2`；仅成功换算时填写 |
+
+固定汇率如下；均为“1单位原币对应人民币元数”：
+
+| 汇率日期 | 币种与汇率 |
+|---|---|
+| `2026-10-23` | USD 6.7180；EUR 7.5140；JPY 0.042793；CHF 8.1710；CAD 4.7804；AUD 4.6982 |
+| `2026-10-27` | GBP 8.9349；DKK 0.9984；SEK 0.6699；CZK 0.3059；CLP 0.006746 |
+
+`amount<=0`固定标记为`INVALID_AMOUNT`且`amount_cny=NULL`。`amount_cny`上的倒排索引用于等值和范围
+过滤；Doris的`ORDER BY amount_cny`仍执行TopN/排序，不能把倒排索引解释为物理排序索引。该固定快照
+是名义金额横向换算，不代表项目发生年份的历史汇率或购买力。
 
 `ads_talent_project` 是人才与科研项目的完整 ADS 关系入口，粒度为一名人才关联一个项目一行，
 逻辑主键为 `talent_id, project_id`。字段如下：
@@ -2632,6 +2694,60 @@ Snapshot `3691395969244640547`、机构 ADS 人才论文事实 Snapshot `7367496
 映射 Snapshot `4591962443053062500`、Topic 映射 Snapshot `6933579552916378888` 和原地区学科宽表
 Snapshot `8559334509421607459`。执行入口、分年聚合和质量校验见
 [`docs/geo_ads_primary_talent_v1.md`](docs/geo_ads_primary_talent_v1.md)。
+
+#### 20.3.2 `ads_topic_country_snapshot`
+
+一行表示一个平台 Topic 在一个国家或地区的当前论文全球分布快照。逻辑主键为
+`topic_id, country_location_id`。本表服务不分年度展示的世界地图、国家排行榜、占比和趋势箭头；
+年度事实仍查询`ads_geo_yearly_discipline_metrics`。
+
+| 字段 | Doris 类型 | 可空 | 说明 |
+|---|---|---|---|
+| `topic_id` | `VARCHAR(64)` | 否 | Topic平台ID；逻辑主键之一 |
+| `country_location_id` | `VARCHAR(64)` | 否 | 国家平台位置ID，关联`ads_location.location_id`；逻辑主键之一 |
+| `country_code` | `VARCHAR(8)` | 是 | ISO 3166-1 alpha-2国家或地区代码；供地图要素关联 |
+| `country_name` | `VARCHAR(256)` | 否 | 当前发布默认国家名称快照 |
+| `country_name_zh` | `VARCHAR(256)` | 是 | 当前治理中文名称快照 |
+| `country_name_en` | `VARCHAR(256)` | 是 | 当前英文名称快照 |
+| `paper_count` | `BIGINT` | 否 | 观察范围内国家参与发表的去重论文数；国际合作论文可进入多个国家 |
+| `paper_fractional_count` | `DECIMAL(20,8)` | 否 | 每篇论文按命中国家数等权分摊后的论文量 |
+| `global_paper_count` | `BIGINT` | 否 | 同一Topic观察范围内全部去重论文数，包括未解析到国家的论文 |
+| `country_resolved_paper_count` | `BIGINT` | 否 | 同一Topic至少解析到一个国家的去重论文数 |
+| `paper_coverage_ratio` | `DECIMAL(18,12)` | 否 | `paper_count/global_paper_count`；是国家参与覆盖率，跨国家之和可大于1 |
+| `country_resolution_ratio` | `DECIMAL(9,6)` | 否 | `country_resolved_paper_count/global_paper_count` |
+| `paper_fractional_share` | `DECIMAL(18,12)` | 否 | 国家分数论文量占全部已解析国家分数论文量的比例；同一Topic合计为1 |
+| `output_rank` | `BIGINT` | 否 | 按分数论文量、参与论文数和国家ID生成的稳定研究产出排名 |
+| `ranked_country_count` | `BIGINT` | 否 | 同一Topic进入当前排名的国家/地区数 |
+| `baseline_paper_count` | `BIGINT` | 否 | 2020—2022对照期国家参与论文数 |
+| `recent_paper_count` | `BIGINT` | 否 | 2023—2025近期国家参与论文数 |
+| `baseline_avg_annual_paper_count` | `DECIMAL(20,8)` | 否 | 对照期年均参与论文数 |
+| `recent_avg_annual_paper_count` | `DECIMAL(20,8)` | 否 | 近期年均参与论文数 |
+| `paper_growth_rate` | `DECIMAL(18,8)` | 是 | `recent_avg/baseline_avg-1`；无有效对照分母时NULL |
+| `trend_direction` | `VARCHAR(32)` | 否 | `UP/STABLE/DOWN/INSUFFICIENT_EVIDENCE` |
+| `growth_rank` | `BIGINT` | 是 | 满足趋势证据门槛的国家在同一Topic内的增长率稳定排名 |
+| `analysis_start_year`, `analysis_end_year` | `SMALLINT NOT NULL` | 否 | 当前固定2015和2025，只使用完整自然年 |
+| `baseline_start_year`, `baseline_end_year` | `SMALLINT NOT NULL` | 否 | 当前固定2020和2022 |
+| `recent_start_year`, `recent_end_year` | `SMALLINT NOT NULL` | 否 | 当前固定2023和2025 |
+| `topic_relation_scope` | `VARCHAR(32)` | 否 | 当前固定`PRIMARY_TOPIC` |
+| `coverage_status` | `VARCHAR(32)` | 否 | `COMPLETE/PARTIAL/NOT_AVAILABLE`国家解析覆盖状态 |
+| `snapshot_date` | `DATE` | 否 | 当前快照业务日期 |
+| `metrics_as_of_date` | `DATE` | 否 | 来源指标统计截止日 |
+| `metric_definition_version` | `VARCHAR(64)` | 否 | 当前固定`topic_country_primary_mvp_v1` |
+| `data_version` | `BIGINT` | 否 | 同一逻辑Key单调数据版本 |
+| `update_time` | `DATETIME(3)` | 否 | UTC生成时间 |
+
+当前固定读取4,000,000篇MVP core论文及其Primary Topic、署名机构、已解析国家和位置维表Snapshot；
+只纳入2015—2025完整年度，不把2026部分年度写入排名或趋势。`paper_count`回答国家参与论文数量，
+不能跨国家求和解释为全球去重论文数；需要可加总占比时必须使用`paper_fractional_count`及
+`paper_fractional_share`。
+
+趋势比较2020—2022和2023—2025两个三年窗口。对照期为0或两个窗口合计少于5篇时固定为
+`INSUFFICIENT_EVIDENCE`；其余记录使用±5%稳定带判定`UP/STABLE/DOWN`。改变时间窗口、规模门槛、
+稳定带或Topic关系范围必须提升`metric_definition_version`，不得原位扩大本版本含义。
+
+前端一次按`topic_id`读取全部国家并按`output_rank`排序；地图和排行榜使用
+`country_location_id`同步选中，地图GeoJSON通过`country_code`关联。边界几何、缩放和动画不进入ADS。
+完整查询、发布和恢复说明见[`docs/topic_country_snapshot_v1.md`](docs/topic_country_snapshot_v1.md)。
 
 ### 20.4 `ads_geo_yearly_institution_type_metrics`
 
@@ -5219,3 +5335,142 @@ ORDER BY statistics_month;
 
 新发布使用Iceberg `research_problem_ads_v14_20261024`和Doris
 `data_version=202610240101`；两端月度表均为91,520行，逻辑Key重复和字段边界异常均为0。
+
+## 42. 专利分析 ADS（6.2.0；6.3.0明细扩展；6.3.1完整交叉矩阵）
+
+### 42.1 范围与口径
+
+专利分析v1固定读取Google Patents MVP证据子集，按公开文本（`PUBLICATION`）计数，统计年份使用
+`publication_year`，范围为1990—2025。2026是不完整年度，不进入总量、排名和趋势；2020—2022为
+对照期，2023—2025为近期窗口。当前正式发布运行ID为
+`bdaf2431-7300-43ae-a055-d8985b84baaa`，`data_version=202610270301`。
+
+“关键词”统一使用Topic，关系类型固定为`CITED_SCIENCE_TOPIC`：从专利连接到其引用的MVP论文，再取
+论文的OpenAlex Primary Topic。该关系反映被引科学基础，不等于从专利标题、摘要、权利要求或全文
+识别的专利内容主题。逐专利关系保存在Iceberg
+`patent_analysis_v1_20261027_r6.dws_patent_topic`，并完整发布到Doris
+`ads_patent_analysis_topic_patent`。Topic中文名称固定从
+治理入口`iceberg.technology_v2.v_openalex_topic_bilingual`物化；该视图只接收当前最新、已批准的
+`zh-Hans/title`治理文本，不从英文名机器猜测中文。
+
+### 42.2 ADS表职责
+
+| 表 | 职责 | 主要限制 |
+|---|---|---|
+| `ads_patent_analysis_summary` | 总览摘要及领先项、增长项、覆盖率 | 每个运行一行 |
+| `ads_patent_analysis_topic` | Topic云、排行、年度与趋势 | 仅`CITED_SCIENCE_TOPIC` |
+| `ads_patent_analysis_topic_patent` | Topic点击后的完整专利关系、核心专利代理排名 | 每Topic前100仅表示被引科学证据强度 |
+| `ads_patent_analysis_jurisdiction` | CN/US/EP/WO总量、占比、排名与趋势 | EP为区域局，WO为国际体系 |
+| `ads_patent_analysis_institution` | 已确认受让机构排行与趋势 | 机构解析覆盖率1.9291% |
+| `ads_patent_analysis_institution_edge` | 共同受让机构网络 | 不是一般技术相似、竞争或论文合作关系 |
+| `ads_patent_analysis_ipc` | IPC来源代码及A—H部类分布 | 当前无分类标题；来源代码版本混合 |
+| `ads_patent_analysis_inventor` | 来源统一姓名排行与趋势 | Top 10000；尚未解析为平台人才 |
+| `ads_patent_analysis_cross_metric` | 全部3,484个Topic × 4辖区的专利数、Jaccard和lift | 完整13,936格；`is_topn_truncated=false` |
+| `ads_patent_analysis_coverage` | 各数据域覆盖、未解析量和限制 | 法律状态为`NOT_AVAILABLE` |
+
+所有表均带`metrics_as_of_date`、`metric_definition_version`、`data_version`和`update_time`。范围及原始
+派生关系保存在同一Iceberg namespace的`dws_patent_analysis_scope`和`dws_patent_topic`；Doris明细表
+持有平台`patent_id`，可直接连接`ads_patent_profile`，不再需要在线连接Iceberg。任务、运行、任务关系、
+案例及下载制品元数据保存在PostgreSQL `patent_analysis_*`控制表，不属于ADS事实表。
+
+### 42.3 实际发布与覆盖率
+
+正式范围包含1,752,444件公开文本、1,018,177个Google family。Topic覆盖1,707,255件
+（97.4214%），辖区覆盖100%，已确认机构覆盖33,807件（1.9291%），IPC覆盖1,749,187件
+（99.8141%），来源发明人姓名覆盖1,666,314件（95.0851%）。法律状态没有可用事实，覆盖为0且状态
+固定为`NOT_AVAILABLE`，不得用`grant_date`推断当前有效、失效或在审状态。
+
+当前3,484个Topic均已物化中英文名称，73,122条Topic ADS记录中文名非空率为100%；IPC标题、中文
+翻译和翻译审核状态仍均为NULL；发明人`platform_talent_id`为NULL且
+`identity_resolution_status='SOURCE_NAME_ONLY'`。机构关系只发布有直接证据的`CO_ASSIGNEE`边；如需技术
+关联、合作或竞争关系，必须新增明确算法、关系类型和证据口径。
+
+`ads_patent_analysis_cross_metric`当前按全部3,484个Topic与CN、US、EP、WO四个辖区生成完整笛卡尔
+网格，共13,936行。没有专利命中的2,131个组合仍保留一行并写
+`joint_patent_count=0`、`joint_share=0`、`jaccard_score=0`和`lift_score=0`，保证矩阵无缺格。
+`is_topn_truncated`固定为false。EP是区域专利局、WO是国际申请体系，不能解释为国家。
+
+### 42.4 `ads_patent_analysis_topic_patent`
+
+一行表示当前分析运行中一个Topic与一件平台专利的关系，逻辑主键为
+`run_id, topic_id, patent_id`。正式版本写入4,135,575行，覆盖3,484个Topic和1,707,255件专利；
+`patent_id`与`ads_patent_profile`的孤儿关系为0。
+
+| 字段 | Doris类型 | 说明 |
+|---|---|---|
+| `run_id` | `VARCHAR(64) NOT NULL` | 分析运行ID；逻辑主键之一 |
+| `topic_id` | `VARCHAR(64) NOT NULL` | 平台Topic ID；逻辑主键之一 |
+| `patent_id` | `VARCHAR(64) NOT NULL` | 平台专利ID；逻辑主键之一，可关联`ads_patent_profile.patent_id` |
+| `google_patent_publication_id` | `VARCHAR(128) NOT NULL` | Google来源公开文本ID，仅用于审计 |
+| `google_family_id` | `VARCHAR(128)` | Google来源专利族ID |
+| `publication_year` | `INT NOT NULL` | 专利公开年 |
+| `topic_name_zh`, `topic_name_en` | `STRING` | Topic中英文名称快照；中文非空 |
+| `relation_type` | `VARCHAR(32) NOT NULL` | 固定`CITED_SCIENCE_TOPIC` |
+| `topic_rank_in_patent` | `BIGINT NOT NULL` | Topic在单件专利内的被引论文证据排名 |
+| `relation_weight` | `DECIMAL(18,12) NOT NULL` | 该Topic证据论文数占该专利全部Topic证据论文数的比例 |
+| `evidence_work_count` | `BIGINT NOT NULL` | 支撑专利—Topic关系的去重被引论文数 |
+| `primary_evidence_work_count` | `BIGINT NOT NULL` | Primary Topic证据论文数；本版本关系均由Primary Topic生成 |
+| `avg_topic_score`, `max_topic_score` | `DECIMAL(18,8)` | 证据论文中该Topic分数的平均值和最大值 |
+| `evidence_count` | `BIGINT NOT NULL` | 上游专利—论文证据计数合计 |
+| `is_primary` | `BOOLEAN NOT NULL` | 是否为该专利证据排名第一的Topic |
+| `core_patent_rank` | `BIGINT NOT NULL` | 专利在Topic内的证据强度稳定排名 |
+| `is_core_patent` | `BOOLEAN NOT NULL` | `core_patent_rank<=100`时为true |
+| `ranking_method` | `VARCHAR(64) NOT NULL` | 固定`CITED_SCIENCE_EVIDENCE_V1` |
+| `metrics_as_of_date` | `DATE NOT NULL` | 来源指标统计截止日 |
+| `metric_definition_version` | `VARCHAR(64) NOT NULL` | 专利分析指标口径版本 |
+| `data_version` | `BIGINT NOT NULL` | 当前正式版本`202610270301` |
+| `update_time` | `DATETIME(3) NOT NULL` | UTC生成时间 |
+
+`core_patent_rank`依次按`evidence_work_count`、`primary_evidence_work_count`、`max_topic_score`、
+`relation_weight`、`publication_year`降序，再按`patent_id`稳定排序。它只衡量专利与被引科学Topic的
+证据强度，不表示法律稳定性、专利价值、技术先进性、市场价值或专家认定。
+
+```sql
+SELECT r.patent_id,p.title,p.abstract_zh,p.abstract_en,p.publication_date,p.grant_date,
+       p.inventors,p.assignees,p.ipc_codes,r.core_patent_rank,
+       r.evidence_work_count,r.relation_weight
+FROM ads_patent_analysis_topic_patent r
+JOIN ads_patent_profile p ON p.patent_id=r.patent_id
+WHERE r.run_id='bdaf2431-7300-43ae-a055-d8985b84baaa'
+  AND r.topic_id=:topic_id AND r.is_core_patent=true
+ORDER BY r.core_patent_rank;
+```
+
+### 42.5 发布与验证
+
+```bash
+uv run --frozen alembic upgrade head
+./scripts/publish_patent_analysis_v1.sh
+uv run --frozen pytest -q tests/test_patent_analysis.py
+```
+
+发布链路采用固定Snapshot、隔离Iceberg namespace、逐表逻辑Key校验、Iceberg—Doris行数对账以及
+PostgreSQL任务状态更新。实际结果和检查见
+[`reports/patent_analysis_v1/post_run_verification.md`](reports/patent_analysis_v1/post_run_verification.md)。
+
+## 43. 深圳GKX产业集群ADS（6.5.0）
+
+本组表使用`ads_sz_gkx_industry_*`前缀，属于独立分类体系，不修改或覆盖`ads_industry`、学科Topic、
+论文、专利及既有产业关系。全量成果关系保留在Iceberg DWS；Doris只发布集群画像和两级映射。
+
+### 43.1 `ads_sz_gkx_industry_cluster`
+
+一行一个集群，逻辑主键为`cluster_code`。保存集群名称、组别、产业名称数组、Subfield/Topic数、去重
+论文/专利数以及分数计数。专利数只表示`CITED_SCIENCE_TOPIC`被引科学基础关联，不表示专利内容产业。
+
+### 43.2 `ads_sz_gkx_industry_cluster_subfield`
+
+一行一个集群—Subfield关系，逻辑主键为`cluster_code, subfield_id`。关系类型为
+`CORE/SUPPORTING/APPLICATION`，固定规则按操作方授权直接发布为`approved`。
+
+### 43.3 `ads_sz_gkx_industry_cluster_topic`
+
+一行一个集群—Topic关系，逻辑主键为`cluster_code, topic_id`。Topic严格继承已发布Subfield关系，
+保存OpenAlex来源ID、平台ID、中英文名、所属Subfield、关系类型、权重及不可变映射版本。
+
+发布入口：
+
+```bash
+./scripts/compose.sh up -d --wait --wait-timeout 300
+./scripts/publish_sz_gkx_industry_v1.sh
+```

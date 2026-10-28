@@ -6,6 +6,115 @@
 - MINOR：向后兼容地新增表、字段或指标。
 - PATCH：不改变接口的说明、约束或索引修正。
 
+## 6.5.0 — 2026-10-27
+
+- 新增`ads_sz_gkx_industry_cluster`、`ads_sz_gkx_industry_cluster_subfield`和
+  `ads_sz_gkx_industry_cluster_topic`，全部使用独立前缀，不修改任何既有表结构或数据。
+- Cluster—Subfield固定规则与Subfield—Topic继承关系按操作方授权自动批准；完整成果关系保留在
+  Iceberg DWS，Doris集群画像发布去重数与分数计数。
+- 专利指标只使用`CITED_SCIENCE_TOPIC`科学引用语义，不冒充专利正文、IPC或主营产业分类。
+
+## 6.4.0 — 2026-10-27
+
+- 为`ads_project_profile`新增人民币名义金额`amount_cny`及汇率、汇率日期、来源、归一状态和策略字段，
+  保留原始`amount/currency`不变。
+- USD、EUR、JPY、CHF、CAD、AUD沿用2026-10-23固定汇率；GBP、DKK、SEK、CZK、CLP使用操作方提供的
+  2026-10-27固定汇率。金额小于等于0时`amount_cny`保持NULL并标记`INVALID_AMOUNT`。
+- 为`amount_cny`新增数值倒排索引`idx_project_amount_cny`，用于等值和范围过滤；`ORDER BY`仍由Doris
+  执行TopN/排序，不宣称倒排索引可以替代物理排序。
+- 已回填63,061条正金额项目，61条非正金额项目保持`amount_cny=NULL`；正金额缺失换算、非正金额误写、
+  换算公式不一致均为0。索引构建状态为`FINISHED`，核验见
+  [`reports/project_amount_cny_v1/post_run_verification.md`](reports/project_amount_cny_v1/post_run_verification.md)。
+
+## 6.3.3 — 2026-10-27
+
+- 将`ads_project_profile.name`既有倒排索引从`unicode`分词重建为ICU多语言分词，并为
+  `ads_project_profile.description`新增ICU多语言全文索引`idx_project_description_multilingual`。
+- `name_zh`继续使用6.3.2建立的中文细粒度索引；三项索引均支持`MATCH_ANY`、`MATCH_ALL`和
+  `MATCH_PHRASE`，不修改项目字段值、项目身份、逻辑Key或`data_version`。
+
+## 6.3.2 — 2026-10-27
+
+- 为`ads_project_profile.name_zh`新增中文细粒度分词倒排全文索引`idx_project_name_zh`，供后续中文
+  项目名称回填后使用。
+- 迁移显式构建既有行索引，支持Doris `MATCH_ANY`、`MATCH_ALL`和`MATCH_PHRASE`；不修改项目名称、
+  项目身份、逻辑Key或`data_version`。
+
+## 6.3.1 — 2026-10-27
+
+- 将`ads_patent_analysis_cross_metric`从Top 100 Topic扩展为正式Topic全集。当前可审计Topic总数为
+  3,484，而不是3,483；全部纳入发布，不人为丢弃一个有效Topic。
+- 正式运行4使用`run_id=bdaf2431-7300-43ae-a055-d8985b84baaa`、Iceberg namespace
+  `patent_analysis_v1_20261027_r6`、`data_version=202610270301`和指标版本
+  `patent_analysis_cited_science_topic_full_matrix_v2`。
+- 交叉矩阵发布3,484 Topic × 4公开辖区，共13,936行；其中2,131个零命中组合显式保留为0，避免矩阵
+  缺格。覆盖3,484个Topic和4个辖区，`is_topn_truncated=false`，名称缺失、重复Key和非法指标均为0。
+- Iceberg与Doris交叉表均为13,936行；任务`current_run_id`已切换到运行4，旧运行继续保留用于审计。
+
+## 6.3.0 — 2026-10-27
+
+- 新增并发布`ads_patent_analysis_topic_patent`，把Iceberg专利—Topic关系完整物化到Doris；逻辑Key为
+  `run_id, topic_id, patent_id`，Topic点击后的专利列表不再需要在线连接Iceberg DWS。
+- 正式运行3使用`run_id=c2307342-4ca0-496f-b31e-c6a1058f0f4e`、Iceberg namespace
+  `patent_analysis_v1_20261027_r5`和`data_version=202610270201`。写入4,135,575条关系，覆盖3,484个
+  Topic和1,707,255件专利；与`ads_patent_profile`连接的孤儿专利ID为0。
+- 为每个Topic按被引论文证据数、Primary证据数、Topic最高分、关系权重、公开年和稳定专利ID生成
+  `core_patent_rank`，前100标记`is_core_patent=true`；共239,178条核心专利关系。该排名是被引科学
+  证据强度代理，不代表专利法律、商业或技术价值。
+- Iceberg与Doris明细行数一致，逻辑Key重复、中文名缺失、无效排名和核心标记不一致均为0；任务
+  `current_run_id`已切换到运行3，旧运行继续保留用于审计。
+
+## 6.2.1 — 2026-10-27
+
+- 将治理视图`iceberg.technology_v2.v_openalex_topic_bilingual`中的已批准Topic中文名称物化到
+  `ads_patent_analysis_topic.topic_name_zh`，不使用英文名机器翻译或猜测值。
+- 发布运行2：`run_id=a4bf7fc3-a4e7-4ff3-8206-52ec739e4f25`、Iceberg namespace
+  `patent_analysis_v1_20261027_r4`、`data_version=202610270101`；运行1及其案例继续保留用于审计。
+- 3,484个分析Topic全部取得中文名；Doris Topic表本版本73,122行、中文名空值0，Iceberg
+  `dws_patent_topic`的4,135,575条关系中文名空值同样为0。Iceberg—Doris行数一致，逻辑Key重复为0。
+- 任务控制面新增独立运行2和案例，任务`current_run_id`已切换到运行2；Schema字段和Topic指标口径不变。
+
+## 6.2.0 — 2026-10-26
+
+- 新增并发布9张专利分析ADS表，覆盖总览、Topic、公开辖区、机构、机构共同受让边、IPC、发明人、
+  Topic×辖区交叉指标和数据覆盖率；逻辑Key均包含`run_id`，公共版本为`data_version=202610260403`。
+- 建立PostgreSQL控制表`patent_analysis_task`、`patent_analysis_run`、`patent_analysis_task_relation`、
+  `patent_analysis_case`和`patent_analysis_artifact`，支持任务状态、重跑/合并关系、案例发布和下载物登记。
+- Topic固定为`CITED_SCIENCE_TOPIC`：专利引用的MVP论文所关联的OpenAlex Primary Topic，不是专利
+  摘要、权利要求或全文的内容分类。新增Iceberg DWS关系表`dws_patent_topic`，实际写入4,135,575条
+  专利—Topic关系，覆盖1,707,255/1,752,444件分析专利（97.4214%）。
+- 分析窗口固定为1990—2025公开年，计数单位为publication；2020—2022为对照期、2023—2025为
+  近期窗口。CN/US是国家，EP是区域局，WO是国际申请体系，不将后二者伪装成国家。
+- 正式Doris结果共138,395行：总览1、Topic 73,122、辖区135、机构1,454、机构边183、IPC
+  53,093、发明人10,000、交叉指标400、覆盖率7。Iceberg与Doris逐表行数一致，逻辑Key重复为0。
+- 机构仅统计已确认的平台机构解析，覆盖33,807件专利（1.9291%）；IPC覆盖99.8141%；发明人来源
+  姓名覆盖95.0851%，但尚未完成人才身份解析。当前法律状态不可用，明确发布为`NOT_AVAILABLE`。
+- 新增Doris迁移、Alembic 0038、固定配置、可恢复发布程序、测试、操作说明和运行后验证报告；不修改
+  任何来源DWD数据或既有Iceberg对象。
+
+## 6.1.0 — 2026-10-26
+
+- 新增并发布`ads_topic_country_snapshot`，一行表示一个Primary Topic在一个国家或地区的当前完整年度论文
+  全球分布快照，逻辑Key为`topic_id, country_location_id`。
+- 固定使用2015—2025完整年度；2020—2022为对照期，2023—2025为近期窗口，不把2026部分年度
+  混入总量、排名或趋势。
+- 同时发布国家参与论文数和按一篇论文命中国家数等权分摊的`paper_fractional_count`；地图正式占比
+  使用`paper_fractional_share`，同一Topic合计为1。`paper_coverage_ratio`只表示国家参与覆盖率，
+  跨国家之和允许大于1。
+- 发布研究产出稳定排名、增长率、趋势方向、国家解析覆盖率、固定窗口和口径版本；证据不足不伪造
+  增长率，使用`INSUFFICIENT_EVIDENCE`。
+- 新增Doris迁移`sql/doris/ads_schema_6_1_0_topic_country_snapshot.sql`、固定配置
+  `config/topic_country_snapshot_v1.json`、发布入口`./scripts/publish_topic_country_snapshot_v1.sh`及
+  使用说明`docs/topic_country_snapshot_v1.md`。实际发布209,517行，覆盖4,467个Topic和224个国家/
+  地区，结果见`reports/topic_country_snapshot_v1/post_run_verification.md`。
+
+## 6.0.2 — 2026-10-26
+
+- 为`ads_talent_profile.name_zh_candidate`新增中文细粒度分词倒排全文索引
+  `idx_talent_profile_name_zh_candidate`，索引参数与既有`name_zh`中文索引一致。
+- 显式构建已有100,000行候选姓名数据，支持Doris `MATCH_ANY`、`MATCH_ALL`和`MATCH_PHRASE`；不修改
+  候选姓名、来源标识、逻辑Key或`data_version`。
+
 ## 6.0.1 — 2026-10-26
 
 - 为`ads_technology_profile.technology_name_en`新增英文分词倒排全文索引
