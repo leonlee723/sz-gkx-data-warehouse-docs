@@ -6,6 +6,14 @@
 - MINOR：向后兼容地新增表、字段或指标。
 - PATCH：不改变接口的说明、约束或索引修正。
 
+## 6.6.0 — 2026-10-28
+
+- 为`ads_sz_gkx_industry_cluster_topic`新增非空字段`industry_chain_stage`，标记Topic在对应集群中的
+  `UPSTREAM/MIDSTREAM/DOWNSTREAM`产业链位置。
+- 首版按现有关系类型确定性回填：`SUPPORTING→UPSTREAM`、`CORE→MIDSTREAM`、
+  `APPLICATION→DOWNSTREAM`；全部3,098条关系均可赋值，不引入人工审核或模型调用。
+- 标签是`cluster_code + topic_id`关系属性，不是Topic全局属性；其他既有表结构和数据不修改。
+
 ## 6.5.0 — 2026-10-27
 
 - 新增`ads_sz_gkx_industry_cluster`、`ads_sz_gkx_industry_cluster_subfield`和

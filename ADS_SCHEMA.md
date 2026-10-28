@@ -2,7 +2,7 @@
 
 ## 1. 主体名称与边界
 
-**Schema version：6.5.0。** 本文件是下游 Doris ADS 逻辑结构与业务命名的唯一真实来源；
+**Schema version：6.6.0。** 本文件是下游 Doris ADS 逻辑结构与业务命名的唯一真实来源；
 可执行物理 DDL 包括 `sql/doris/` 下的 Talent、Institution 基线文件及版本化
 `ads_schema_*` 迁移文件；新增公共学科维表的 DDL 为
 [`sql/doris/ads_schema_1_7_0_publication_profiles.sql`](sql/doris/ads_schema_1_7_0_publication_profiles.sql)；
@@ -112,6 +112,8 @@ Topic论文全球国家当前快照迁移为
 [`sql/doris/ads_schema_6_3_3_project_multilingual_search_indexes.sql`](sql/doris/ads_schema_6_3_3_project_multilingual_search_indexes.sql)。
 深圳GKX产业集群独立体系迁移为
 [`sql/doris/ads_schema_6_5_0_sz_gkx_industry.sql`](sql/doris/ads_schema_6_5_0_sz_gkx_industry.sql)。
+集群—Topic产业链上中下游标签迁移为
+[`sql/doris/ads_schema_6_6_0_sz_gkx_industry_chain_stage.sql`](sql/doris/ads_schema_6_6_0_sz_gkx_industry_chain_stage.sql)。
 项目金额人民币归一及范围过滤索引迁移为
 [`sql/doris/ads_schema_6_4_0_project_amount_cny.sql`](sql/doris/ads_schema_6_4_0_project_amount_cny.sql)。
 逻辑文档与可执行 DDL 必须同版本变更，版本历史记录在
@@ -212,7 +214,7 @@ Topic论文全球国家当前快照迁移为
 | `ads_institution_industry` | 一个机构在一个分类体系的一个产业节点一行 | `institution_id, taxonomy_id, industry_id` | 1.11.0新增；5.0.0发布assignee与发明人任职证据并集 |
 | `ads_sz_gkx_industry_cluster` | 深圳GKX独立体系的一个产业集群一行 | `cluster_code` | 6.5.0新增并发布 |
 | `ads_sz_gkx_industry_cluster_subfield` | 一个集群关联一个Subfield一行 | `cluster_code, subfield_id` | 6.5.0自动批准并发布 |
-| `ads_sz_gkx_industry_cluster_topic` | 一个集群关联一个Topic一行 | `cluster_code, topic_id` | 6.5.0按Subfield继承并发布 |
+| `ads_sz_gkx_industry_cluster_topic` | 一个集群关联一个Topic一行 | `cluster_code, topic_id` | 6.5.0按Subfield继承；6.6.0增加产业链位置 |
 | `ads_talent_industry_activity` | 一名人才在一个分类体系的一个产业节点一行 | `talent_id, taxonomy_id, industry_id` | 2.2.0新增并发布 |
 | `ads_technology_commercial_value_simulation` | 一个固定目录技术的一个模拟版本一行 | `catalog_release_id, tech_id, simulation_version` | 2.3.0新增并发布；仅限模拟 |
 | `ads_talent_industry_capability_simulation` | 一名人才在一个产业节点的一个模拟版本一行 | `talent_id, taxonomy_id, industry_id, simulation_version` | 4.1.0统一为全量覆盖模拟；仅限模拟 |
@@ -5524,6 +5526,7 @@ PostgreSQL任务状态更新。实际结果和检查见
 | 父级学科 | `openalex_subfield_id` | `VARCHAR(32) NOT NULL` | Topic来源记录所属的OpenAlex Subfield ID |
 | 关系语义 | `relation_type` | `VARCHAR(32) NOT NULL` | 原样继承Cluster—Subfield的`CORE/SUPPORTING/APPLICATION` |
 | 关系语义 | `mapping_weight` | `DECIMAL(9,6) NOT NULL` | 原样继承Cluster—Subfield固定权重 |
+| 产业链位置 | `industry_chain_stage` | `VARCHAR(16) NOT NULL` | Topic在当前集群中的位置：`UPSTREAM/MIDSTREAM/DOWNSTREAM`；不是Topic全局属性 |
 | 映射治理 | `mapping_method` | `VARCHAR(64) NOT NULL` | 当前固定`SUBFIELD_INHERITANCE_AUTO_APPROVED` |
 | 映射治理 | `review_status` | `VARCHAR(24) NOT NULL` | 当前固定`approved`；不是逐Topic人工审核结果 |
 | 发布版本 | `cluster_release_id` | `VARCHAR(64) NOT NULL` | 不可变产业集群来源发布ID |
@@ -5534,6 +5537,18 @@ PostgreSQL任务状态更新。实际结果和检查见
 本表不是逐Topic语义模型或专家判断结果。只要Topic属于已映射Subfield，就继承对应集群关系；因此适合
 产业集群范围召回和下游候选筛选，精度低于逐Topic审核。完整论文、专利关系分别查询Iceberg
 `dws_sz_gkx_industry_cluster_paper`和`dws_sz_gkx_industry_cluster_patent`，不在Doris重复保存全量明细。
+
+产业链位置使用固定、互斥且完整的确定性映射：
+
+```text
+relation_type='SUPPORTING'  -> industry_chain_stage='UPSTREAM'
+relation_type='CORE'        -> industry_chain_stage='MIDSTREAM'
+relation_type='APPLICATION' -> industry_chain_stage='DOWNSTREAM'
+```
+
+`UPSTREAM`表示基础材料、基础科学或使能技术，`MIDSTREAM`表示集群核心研发、工程或制造范围，
+`DOWNSTREAM`表示应用与服务场景。标签继承Cluster—Subfield关系，因此同一Topic在不同集群中可以具有
+不同产业链位置；不得脱离`cluster_code`单独解释或汇总为Topic的唯一产业链属性。
 
 发布入口：
 
