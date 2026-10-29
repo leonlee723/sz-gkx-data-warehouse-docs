@@ -6,6 +6,36 @@
 - MINOR：向后兼容地新增表、字段或指标。
 - PATCH：不改变接口的说明、约束或索引修正。
 
+## 6.13.0 — 2026-10-29
+
+- 为`ads_technology_community`新增`primary_field_*`、`primary_subfield_*`平台ID及中英文发布快照，
+  支持技术簇列表按主Field/Subfield直接展示和筛选；字段采用`primary_*`命名，不声称唯一学科归属。
+- 主Subfield由簇内成员`leading_topic_id`映射公共学科路径后，依次按`membership_score`之和、成员数和
+  `subfield_id`确定性排序；主Field严格继承所选Subfield父级，不使用来源`fields_raw`自由文本。
+- 校正`ads_technology_profile.leading_topic_id`的既有说明：物理值为OpenAlex来源Topic ID（`T…`），
+  本次通过identity bridge映射成`primary_subfield_id`和`primary_field_id`平台ID；不改写既有画像字段。
+- 新增主分类成员数、加权分、成员占比、分类覆盖率、次级Subfield数、跨学科标记和方法版本。
+  缺少Topic映射的成员保留在覆盖分母中；主Subfield成员占已分类成员比例低于0.70时标记跨学科。
+- 所有identity、OpenAlex分类和中文本地化输入均固定Iceberg Snapshot；新结果写入独立
+  `technology_graph_ads_v2_20261029`命名空间，历史v1不改写。Doris迁移为
+  `sql/doris/ads_schema_6_13_0_technology_community_discipline.sql`。
+- 已发布并完成Iceberg—Doris对账：社区1,731行全部具有主Subfield，跨学科16行，最低覆盖率
+  0.999759；中英文名称空值、比例异常、Subfield—Field父级不一致和重复Key均为0。其他五张技术图
+  服务表按新数据版本同步发布，六表行数分别为19,430、1,731、19,430、164,354、587,252和47,909。
+
+## 6.12.1 — 2026-10-29
+
+- 修复`ads_technology_stage_assessment.stage_code`与八阶段维表使用两套互不相交枚举的问题；该字段
+  现在严格引用`ads_technology_transfer_stage.stage_code`，不再产生`UNCERTAIN`或其他平行阶段代码。
+- 确定性规则按现有内部证据保守输出`BASIC_RESEARCH`、`PROOF_OF_CONCEPT`、`ENGINEERING`或
+  `INDUSTRIALIZATION`；监管、标准和市场来源尚未接入时，不推断监管或市场规模化阶段。
+- 新增Iceberg与Doris引用完整性校验及幂等修复命令`technology-ads align-stage-codes`；既有
+  `ENGINEERING_VALIDATION`迁移为`ENGINEERING`，`EARLY_COMMERCIALIZATION`迁移为
+  `INDUSTRIALIZATION`。v1、v2每版均发布`ENGINEERING` 9,022条、`INDUSTRIALIZATION`
+  10,408条；Iceberg与Doris逐版均为19,430条，空值、维表孤儿代码和重复逻辑Key均为0。
+- 本次对齐不调用DeepSeek；阶段只由固定内部证据规则生成，以保证结果可复算。既有Doris物理列受
+  Doris 4.1限制仍为nullable，但发布校验将NULL作为关键错误；新建表DDL已声明`NOT NULL`。
+
 ## 6.12.0 — 2026-10-29
 
 - 根据操作方明确授权，将`ads_technology_profile`全部19,430条中文技术名称批量标记为人工审核通过；

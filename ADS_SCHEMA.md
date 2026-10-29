@@ -2,7 +2,7 @@
 
 ## 1. 主体名称与边界
 
-**Schema version：6.12.0。** 本文件是下游 Doris ADS 逻辑结构与业务命名的唯一真实来源；
+**Schema version：6.13.0。** 本文件是下游 Doris ADS 逻辑结构与业务命名的唯一真实来源；
 可执行物理 DDL 包括 `sql/doris/` 下的 Talent、Institution 基线文件及版本化
 `ads_schema_*` 迁移文件；新增公共学科维表的 DDL 为
 [`sql/doris/ads_schema_1_7_0_publication_profiles.sql`](sql/doris/ads_schema_1_7_0_publication_profiles.sql)；
@@ -18,6 +18,8 @@ MVP论文摘要扩展迁移为
 [`sql/doris/ads_schema_6_11_0_patent_analysis_cross_trend.sql`](sql/doris/ads_schema_6_11_0_patent_analysis_cross_trend.sql)；
 机构合作Subfield年度关系迁移为
 [`sql/doris/ads_schema_6_12_0_institution_collaboration_subfield.sql`](sql/doris/ads_schema_6_12_0_institution_collaboration_subfield.sql)；
+技术簇主Field/Subfield分类迁移为
+[`sql/doris/ads_schema_6_13_0_technology_community_discipline.sql`](sql/doris/ads_schema_6_13_0_technology_community_discipline.sql)；
 ORCID 经历及机构扩展迁移为
 [`sql/doris/ads_schema_1_8_0_orcid_experience.sql`](sql/doris/ads_schema_1_8_0_orcid_experience.sql)；
 人才—项目关系迁移为
@@ -3331,7 +3333,7 @@ set +a
 | 状态与口径 | `translation_review_status` | `VARCHAR(32)` | 翻译人工审核状态；当前统一为`APPROVED`，无`PENDING` |
 | 展示与说明 | `domains_raw` | `STRING` | 来源Domain名称快照 |
 | 展示与说明 | `fields_raw` | `STRING` | 来源Field名称快照 |
-| 身份与关联 | `leading_topic_id` | `VARCHAR(64)` | 证据量领先的平台Topic ID |
+| 身份与关联 | `leading_topic_id` | `VARCHAR(64)` | 证据量领先的OpenAlex来源Topic ID；经identity bridge映射平台ID |
 | 状态与口径 | `chain_role` | `VARCHAR(64)` | 技术链位置角色 |
 | 状态与口径 | `is_chain_connected` | `BOOLEAN` | 是否连接到候选技术关系图 |
 | 指标 | `upstream_dependency_count` | `BIGINT` | 上游依赖候选节点数 |
@@ -3653,12 +3655,18 @@ set +a
 #### 24.12.13 `ads_technology_stage_assessment`
 
 候选技术发展阶段的规则或模型研判。逻辑 Key：`assessment_id`。
+`stage_code` 必须引用 `ads_technology_transfer_stage.stage_code` 的八阶段代码域，不得使用
+`UNCERTAIN`、`EARLY_RESEARCH`、`ENGINEERING_VALIDATION`、`EARLY_COMMERCIALIZATION` 等平行枚举；
+证据不足时仍按当前可观察证据保守归入八阶段之一，并通过置信度、风险和证据覆盖字段表达不确定性。
+当前确定性基线只会输出 `BASIC_RESEARCH`、`PROOF_OF_CONCEPT`、`ENGINEERING` 或
+`INDUSTRIALIZATION`；由于尚无注册的监管、标准和市场事实来源，不得自动输出
+`REGULATORY_OR_STANDARDIZATION` 或 `MARKET_SCALE`。
 
 | 字段组 | 字段 | Doris 类型 | 说明 |
 |---|---|---|---|
 | 身份与关联 | `assessment_id` | `VARCHAR(64) NOT NULL` | 评估结果确定性ID |
 | 身份与关联 | `technology_node_id` | `VARCHAR(64)` | 确定性候选技术节点ID |
-| 身份与关联 | `stage_code` | `VARCHAR(64)` | 技术发展或转化阶段代码 |
+| 身份与关联 | `stage_code` | `VARCHAR(64) NOT NULL` | 引用`ads_technology_transfer_stage.stage_code`的八阶段代码 |
 | 指标 | `stage_confidence` | `DECIMAL(5,4)` | 阶段置信 |
 | 状态与口径 | `assessment_method` | `VARCHAR(64)` | 评估方法 |
 | 展示与说明 | `current_status_description` | `STRING` | 当前阶段状态说明 |
@@ -4044,6 +4052,13 @@ uv run python -m app.technology_disruption.cli run \
 | `community_method/seed/resolution` | `LOUVAIN_WEIGHTED_V1/42/1.0` |
 | `community_name_translation_status` | 当前为`PENDING` |
 
+为支持列表按学科直接筛选，簇群表同时发布`primary_field_*`和`primary_subfield_*`主分类快照。
+该分类先把成员技术的`leading_topic_id`映射到公共学科路径，再按簇内`membership_score`之和、成员数和
+`subfield_id`依次确定稳定第一名；Field必须是所选Subfield的父级。它是图簇的主要学科标签，不是唯一
+学科归属。`discipline_member_share`披露主Subfield在已分类成员中的占比，`discipline_coverage_rate`
+披露成功映射成员占全部成员的比例；前者低于0.70时`is_cross_disciplinary=true`。缺少主Topic的成员
+保留在覆盖率分母中，不强行归类。中英文名称是发布快照，公共学科维表仍是名称与层级权威入口。
+
 当前1,731个簇群包含1,708个单节点簇。这表示这些节点在HIGH/MEDIUM证据子图中没有可用于可靠聚类的
 邻边，不表示它们在现实中不存在相关技术。前端应提供“未形成可靠簇群”图例，不应把所有单节点簇
 合并为一个“其他”簇，否则会伪造成员之间的联系。
@@ -4128,12 +4143,15 @@ Louvain簇群是本次图快照的结构结果，不是人工技术目录；核�
 
 ```bash
 ./scripts/build_technology_graph_dws.sh
-./scripts/publish_technology_graph_ads_v1.sh
+./scripts/publish_technology_graph_ads_v2.sh
 ```
 
-ADS先物化到 `iceberg.technology_graph_ads_v1_20261016`，再幂等加载到Doris。六张表当前行数依次为
+6.13.0 ADS先物化到 `iceberg.technology_graph_ads_v2_20261029`，再幂等加载到Doris；历史
+`technology_graph_ads_v1_20261016`保持不变。六张表当前行数依次为
 19,430、1,731、19,430、164,354、587,252和47,909；Iceberg与Doris逐表一致，逻辑键重复与时间/
-分值异常均为0。报告位于 `reports/technology_graph_ads_v1_20261016/`。
+分值异常均为0。全部1,731个社区已获得主Subfield，16个标记为跨学科；唯一缺少主Topic的技术位于
+4,151成员社区，故最低分类覆盖率为0.999759，名称空值、比例异常和Subfield—Field父级不一致均为0。
+v2报告位于 `reports/technology_graph_ads_v2_20261029/`。
 
 ### 25.9 完整字段字典
 
@@ -4190,6 +4208,19 @@ ADS先物化到 `iceberg.technology_graph_ads_v1_20261016`，再幂等加载到D
 | 指标 | `core_node_count` | `BIGINT` | CORE角色节点数 |
 | 指标 | `bridge_node_count` | `BIGINT` | BRIDGE角色节点数 |
 | 身份与关联 | `core_technology_node_id` | `VARCHAR(64)` | 簇内加权度最高的代表节点ID |
+| 主学科快照 | `primary_field_id` | `VARCHAR(64)` | 主Field平台ID；由成员主Topic确定性聚合 |
+| 主学科快照 | `primary_field_name_zh` | `STRING` | 主Field中文名称发布快照 |
+| 主学科快照 | `primary_field_name_en` | `STRING` | 主Field英文名称发布快照 |
+| 主学科快照 | `primary_subfield_id` | `VARCHAR(64)` | 主Subfield平台ID；由成员主Topic确定性聚合 |
+| 主学科快照 | `primary_subfield_name_zh` | `STRING` | 主Subfield中文名称发布快照 |
+| 主学科快照 | `primary_subfield_name_en` | `STRING` | 主Subfield英文名称发布快照 |
+| 主学科指标 | `discipline_member_count` | `BIGINT` | 支持主Subfield的已分类成员数 |
+| 主学科指标 | `primary_subfield_weighted_score` | `DOUBLE` | 主Subfield成员`membership_score`之和 |
+| 主学科指标 | `discipline_member_share` | `DECIMAL(9,6)` | 支持主Subfield成员占已分类成员比例 |
+| 主学科指标 | `discipline_coverage_rate` | `DECIMAL(9,6)` | 可映射成员占全部成员比例 |
+| 状态与口径 | `discipline_assignment_method` | `VARCHAR(64)` | 当前为`LEADING_TOPIC_MEMBERSHIP_WEIGHT_V1` |
+| 主学科指标 | `secondary_subfield_count` | `BIGINT` | 除主Subfield外的其他已观察Subfield数 |
+| 状态与口径 | `is_cross_disciplinary` | `BOOLEAN` | 主Subfield成员占比低于0.70时为真；未分类为NULL |
 | 指标 | `paper_count` | `BIGINT` | 簇群成员论文数之和 |
 | 指标 | `patent_count` | `BIGINT` | 簇群成员关联专利数之和 |
 | 时间 | `first_observed_year` | `SMALLINT` | 成员seed论文最早观察年份 |
