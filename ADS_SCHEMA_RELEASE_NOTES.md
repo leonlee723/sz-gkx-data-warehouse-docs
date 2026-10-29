@@ -6,6 +6,95 @@
 - MINOR：向后兼容地新增表、字段或指标。
 - PATCH：不改变接口的说明、约束或索引修正。
 
+## 6.12.0 — 2026-10-29
+
+- 根据操作方明确授权，将`ads_technology_profile`全部19,430条中文技术名称批量标记为人工审核通过；
+  `translation_status`与`translation_review_status`统一为`APPROVED`，不再保留`PENDING`。译文内容、
+  `DEEPSEEK_LLM`来源和翻译版本均不改变；该批准表示项目工作流审核，不冒充官方术语或逐条领域专家认证。
+- 审核使用版本化、可重复执行的
+  `sql/doris/ads_technology_profile_translation_approval_20261029.sql`，行级`data_version`提升为
+  `202610290430`；执行后总行数仍为19,430，空中文名和非`APPROVED`状态均要求为0。
+- 新增`ads_institution_collaboration_subfield_yearly`，按目标机构、合作机构、自然年和平台Subfield发布
+  有向合作领域关系，支持合作分析列表按真实合作成果所属Subfield过滤。
+- 论文领域只使用双方共同论文的Primary Topic；专利领域只使用双方均为`confirmed` assignee的共同
+  Patent publication及其引用科学Primary Topic。禁止使用双方机构学科画像交集冒充合作领域。
+- 分别保存Subfield内共同论文/共同专利数、机构对年度总数、已分类数、覆盖率和覆盖状态；无Topic
+  映射的成果保持在覆盖分母中，不写入任意领域，也不以0冒充完整覆盖。
+- 新增按年度有界物化、断点续跑、Iceberg—Doris逐年对账和重复Key/自环/计数/覆盖率校验；执行入口
+  为`./scripts/publish_institution_collaboration_subfield_ads.sh`。
+- 已物化并发布2015—2026年23,363,790行，覆盖252个Subfield和14,353,022个有可分类证据的有向
+  机构对年度；Iceberg与Doris逐年及总行数一致，重复Key、自环和计数/覆盖率异常均为0。
+- 合作论文机构对出现31,151,628次，其中31,065,722次可映射Subfield，覆盖99.7242%；confirmed共同
+  受让专利出现1,432次，其中526次具有引用科学Subfield，覆盖36.7318%。专利覆盖必须标记为部分，
+  不得解释为IPC/CPC或专利正文领域。
+
+## 6.11.0 — 2026-10-29
+
+- 为`ads_patent_analysis_cross_metric`新增对照期专利数、近期专利数、专利数变化、增长率、趋势方向及
+  两个窗口起止年共9个字段；全部3,484个Topic × 4个辖区的13,936个单元格均已回填。
+- 固定2020—2022为对照期、2023—2025为近期窗口；趋势结果为UP 2,361、DOWN 5,208、STABLE 551、
+  INSUFFICIENT_EVIDENCE 5,816。对照期为0时`growth_rate`为NULL；两期合计少于5件时趋势方向标记为
+  `INSUFFICIENT_EVIDENCE`。
+- 新增`ads_patent_analysis_cross_year`，发布3,484个Topic × 4个辖区 × 1990—2025共501,696行完整
+  年度网格；334,362个零命中年度显式保留，160,715行具有可计算的同比增长率。
+- Iceberg与Doris行数一致；组合级和年度表逻辑Key重复、负计数、变化量公式、增长率公式、年份窗口和
+  趋势枚举异常均为0，阶段校验`critical_errors=0`。
+
+## 6.10.0 — 2026-10-28
+
+- 新增并发布`ads_patent_analysis_patent_institution`，不再以`confirmed`作为关系入表条件；固定分析
+  范围内所有有规范申请人Key的专利—申请人关系均物化为机构节点关系。
+- 写入2,767,360条关系，覆盖1,664,521/1,752,444件专利，覆盖率94.9828%；共有548,053个实际
+  机构节点。Iceberg与Doris行数一致。
+- 34,115条关系标记`is_confirmed=true`并保存平台机构ID；2,733,245条关系标记false，使用
+  `assignee:<assignee_key>`稳定节点ID。所有关系保留`resolution_status`、匹配方法和置信度。
+- 逻辑Key重复、申请人孤儿关系、确认标识冲突、机构ID状态冲突和非法关系权重均为0。
+
+## 6.9.0 — 2026-10-28
+
+- 新增并发布`ads_patent_analysis_assignee`，以`run_id, assignee_key`为逻辑Key，直接从固定专利范围
+  和固定申请人事实聚合全局节点，不再从Topic×申请人结果跨Topic求和，因此不会因一件专利关联多个
+  Topic而重复计数。
+- 表内写入548,274个申请人节点：546,566个`unmatched`、33个`ambiguous`、1,675个`confirmed`；
+  confirmed节点连接1,454个平台机构。申请人名称覆盖1,664,521/1,752,444件专利（94.9828%）。
+- 同时保存去重专利数、专利族数、按单件专利申请人数等权分摊的专利数、全局占比、稳定排名，以及
+  `platform_institution_id`、ROR、解析状态、匹配方法、置信度和候选数。未确认名称不得冒充平台机构。
+- Topic×申请人表同步改用DWD规范`assignee_key`；531,094个Topic申请人Key全部命中全局申请人表，
+  解析状态和平台机构ID不一致为0。
+- Iceberg与Doris均为548,274行，逻辑Key重复、解析状态与机构ID矛盾、非法指标均为0；通过16个
+  稳定哈希桶幂等导入Doris。
+
+## 6.8.0 — 2026-10-28
+
+- 新增并发布10张专利分析ADS表：分类字典快照、Topic×CPC、Topic×来源申请人、Topic×确认机构、
+  辖区×确认机构、机构×IPC/CPC、机构年度、机构×来源发明人、IPC×Topic和实体代表专利。
+- 正式运行5使用`run_id=e4dcc585-a9e4-458e-a646-0c441c3eda76`、Iceberg namespace
+  `patent_analysis_v1_20261028_r7`、`data_version=202610280301`和指标版本
+  `patent_analysis_cited_science_classification_v3`；PostgreSQL状态为`SUCCESS/COMPLETE`。
+- Topic×CPC写入5,236,443行，覆盖3,480个有CPC证据的Topic；Topic×来源申请人写入2,400,215行，
+  覆盖3,473个Topic；IPC×Topic写入2,482,356行。三者均保留完整分布，
+  `is_topn_truncated=false`。
+- 来源申请人名称覆盖1,664,521/1,752,444件分析专利（94.9828%），解决主要申请人名称排行的数据
+  覆盖问题；严格的平台机构解析仍只接受确认映射，覆盖33,807件（1.9291%），二者不得混为一谈。
+- IPC 2026.01的79,722条官方中文候选由操作方批量确认为正式名称，采用新增revision、
+  `review_status=approved`和`locked=true`保留审计历史；分析所用53,085个IPC代码中51,121个取得正式
+  中文名称。423个分类节点没有中文来源记录，1,280个既有提取冲突按本次操作方策略显式接受。
+- CPC中文翻译本版本明确排除：未调用DeepSeek，未新增、修改或批准CPC中文名称；分析相关的161,825
+  个CPC节点中文名称均为空。
+- 10张新增表及既有10张分析表均完成Iceberg—Doris逐表行数对账，阶段校验
+  `critical_errors=0`；百万级事实采用确定性哈希分桶幂等导入，避免Doris BE内存峰值。
+
+## 6.7.0 — 2026-10-28
+
+- 为 `ads_paper_profile` 新增 `abstract_original`、`abstract_en` 和 `abstract_zh`，只发布固定
+  4,000,000 篇 MVP core 中能够从 OpenAlex 来源倒排索引确定性重建的摘要。
+- 摘要先进入 DWD 1.15.0 的稀疏扩展表 `dwd_work_abstract`；选择集合和来源 Snapshot 均固定版本，
+  未命中或来源没有摘要的论文保留画像行并将摘要字段置为 `NULL`。
+- 不执行摘要生成或自动翻译，ADS 发布任务不直接读取受保护的原始 Snapshot。
+- 2026-10-29 已完成 Doris 迁移和正式发布：`ads_paper_profile` 保持 4,000,000 行且主键唯一，
+  2,621,227 篇具有来源摘要，其中英文 2,518,259 篇、中文 3,616 篇、其他或未标明为中英文
+  99,352 篇；全部行使用 `data_version=202610280670`，语言错位、空主键和新旧版本混合均为 0。
+
 ## 6.6.0 — 2026-10-28
 
 - 为`ads_sz_gkx_industry_cluster_topic`新增非空字段`industry_chain_stage`，标记Topic在对应集群中的

@@ -2,10 +2,22 @@
 
 ## 1. 主体名称与边界
 
-**Schema version：6.6.0。** 本文件是下游 Doris ADS 逻辑结构与业务命名的唯一真实来源；
+**Schema version：6.12.0。** 本文件是下游 Doris ADS 逻辑结构与业务命名的唯一真实来源；
 可执行物理 DDL 包括 `sql/doris/` 下的 Talent、Institution 基线文件及版本化
 `ads_schema_*` 迁移文件；新增公共学科维表的 DDL 为
 [`sql/doris/ads_schema_1_7_0_publication_profiles.sql`](sql/doris/ads_schema_1_7_0_publication_profiles.sql)；
+MVP论文摘要扩展迁移为
+[`sql/doris/ads_schema_6_7_0_paper_abstract.sql`](sql/doris/ads_schema_6_7_0_paper_abstract.sql)；
+专利分析分类、申请人及机构下钻扩展迁移为
+[`sql/doris/ads_schema_6_8_0_patent_analysis_enhancement.sql`](sql/doris/ads_schema_6_8_0_patent_analysis_enhancement.sql)；
+专利分析全局申请人节点迁移为
+[`sql/doris/ads_schema_6_9_0_patent_analysis_assignee.sql`](sql/doris/ads_schema_6_9_0_patent_analysis_assignee.sql)；
+最大覆盖专利—机构节点关系迁移为
+[`sql/doris/ads_schema_6_10_0_patent_analysis_patent_institution.sql`](sql/doris/ads_schema_6_10_0_patent_analysis_patent_institution.sql)；
+国家/地区×Topic单元格增长与年度趋势迁移为
+[`sql/doris/ads_schema_6_11_0_patent_analysis_cross_trend.sql`](sql/doris/ads_schema_6_11_0_patent_analysis_cross_trend.sql)；
+机构合作Subfield年度关系迁移为
+[`sql/doris/ads_schema_6_12_0_institution_collaboration_subfield.sql`](sql/doris/ads_schema_6_12_0_institution_collaboration_subfield.sql)；
 ORCID 经历及机构扩展迁移为
 [`sql/doris/ads_schema_1_8_0_orcid_experience.sql`](sql/doris/ads_schema_1_8_0_orcid_experience.sql)；
 人才—项目关系迁移为
@@ -144,7 +156,7 @@ Topic论文全球国家当前快照迁移为
 ## 2. 公共约束
 
 - 数据库：`gkx_technology_analysis_dev`；存储引擎：Apache Doris OLAP。
-- 当前 139 张表均为 `UNIQUE KEY` + Merge-on-Write 当前状态表；事实与画像表按其主体 ID
+- 当前 153 张表均为 `UNIQUE KEY` + Merge-on-Write 当前状态表；事实与画像表按其主体 ID
   HASH 分桶，低基数机构类型维表使用 1 个桶。
 - 所有平台主体 ID 使用 `VARCHAR(64)`，与任何单一来源 ID 解耦；外部 ID 通过持久 identity
   bridge 映射，不由来源 ID、姓名、批次顺序或行号推导。
@@ -191,7 +203,20 @@ Topic论文全球国家当前快照迁移为
 | `ads_patent_analysis_ipc` | 一个运行的一个IPC来源代码或部类一行 | `run_id, classification_code, classification_level, period_key` | 6.2.0新增并发布 |
 | `ads_patent_analysis_inventor` | 一个运行的一个来源姓名Key一行 | `run_id, inventor_key, period_key` | 6.2.0新增并发布；Top 10000 |
 | `ads_patent_analysis_cross_metric` | 一个运行的一对分析维度及一个指标一行 | `run_id, dimension_x_type, dimension_x_id, dimension_y_type, dimension_y_id, metric_code` | 6.2.0新增；6.3.1发布完整Topic×辖区矩阵 |
+| `ads_patent_analysis_cross_year` | 一个运行的一个辖区、Topic和自然年一行 | `run_id, jurisdiction_code, topic_id, statistics_year` | 6.11.0新增并发布完整1990—2025年度矩阵 |
 | `ads_patent_analysis_coverage` | 一个运行的一个数据域覆盖率一行 | `run_id, data_domain` | 6.2.0新增并发布 |
+| `ads_patent_analysis_classification` | 一个运行、分类体系、版本和分类节点一行 | `run_id, scheme, release_id, classification_code` | 6.8.0新增并发布IPC/CPC字典快照 |
+| `ads_patent_analysis_assignee` | 一个运行的一个全局来源申请人名称Key一行 | `run_id, assignee_key` | 6.9.0新增并发布；专利去重后全局申请人节点，不跨Topic重复计数 |
+| `ads_patent_analysis_patent_institution` | 一个运行的一件专利与一个来源申请人Key一行 | `run_id, patent_id, assignee_key` | 6.10.0新增并发布；confirmed与未确认关系全部保留 |
+| `ads_patent_analysis_topic_cpc` | 一个运行的一个Topic与一个CPC分类一行 | `run_id, topic_id, cpc_code` | 6.8.0新增并发布；完整非TopN分布 |
+| `ads_patent_analysis_topic_assignee` | 一个运行的一个Topic与一个来源申请人名称Key一行 | `run_id, topic_id, assignee_key` | 6.8.0新增并发布；来源名称覆盖94.9828% |
+| `ads_patent_analysis_topic_institution` | 一个运行的一个Topic与一个已确认平台机构一行 | `run_id, topic_id, institution_id` | 6.8.0新增并发布；确认解析覆盖1.9291% |
+| `ads_patent_analysis_jurisdiction_institution` | 一个运行的一个公开辖区与一个已确认平台机构一行 | `run_id, jurisdiction_code, institution_id` | 6.8.0新增并发布 |
+| `ads_patent_analysis_institution_classification` | 一个运行的一个机构与一个IPC/CPC分类一行 | `run_id, institution_id, scheme, classification_code` | 6.8.0新增并发布 |
+| `ads_patent_analysis_institution_year` | 一个运行的一个机构与一个自然年一行 | `run_id, institution_id, statistics_year` | 6.8.0新增并发布 |
+| `ads_patent_analysis_institution_inventor` | 一个运行的一个机构与一个来源发明人姓名Key一行 | `run_id, institution_id, inventor_key` | 6.8.0新增并发布 |
+| `ads_patent_analysis_ipc_topic` | 一个运行的一个IPC代码与一个Topic一行 | `run_id, ipc_code, topic_id` | 6.8.0新增并发布；完整非TopN分布 |
+| `ads_patent_analysis_entity_patent` | 一个运行的辖区、IPC或机构代表专利一行 | `run_id, entity_type, entity_id, patent_id` | 6.8.0新增并发布；每实体最多20件代理排名 |
 | `ads_institution_type` | 一个机构类型一行 | `institution_type_id` | 已发布，含 OpenAlex 类型及 unknown 兜底类型 |
 | `ads_location` | 一个平台位置一行 | `location_id` | 已发布 |
 | `ads_location_external_id` | 一个外部位置编码映射一行 | `id_namespace, external_id` | 已发布 |
@@ -208,6 +233,7 @@ Topic论文全球国家当前快照迁移为
 | `ads_institution_discipline_profile` | 一个机构的一个 Topic 一行，并展开 Field/Subfield | `institution_id, topic_id` | 已发布 |
 | `ads_institution_yearly_metrics` | 一个机构一个自然年一行 | `institution_id, statistics_year` | 已发布 |
 | `ads_institution_collaboration_yearly` | 一个目标机构与一个合作机构在一个自然年一行 | `institution_id, collaborator_institution_id, statistics_year` | 1.10.0新增并发布论文合作；专利合作字段预留 |
+| `ads_institution_collaboration_subfield_yearly` | 一个目标机构、合作机构、自然年与合作Subfield一行 | `institution_id, collaborator_institution_id, statistics_year, subfield_id` | 6.12.0新增；只使用共同论文与confirmed共同受让专利证据 |
 | `ads_institution_topic_entry` | 一个机构在一个 Primary Topic 的首次观察进入事实一行 | `institution_id, topic_id` | 1.12.0新增并发布 |
 | `ads_institution_technology_power` | 一个具有 MVP core 论文证据的机构一行 | `institution_id` | 1.13.0新增并发布；四指标科研技术力 MVP 评分 |
 | `ads_industry` | 一个产业分类体系的一个节点一行 | `taxonomy_id, industry_id` | 1.11.0新增并发布 |
@@ -1389,6 +1415,9 @@ research_to_patent_citation_rate =
 | 标题 | `title_zh` | `STRING` | 明确中文标题，不自动翻译 |
 | 标题 | `title_en` | `STRING` | 明确英文标题 |
 | 标题 | `title_original` | `STRING` | 来源原始标题 |
+| 摘要 | `abstract_zh` | `STRING` | 仅来源明确标记为中文的摘要；不自动翻译 |
+| 摘要 | `abstract_en` | `STRING` | 仅来源明确标记为英文的摘要；不自动翻译 |
+| 摘要 | `abstract_original` | `STRING` | OpenAlex来源倒排索引确定性重建的原始摘要 |
 | 发布 | `publication_date` | `DATE` | 发布日期 |
 | 发布 | `publication_year` | `SMALLINT NOT NULL` | 发布年份 |
 | 发布 | `paper_type` | `VARCHAR(64)` | OpenAlex论文类型 |
@@ -1421,6 +1450,9 @@ research_to_patent_citation_rate =
 `primary_topic_id` 和 `topic_ids` 使用平台 Topic ID，可关联 `ads_discipline_topic`；OpenAlex ID
 只保留在 `openalex_primary_topic_id`。标题按中文、英文、原始标题、展示名、OpenAlex Work ID
 依次确定性兜底，保证 `title` 非空；该顺序不表示自动翻译。
+
+摘要只从固定 MVP core 选择范围对应的 `dwd_work_abstract` 稀疏扩展表发布。没有可用来源摘要时三个
+摘要字段均为 `NULL`；不从标题生成摘要，不自动翻译，也不让 ADS 发布程序直接读取原始 Snapshot。
 
 ## 13.2 `ads_patent_profile`
 
@@ -1921,6 +1953,48 @@ assignee 事实。`unique_candidate`、`ambiguous`、名称相似或发明人任
 `relationship_quality_status` 使用 `VERIFIED / PARTIAL / LOW_CONFIDENCE`。首版存在不同署名位置的
 论文边为 `VERIFIED`，仅有同一作者多机构署名证据的边为 `LOW_CONFIDENCE`。发布入口和核验口径见
 [`docs/institution_collaboration_ads_v1.md`](docs/institution_collaboration_ads_v1.md)。
+
+## 17.1.1 `ads_institution_collaboration_subfield_yearly`
+
+机构年度合作领域表，一行表示一个有向机构对在一个自然年内由真实合作成果支持的一个Subfield。
+逻辑Key为`institution_id, collaborator_institution_id, statistics_year, subfield_id`。本表专门服务
+合作领域筛选，不使用两个机构各自学科画像的集合交集，因此不会把“双方分别研究同一领域”误报为
+“双方在该领域发生合作”。
+
+论文领域只使用双方共同论文的Primary Topic，并通过公共Topic维表的祖先关系映射到平台Subfield。
+专利领域只使用双方均为`confirmed` assignee的共同Patent publication，再由该专利引用科学论文的
+Primary Topic映射到Subfield；这是`CITED_SCIENCE_TOPIC`语义，不表示专利正文技术分类。一个共同专利
+可关联多个Subfield，但同一机构对、年份、Subfield内按`publication_id`去重。
+
+| 字段组 | 字段 | Doris 类型 | 说明 |
+|---|---|---|---|
+| Key | `institution_id` | `VARCHAR(64) NOT NULL` | 目标机构平台ID |
+| Key | `collaborator_institution_id` | `VARCHAR(64) NOT NULL` | 合作机构平台ID；不得等于目标机构 |
+| Key | `statistics_year` | `SMALLINT NOT NULL` | 合作论文发表年或共同专利公开年 |
+| Key | `subfield_id` | `VARCHAR(64) NOT NULL` | 平台Subfield ID，可关联`ads_discipline_subfield` |
+| 领域证据 | `co_paper_count` | `BIGINT NOT NULL` | 该Subfield内双方共同出现的去重论文数 |
+| 领域证据 | `co_patent_count` | `BIGINT NOT NULL` | 该Subfield内双方confirmed assignee共同专利数 |
+| 覆盖分母 | `pair_co_paper_count` | `BIGINT NOT NULL` | 机构对当年全部合作论文数 |
+| 覆盖分子 | `classified_co_paper_count` | `BIGINT NOT NULL` | 可映射到Subfield的合作论文数 |
+| 覆盖分母 | `pair_co_patent_count` | `BIGINT NOT NULL` | 机构对当年全部confirmed共同受让专利数 |
+| 覆盖分子 | `classified_co_patent_count` | `BIGINT NOT NULL` | 可由引用科学Topic映射到Subfield的共同专利数 |
+| 覆盖 | `paper_subfield_coverage_rate` | `DECIMAL(9,6)` | `classified_co_paper_count / pair_co_paper_count` |
+| 覆盖 | `patent_subfield_coverage_rate` | `DECIMAL(9,6)` | `classified_co_patent_count / pair_co_patent_count` |
+| 分类 | `evidence_type_ids` | `ARRAY<STRING> NOT NULL` | `paper_coauthorship`和/或`patent_co_assignee` |
+| 覆盖 | `paper_coverage_status` | `VARCHAR(32) NOT NULL` | COMPLETE/PARTIAL/NOT_AVAILABLE |
+| 覆盖 | `patent_coverage_status` | `VARCHAR(32) NOT NULL` | COMPLETE/PARTIAL/NOT_AVAILABLE |
+| 血缘 | `paper_source_snapshot_id` | `VARCHAR(128)` | 固定机构论文输入Snapshot |
+| 血缘 | `patent_source_snapshot_id` | `VARCHAR(128)` | 固定confirmed专利机构关系Snapshot |
+| 血缘 | `work_source_snapshot_id` | `VARCHAR(128)` | 固定论文主体Snapshot |
+| 血缘 | `topic_source_snapshot_id` | `VARCHAR(128)` | 固定论文Topic关系Snapshot |
+| 版本 | `metrics_as_of_date` | `DATE NOT NULL` | 指标统计截止日 |
+| 版本 | `metric_definition_version` | `VARCHAR(64) NOT NULL` | 合作Subfield口径版本 |
+| 版本 | `data_version` | `BIGINT NOT NULL` | Key级单调版本 |
+| 版本 | `update_time` | `DATETIME(3) NOT NULL` | UTC生成时间 |
+
+查询某Subfield下的机构合作组合时，必须先按`subfield_id`和时间范围过滤，再按有向机构对聚合
+`co_paper_count`与`co_patent_count`。论文或专利覆盖状态为`PARTIAL/NOT_AVAILABLE`时必须随结果返回；
+没有Subfield映射的合作成果不会凭空进入其他领域，也不得解释为不存在合作成果。
 
 ## 17.2 `ads_institution_topic_entry`
 
@@ -3039,7 +3113,8 @@ Key重复、Topic孤儿、人才孤儿、覆盖状态、数值范围、Top 20排
 `tech_id`和`mapping_status`字段。
 
 `ads_technology_profile` 保存技术名称、说明和关键词的 `original/en/zh` 三组字段，以及翻译状态、
-版本、来源和审核状态。当前尚无统一审核中文翻译，`_zh` 必须为 NULL/空数组，不得复制英文冒充中文。
+版本、来源和审核状态。技术名称中文译文已由操作方批量审核通过；说明和关键词中文字段仍可为空，
+不得复制英文冒充中文。批量审核表示项目工作流批准，不改变 `DEEPSEEK_LLM` 来源，也不冒充官方术语。
 论文、专利、机构和案例表只保存自身名称快照，通过 `technology_node_id` 关联技术画像。
 
 ### 24.2 功能点、实现表与使用方法
@@ -3243,17 +3318,17 @@ set +a
 | 状态与口径 | `node_identity_type` | `VARCHAR(32)` | 固定为`ETO_RESEARCH_CLUSTER_TECHNOLOGY` |
 | 展示与说明 | `technology_name_original` | `STRING` | 技术原始名称 |
 | 展示与说明 | `technology_name_en` | `STRING` | 技术英文名称 |
-| 展示与说明 | `technology_name_zh` | `STRING` | 审核中文技术名称；当前可为空 |
+| 展示与说明 | `technology_name_zh` | `STRING` | 审核中文技术名称；当前19,430条均非空 |
 | 展示与说明 | `technology_description_original` | `STRING` | 技术原始说明 |
 | 展示与说明 | `technology_description_en` | `STRING` | 技术英文说明 |
 | 展示与说明 | `technology_description_zh` | `STRING` | 审核中文技术说明；当前可为空 |
 | 展示与说明 | `keywords_original` | `ARRAY<STRING>` | 原始关键词去重数组 |
 | 展示与说明 | `keywords_en` | `ARRAY<STRING>` | 英文关键词去重数组 |
 | 展示与说明 | `keywords_zh` | `ARRAY<STRING>` | 审核中文关键词数组；当前可为空 |
-| 状态与口径 | `translation_status` | `VARCHAR(32)` | 翻译完成状态 |
+| 状态与口径 | `translation_status` | `VARCHAR(32)` | 翻译完成状态；当前统一为`APPROVED` |
 | 版本与审计 | `translation_version` | `VARCHAR(64)` | 翻译规则或模型版本 |
 | 状态与口径 | `translation_source` | `VARCHAR(32)` | 翻译来源类型 |
-| 状态与口径 | `translation_review_status` | `VARCHAR(32)` | 翻译人工审核状态 |
+| 状态与口径 | `translation_review_status` | `VARCHAR(32)` | 翻译人工审核状态；当前统一为`APPROVED`，无`PENDING` |
 | 展示与说明 | `domains_raw` | `STRING` | 来源Domain名称快照 |
 | 展示与说明 | `fields_raw` | `STRING` | 来源Field名称快照 |
 | 身份与关联 | `leading_topic_id` | `VARCHAR(64)` | 证据量领先的平台Topic ID |
@@ -5338,19 +5413,19 @@ ORDER BY statistics_month;
 新发布使用Iceberg `research_problem_ads_v14_20261024`和Doris
 `data_version=202610240101`；两端月度表均为91,520行，逻辑Key重复和字段边界异常均为0。
 
-## 42. 专利分析 ADS（6.2.0；6.3.0明细扩展；6.3.1完整交叉矩阵）
+## 42. 专利分析 ADS（6.2.0；6.3.0明细扩展；6.3.1完整交叉矩阵；6.8.0分类扩展；6.9.0全局申请人节点；6.10.0最大覆盖专利机构关系；6.11.0单元格增长趋势）
 
 ### 42.1 范围与口径
 
 专利分析v1固定读取Google Patents MVP证据子集，按公开文本（`PUBLICATION`）计数，统计年份使用
 `publication_year`，范围为1990—2025。2026是不完整年度，不进入总量、排名和趋势；2020—2022为
 对照期，2023—2025为近期窗口。当前正式发布运行ID为
-`bdaf2431-7300-43ae-a055-d8985b84baaa`，`data_version=202610270301`。
+`e4dcc585-a9e4-458e-a646-0c441c3eda76`，`data_version=202610280301`。
 
 “关键词”统一使用Topic，关系类型固定为`CITED_SCIENCE_TOPIC`：从专利连接到其引用的MVP论文，再取
 论文的OpenAlex Primary Topic。该关系反映被引科学基础，不等于从专利标题、摘要、权利要求或全文
 识别的专利内容主题。逐专利关系保存在Iceberg
-`patent_analysis_v1_20261027_r6.dws_patent_topic`，并完整发布到Doris
+`patent_analysis_v1_20261028_r7.dws_patent_topic`，并完整发布到Doris
 `ads_patent_analysis_topic_patent`。Topic中文名称固定从
 治理入口`iceberg.technology_v2.v_openalex_topic_bilingual`物化；该视图只接收当前最新、已批准的
 `zh-Hans/title`治理文本，不从英文名机器猜测中文。
@@ -5365,10 +5440,23 @@ ORDER BY statistics_month;
 | `ads_patent_analysis_jurisdiction` | CN/US/EP/WO总量、占比、排名与趋势 | EP为区域局，WO为国际体系 |
 | `ads_patent_analysis_institution` | 已确认受让机构排行与趋势 | 机构解析覆盖率1.9291% |
 | `ads_patent_analysis_institution_edge` | 共同受让机构网络 | 不是一般技术相似、竞争或论文合作关系 |
-| `ads_patent_analysis_ipc` | IPC来源代码及A—H部类分布 | 当前无分类标题；来源代码版本混合 |
+| `ads_patent_analysis_ipc` | IPC来源代码及A—H部类分布 | 接入IPC 2026.01正式中文名称；历史来源代码仍可能无法匹配 |
 | `ads_patent_analysis_inventor` | 来源统一姓名排行与趋势 | Top 10000；尚未解析为平台人才 |
 | `ads_patent_analysis_cross_metric` | 全部3,484个Topic × 4辖区的专利数、Jaccard和lift | 完整13,936格；`is_topn_truncated=false` |
+| `ads_patent_analysis_cross_year` | 全部Topic × 辖区 × 1990—2025自然年的年度趋势 | 完整501,696格；无专利年份显式保留0 |
 | `ads_patent_analysis_coverage` | 各数据域覆盖、未解析量和限制 | 法律状态为`NOT_AVAILABLE` |
+| `ads_patent_analysis_classification` | IPC/CPC节点、父级、原文及已审核中文快照 | CPC中文翻译本版本明确排除 |
+| `ads_patent_analysis_assignee` | 全局申请人节点、排名及平台机构解析状态 | 名称覆盖94.9828%；未确认名称不冒充平台机构 |
+| `ads_patent_analysis_patent_institution` | 专利与全部来源机构节点关系 | 2,767,360条；覆盖1,664,521件专利；保留确认标识 |
+| `ads_patent_analysis_topic_cpc` | Topic的CPC技术分支完整分布 | 3,480个Topic有CPC；不做TopN截断 |
+| `ads_patent_analysis_topic_assignee` | Topic主要申请人来源名称完整分布 | 名称级覆盖94.9828%，不等同平台机构消歧 |
+| `ads_patent_analysis_topic_institution` | Topic主要平台机构 | 仅确认机构映射，覆盖率1.9291% |
+| `ads_patent_analysis_jurisdiction_institution` | 公开辖区主要平台机构 | 仅确认机构映射 |
+| `ads_patent_analysis_institution_classification` | 机构IPC/CPC技术领域分布 | 仅确认机构映射 |
+| `ads_patent_analysis_institution_year` | 机构历年专利趋势 | 仅确认机构映射 |
+| `ads_patent_analysis_institution_inventor` | 机构核心发明人来源姓名 | 尚未解析为平台人才 |
+| `ads_patent_analysis_ipc_topic` | IPC相关热点Topic完整分布 | 不做TopN截断；Topic为被引科学Topic |
+| `ads_patent_analysis_entity_patent` | 辖区、IPC、机构代表专利 | 每实体最多20件；证据代理不代表专利价值 |
 
 所有表均带`metrics_as_of_date`、`metric_definition_version`、`data_version`和`update_time`。范围及原始
 派生关系保存在同一Iceberg namespace的`dws_patent_analysis_scope`和`dws_patent_topic`；Doris明细表
@@ -5382,15 +5470,41 @@ ORDER BY statistics_month;
 （99.8141%），来源发明人姓名覆盖1,666,314件（95.0851%）。法律状态没有可用事实，覆盖为0且状态
 固定为`NOT_AVAILABLE`，不得用`grant_date`推断当前有效、失效或在审状态。
 
-当前3,484个Topic均已物化中英文名称，73,122条Topic ADS记录中文名非空率为100%；IPC标题、中文
-翻译和翻译审核状态仍均为NULL；发明人`platform_talent_id`为NULL且
+当前3,484个Topic均已物化中英文名称，73,122条Topic ADS记录中文名非空率为100%。IPC分类字典
+固定`release_id=20260101`，53,085个分析IPC代码中51,121个取得`approved`中文名称；未命中项保持
+NULL并通过`mapping_coverage_status`显式标识。CPC共161,825个与分析范围相关的节点，中文名称为0，
+本版本未调用大模型翻译。发明人`platform_talent_id`为NULL且
 `identity_resolution_status='SOURCE_NAME_ONLY'`。机构关系只发布有直接证据的`CO_ASSIGNEE`边；如需技术
 关联、合作或竞争关系，必须新增明确算法、关系类型和证据口径。
+
+Topic主要申请机构提供两种语义：`ads_patent_analysis_topic_assignee`直接使用Google Patents统一申请人
+名称，覆盖1,664,521/1,752,444件分析专利（94.9828%）；`ads_patent_analysis_topic_institution`只使用
+确认映射到平台机构的记录，仍为33,807件（1.9291%）。前者解决名称级排行覆盖不足，后者保留严格的
+平台机构身份，不把名称相似或未经审核的候选关系冒充确认机构。
+
+全局节点和列表必须使用`ads_patent_analysis_assignee`，不能对Topic×申请人表跨Topic求和。该表包含
+548,274个申请人节点，排名覆盖1—548,274；其中546,566个`unmatched`、33个`ambiguous`、1,675个
+`confirmed`，确认节点连接1,454个平台机构。节点可以用`assignee_name`和`assignee_country_code`
+展示，以`patent_count`控制大小并按`assignee_rank`排序；只有`platform_institution_id`非空的确认节点
+才允许跳转平台机构画像。
+
+专利—机构节点展示统一读取`ads_patent_analysis_patent_institution`，不得再用确认关系表限制主列表。
+该表保留2,767,360条来源关系，覆盖1,664,521件分析专利（94.9828%）：34,115条关系标记
+`is_confirmed=true`，其余2,733,245条标记为false并使用`assignee:<assignee_key>`作为稳定节点ID。
+所有关系均保留`resolution_status`，消费者可以展示确认状态，但默认节点和关系数量包含全部状态。
 
 `ads_patent_analysis_cross_metric`当前按全部3,484个Topic与CN、US、EP、WO四个辖区生成完整笛卡尔
 网格，共13,936行。没有专利命中的2,131个组合仍保留一行并写
 `joint_patent_count=0`、`joint_share=0`、`jaccard_score=0`和`lift_score=0`，保证矩阵无缺格。
-`is_topn_truncated`固定为false。EP是区域专利局、WO是国际申请体系，不能解释为国家。
+`is_topn_truncated`固定为false。每个单元格同时物化2020—2022对照期与2023—2025近期窗口的
+`baseline_patent_count`、`recent_patent_count`、`patent_count_change`、`growth_rate`和
+`trend_direction`。13,936格中UP 2,361、DOWN 5,208、STABLE 551、INSUFFICIENT_EVIDENCE 5,816；
+对照期为0时增长率保持NULL，避免制造无穷增长率；两期合计少于5件时趋势方向仍标记为证据不足。
+
+`ads_patent_analysis_cross_year`按3,484个Topic、4个辖区和1990—2025共36个自然年生成完整网格，
+共501,696行，其中334,362个零命中年度仍显式保留。表内提供年度专利数、专利族数、辖区年度占比、
+上一年专利数、同比增量、同比增长率和趋势方向；160,715行具有可计算的同比增长率。EP是区域专利局、
+WO是国际申请体系，不能解释为国家。
 
 ### 42.4 `ads_patent_analysis_topic_patent`
 
@@ -5420,7 +5534,7 @@ ORDER BY statistics_month;
 | `ranking_method` | `VARCHAR(64) NOT NULL` | 固定`CITED_SCIENCE_EVIDENCE_V1` |
 | `metrics_as_of_date` | `DATE NOT NULL` | 来源指标统计截止日 |
 | `metric_definition_version` | `VARCHAR(64) NOT NULL` | 专利分析指标口径版本 |
-| `data_version` | `BIGINT NOT NULL` | 当前正式版本`202610270301` |
+| `data_version` | `BIGINT NOT NULL` | 当前正式版本`202610280301` |
 | `update_time` | `DATETIME(3) NOT NULL` | UTC生成时间 |
 
 `core_patent_rank`依次按`evidence_work_count`、`primary_evidence_work_count`、`max_topic_score`、
@@ -5433,12 +5547,30 @@ SELECT r.patent_id,p.title,p.abstract_zh,p.abstract_en,p.publication_date,p.gran
        r.evidence_work_count,r.relation_weight
 FROM ads_patent_analysis_topic_patent r
 JOIN ads_patent_profile p ON p.patent_id=r.patent_id
-WHERE r.run_id='bdaf2431-7300-43ae-a055-d8985b84baaa'
+WHERE r.run_id='e4dcc585-a9e4-458e-a646-0c441c3eda76'
   AND r.topic_id=:topic_id AND r.is_core_patent=true
 ORDER BY r.core_patent_rank;
 ```
 
-### 42.5 发布与验证
+### 42.5 6.8.0—6.11.0新增表实际行数
+
+| 表 | Iceberg / Doris行数 | 支持范围 |
+|---|---:|---|
+| `ads_patent_analysis_classification` | 214,910 | IPC 53,085；CPC 161,825 |
+| `ads_patent_analysis_assignee` | 548,274 | 全局申请人节点；名称级覆盖94.9828% |
+| `ads_patent_analysis_patent_institution` | 2,767,360 | 覆盖1,664,521件专利；覆盖率94.9828% |
+| `ads_patent_analysis_cross_year` | 501,696 | 3,484个Topic × 4个辖区 × 36年完整趋势网格 |
+| `ads_patent_analysis_topic_cpc` | 5,236,443 | 3,480个Topic；完整分布 |
+| `ads_patent_analysis_topic_assignee` | 2,400,215 | 3,473个Topic；531,094个规范申请人Key全部命中全局申请人表 |
+| `ads_patent_analysis_topic_institution` | 22,552 | Topic×确认机构 |
+| `ads_patent_analysis_jurisdiction_institution` | 2,492 | 辖区×确认机构 |
+| `ads_patent_analysis_institution_classification` | 162,540 | 确认机构×IPC/CPC |
+| `ads_patent_analysis_institution_year` | 5,269 | 确认机构年度趋势 |
+| `ads_patent_analysis_institution_inventor` | 26,379 | 确认机构×来源发明人姓名 |
+| `ads_patent_analysis_ipc_topic` | 2,482,356 | IPC×Topic完整分布 |
+| `ads_patent_analysis_entity_patent` | 633,456 | 辖区80、IPC625,515、机构7,861；每实体最多20件 |
+
+### 42.6 发布与验证
 
 ```bash
 uv run --frozen alembic upgrade head
