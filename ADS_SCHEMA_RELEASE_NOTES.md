@@ -6,6 +6,78 @@
 - MINOR：向后兼容地新增表、字段或指标。
 - PATCH：不改变接口的说明、约束或索引修正。
 
+## 6.18.0 — 2026-10-30
+
+- 新增`ads_technology_hotspot_yearly`，按19,430个技术点×2015—2026完整年度网格发布论文数、年度新增
+  引用数、热度指数、同比变化和三年移动平均，不修改关键词粒度的`ads_technology_hotspot_signal`。
+- `paper_count`固定使用ETO Cluster的top/seed论文并按发表年统计；`new_citation_count`连接固定
+  `dwd_work_count_by_year` Snapshot，按论文实际收到引用的年份统计，不再用当年发表论文的当前累计
+  被引冒充年度新增引用。
+- 论文活跃度和引用关注度在同年同主Subfield内对`ln(1+count)`计算百分位，热度指数固定为前者60%加
+  后者40%；主Topic不能连接DWD Topic的技术进入`UNCLASSIFIED`组，不静默丢弃。
+- 按操作方明确要求，2026不执行部分年度折算，2015—2026全部标记`coverage_status=COMPLETE`；零命中
+  年度保留0，首年同比和上年热度为0时的同比率保留NULL。
+- 新增独立固定输入配置`config/technology_hotspot_yearly_v1.json`、发布入口
+  `./scripts/publish_technology_hotspot_yearly_v1.sh`和Doris迁移
+  `sql/doris/ads_schema_6_18_0_technology_hotspot_yearly.sql`。
+- 2026-10-30完成正式发布：Iceberg Snapshot为`3887317550858712591`，Iceberg与Doris均为233,160行、
+  19,430个技术点和12个年度；论文总数90,911、年度新增引用总数87,235,893，逐年行数及汇总完全一致，
+  重复Key、负计数、越界分数、非法状态和非`COMPLETE`行均为0。
+
+## 6.17.0 — 2026-10-30
+
+- 为`ads_project_profile`新增非空`amount_cny_value_type`，使用`SOURCE_CONVERTED`、
+  `SIMULATED_SHENZHEN_MEDIAN_V1`和`UNAVAILABLE`明确区分来源换算、深圳项目模拟及不可用金额。
+- 从当前深圳机构关联项目中2,063个真实换算金额冻结人民币中位数`581,984.8125`元；对缺失金额项目
+  使用`project_id + 固定seed`的CRC32确定性生成±20%浮动，同一项目幂等重跑保持相同金额。
+- 模拟只写人民币`amount_cny`和独立策略标识，不修改来源`amount/currency`、汇率字段或归一状态；
+  模拟金额不得解释为实际拨款、承担经费或深圳财政投入。
+- 新增迁移`sql/doris/ads_schema_6_17_0_project_shenzhen_simulated_amount.sql`，并要求深圳项目金额、
+  类型标识、范围、幂等性及非深圳未命中约束全部通过后发布。
+
+## 6.16.0 — 2026-10-29
+
+- 为`ads_technology_disruption_assessment`新增`leading_topic_id`、`leading_topic_name_zh`和
+  `leading_topic_name_en`，使列表和详情查询无需回连`ads_technology_profile`及公共Topic维表。
+- `leading_topic_id`严格复制固定Snapshot画像中的OpenAlex来源Topic ID；中文名优先使用最新已批准
+  `zh-Hans/title`本地化值并回退DWD中文名，英文名优先使用DWD英文名并回退OpenAlex原始名。
+- 新版本固定`dwd_topic`和本地化文本Snapshot，要求19,430条评估的Topic ID及中英文名全部非空；
+  评分公式、门槛、状态、`assessment_id`和模型版本均不改变，历史Iceberg Snapshot不改写。
+- 新主版本加载后，以更高行级`data_version`重新发布既有92条证据约束详情，避免唯一键版本更新覆盖
+  `detail_*`字段；详情内容、Prompt及审核状态不改变。
+- 新增Doris迁移`sql/doris/ads_schema_6_16_0_technology_disruption_leading_topic.sql`及独立发布配置
+  `config/technology_disruption_ads_v1_7.json`。
+
+## 6.15.0 — 2026-10-29
+
+- 使用智谱API为92条`DISRUPTIVE_CANDIDATE`生成中文`detail_content`和`impact_assessment`，输入固定为当前评估
+  分项、最多8篇代表论文（含可用摘要）和最多8件代表专利；禁止模型补充未提供的市场、政策、机构或
+  产品落地事实。
+- 新增生成方法、模型、Prompt、审核状态、生成时间及论文/专利证据计数字段；模型结果首版统一标记
+  `PENDING_REVIEW`，不能展示成专家确认结论。
+- 原始输入、输入哈希、模型响应和token用量保存在断点续跑缓存；正式结果先写不可变Iceberg
+  `technology_disruption_detail_seed`，再以更高`data_version`部分更新Doris评估表。
+- 详情生成固定使用`glm-5.3-flash`、`reasoning_effort=low`和单并发；增加单条pilot、180秒整次请求
+  硬截止、请求级进度日志、空响应/截断校验、携带校验错误的结构化修复重试及失败后停止继续排队，
+  避免思考模型长期占用首条任务或重复返回相同的无效JSON。
+- 正式发布以DWD 1.16.0的
+  `technology_disruption_dwd_v1_20261030.dwd_technology_disruption_detail`为不可变上游，Doris ADS
+  只做92条候选详情冗余；原文长度偏离Prompt目标但按操作方明确指示保留，不执行静默截断。
+- 2026-10-30完成正式发布：DWD写入92行、Iceberg Snapshot为`3485583994851802092`，论文与专利
+  证据计数分别对账为726；Doris以`data_version=202610290801`部分更新92条候选，正文和影响评估
+  均无空值，非候选行未写入详情字段。
+
+## 6.14.0 — 2026-10-29
+
+- 为`ads_technology_disruption_assessment`新增`technology_name_zh`，从已批准、内容哈希固定的翻译
+  交付文件发布不可变Iceberg seed后冗余中文技术名称，列表查询不再需要为中文名额外连接画像表。
+- Seed由19,420条翻译交付记录和画像中10条此前已有中文名组成；两部分均处于同一操作方批准范围，
+  发布前校验合计19,430个唯一技术ID且中文名全部非空。
+- 评分公式、门槛、状态、`assessment_id`和模型版本均不改变；新发布只提升数据版本并写入独立
+  `technology_disruption_ads_v1_6_20261029` namespace，历史Iceberg Snapshot不改写。
+- 新增Doris迁移`sql/doris/ads_schema_6_14_0_technology_disruption_name_zh.sql`，生成和发布校验要求
+  19,430条评估的中文名称全部非空。
+
 ## 6.13.0 — 2026-10-29
 
 - 为`ads_technology_community`新增`primary_field_*`、`primary_subfield_*`平台ID及中英文发布快照，

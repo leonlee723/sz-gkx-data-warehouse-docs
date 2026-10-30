@@ -2,7 +2,7 @@
 
 ## 1. 主体名称与边界
 
-**Schema version：6.13.0。** 本文件是下游 Doris ADS 逻辑结构与业务命名的唯一真实来源；
+**Schema version：6.18.0。** 本文件是下游 Doris ADS 逻辑结构与业务命名的唯一真实来源；
 可执行物理 DDL 包括 `sql/doris/` 下的 Talent、Institution 基线文件及版本化
 `ads_schema_*` 迁移文件；新增公共学科维表的 DDL 为
 [`sql/doris/ads_schema_1_7_0_publication_profiles.sql`](sql/doris/ads_schema_1_7_0_publication_profiles.sql)；
@@ -20,6 +20,16 @@ MVP论文摘要扩展迁移为
 [`sql/doris/ads_schema_6_12_0_institution_collaboration_subfield.sql`](sql/doris/ads_schema_6_12_0_institution_collaboration_subfield.sql)；
 技术簇主Field/Subfield分类迁移为
 [`sql/doris/ads_schema_6_13_0_technology_community_discipline.sql`](sql/doris/ads_schema_6_13_0_technology_community_discipline.sql)；
+颠覆性技术评估中文名称冗余迁移为
+[`sql/doris/ads_schema_6_14_0_technology_disruption_name_zh.sql`](sql/doris/ads_schema_6_14_0_technology_disruption_name_zh.sql)；
+颠覆性技术预警详情与影响评估迁移为
+[`sql/doris/ads_schema_6_15_0_technology_disruption_detail.sql`](sql/doris/ads_schema_6_15_0_technology_disruption_detail.sql)；
+颠覆性技术评估领先Topic双语快照迁移为
+[`sql/doris/ads_schema_6_16_0_technology_disruption_leading_topic.sql`](sql/doris/ads_schema_6_16_0_technology_disruption_leading_topic.sql)；
+深圳关联项目缺失金额的确定性模拟与真假标识迁移为
+[`sql/doris/ads_schema_6_17_0_project_shenzhen_simulated_amount.sql`](sql/doris/ads_schema_6_17_0_project_shenzhen_simulated_amount.sql)；
+技术点年度热度、论文和新增引用曲线迁移为
+[`sql/doris/ads_schema_6_18_0_technology_hotspot_yearly.sql`](sql/doris/ads_schema_6_18_0_technology_hotspot_yearly.sql)；
 ORCID 经历及机构扩展迁移为
 [`sql/doris/ads_schema_1_8_0_orcid_experience.sql`](sql/doris/ads_schema_1_8_0_orcid_experience.sql)；
 人才—项目关系迁移为
@@ -271,6 +281,7 @@ Topic论文全球国家当前快照迁移为
 | `ads_technology_yearly_metrics` | 技术节点一年 | `technology_node_id, statistics_year` | 4.6.0新增并发布 |
 | `ads_technology_hotspot_signal` | 技术节点的一个语义信号 | `technology_node_id, signal_id` | 4.6.0新增并发布 |
 | `ads_technology_hotspot_snapshot` | 技术节点一个热点模型版本 | `technology_node_id, model_version` | 4.6.0新增并发布 |
+| `ads_technology_hotspot_yearly` | 技术节点一个自然年的热度曲线点 | `technology_node_id, statistics_year, model_version` | 6.18.0新增；论文按发表年、引用按收到引用年 |
 | `ads_technology_potential_dimension` | 技术潜力评估的一个维度 | `technology_node_id, model_version, scenario_id, dimension_code` | 4.6.0新增并发布 |
 | `ads_technology_potential_assessment` | 技术的一次潜力评估 | `assessment_id` | 4.6.0新增并发布 |
 | `ads_technology_potential_evidence` | 潜力评估的一条证据 | `assessment_id, evidence_id` | 4.6.0新增并发布 |
@@ -2521,6 +2532,7 @@ Grant ID 只通过 identity bridge 映射。开始年优先采用来源 `start_y
 | `amount_cny_exchange_rate_source` | `VARCHAR(64)` | 操作方提供的汇率来源类型 |
 | `amount_cny_normalization_status` | `VARCHAR(40)` | `CONVERTED_TO_CNY_FIXED_RATE/INVALID_AMOUNT/CURRENCY_MISSING/FX_RATE_MISSING`；没有来源金额时为空 |
 | `amount_cny_conversion_policy` | `VARCHAR(64)` | 当前为`FIXED_SNAPSHOT_CNY_PER_CURRENCY_UNIT_V2`；仅成功换算时填写 |
+| `amount_cny_value_type` | `VARCHAR(48) NOT NULL` | `SOURCE_CONVERTED`为来源金额换算，`SIMULATED_SHENZHEN_MEDIAN_V1`为深圳项目模拟金额，`UNAVAILABLE`为当前无人民币金额 |
 
 固定汇率如下；均为“1单位原币对应人民币元数”：
 
@@ -2532,6 +2544,12 @@ Grant ID 只通过 identity bridge 映射。开始年优先采用来源 `start_y
 `amount<=0`固定标记为`INVALID_AMOUNT`且`amount_cny=NULL`。`amount_cny`上的倒排索引用于等值和范围
 过滤；Doris的`ORDER BY amount_cny`仍执行TopN/排序，不能把倒排索引解释为物理排序索引。该固定快照
 是名义金额横向换算，不代表项目发生年份的历史汇率或购买力。
+
+6.17.0只在Doris Serving层为当前深圳统一城市ID关联且`amount_cny`缺失的项目补充模拟人民币金额。
+基准中位数固定为当前2,063个来源换算项目的`581,984.8125`元；按`project_id`与固定seed的CRC32
+确定性生成0.8000至1.2000系数，因此同一项目重跑结果不变。模拟值只写`amount_cny`，不修改来源
+`amount`、`currency`、汇率及归一状态。聚合和导出必须同时返回`amount_cny_value_type`，不得把
+`SIMULATED_SHENZHEN_MEDIAN_V1`解释为真实拨款、项目承担金额或财政投入事实。
 
 `ads_talent_project` 是人才与科研项目的完整 ADS 关系入口，粒度为一名人才关联一个项目一行，
 逻辑主键为 `talent_id, project_id`。字段如下：
@@ -3126,7 +3144,7 @@ Key重复、Topic孤儿、人才孤儿、覆盖状态、数值范围、Top 20排
 | 技术网络可视化 | `ads_technology_graph_edge` | `ads_technology_profile` | 按关系类型、证据等级和最低置信分筛边，再连接两端画像；587,252条候选关系 |
 | 技术节点下钻 | `ads_technology_profile` | `ads_technology_paper`, `ads_technology_patent`, `ads_technology_institution`, `ads_technology_application_case` | 按同一节点ID查代表论文、专利、机构/企业和项目案例 |
 | 语义热点提取 | `ads_technology_hotspot_signal` | `ads_technology_profile` | 当前是ETO标签关键词及年度代理，尚不是全文NLP新短语抽取 |
-| 热点趋势分析 | `ads_technology_hotspot_snapshot` | `ads_technology_yearly_metrics` | Snapshot用于状态/排名，Yearly用于曲线；19,430个结果 |
+| 热点趋势分析 | `ads_technology_hotspot_yearly` | `ads_technology_hotspot_snapshot`, `ads_technology_yearly_metrics` | Yearly提供2015—2026完整年度论文、新增引用和热度曲线；Snapshot保留当前状态/排名 |
 | 潜力评估 | `ads_technology_potential_assessment` | `ads_technology_potential_dimension`, `ads_technology_potential_evidence` | 综合表筛选，dimension解释分项，evidence回溯论文/专利/项目 |
 | 多技术对比 | `ads_technology_potential_dimension` | `ads_technology_potential_assessment` | 对选中节点按`dimension_code`透视生成雷达图；不保存临时对比 |
 | 阶段自动判定 | `ads_technology_stage_assessment` | `ads_technology_assessment_evidence` | 当前发布可复算规则基线，不冒充联网LLM判断 |
@@ -3589,6 +3607,56 @@ set +a
 | 版本与审计 | `data_version` | `BIGINT NOT NULL` | 同一业务Key的单调数据版本 |
 | 版本与审计 | `update_time` | `DATETIME(3) NOT NULL` | UTC生成时间 |
 
+#### 24.12.9a `ads_technology_hotspot_yearly`
+
+技术点年度论文、新增引用、热度指数及增长曲线。逻辑Key：
+`technology_node_id, statistics_year, model_version`。本表不改变
+`ads_technology_hotspot_signal`的关键词信号语义，也不以发表年累计被引冒充年度新增引用。
+
+论文范围固定为ETO Cluster的`is_eto_top_paper=true`关系；`paper_count`按论文发表年统计，
+`new_citation_count`按`dwd_work_count_by_year.year`统计该技术全部范围内论文在对应自然年新收到的引用。
+2015—2026生成完整技术点×年度网格，零命中显式保存为0；按操作方要求，2026与其他年份一样标记
+`coverage_status=COMPLETE`，不执行部分年折算。
+
+论文活跃度和引用关注度分别使用同年、同主Subfield内`ln(1+count)`百分位；主Topic无法连接DWD Topic
+时进入`UNCLASSIFIED`可比组。年度热度固定为：
+
+```text
+hotspot_score = 0.60 * paper_activity_score
+              + 0.40 * citation_attention_score
+```
+
+首年同比为空；上年热度为0时同比率为空，避免无穷值。`rolling_3y_score`为含当年的三年移动平均；
+`trend_status`只表示年度方向，不替代领域专家对短期热点或长期趋势的判断。完整输入Snapshot、运行命令
+和发布核验见[`docs/technology_hotspot_yearly_v1.md`](docs/technology_hotspot_yearly_v1.md)。
+
+| 字段组 | 字段 | Doris类型 | 说明 |
+|---|---|---|---|
+| Key | `technology_node_id` | `VARCHAR(64) NOT NULL` | 确定性技术点ID |
+| Key | `statistics_year` | `SMALLINT NOT NULL` | 自然统计年 |
+| Key/版本 | `model_version` | `VARCHAR(64) NOT NULL` | 年度热度模型版本 |
+| 学科 | `primary_subfield_source_id` | `VARCHAR(64) NOT NULL` | 主Topic对应OpenAlex Subfield来源ID；未映射为UNCLASSIFIED |
+| 原始指标 | `paper_count` | `BIGINT NOT NULL` | 当年发表的ETO top/seed去重论文数 |
+| 原始指标 | `new_citation_count` | `BIGINT NOT NULL` | 范围论文当年新收到的引用数 |
+| 分母 | `total_observed_paper_count` | `BIGINT NOT NULL` | 同年全部技术点观察论文关系数 |
+| 分母 | `total_observed_new_citation_count` | `BIGINT NOT NULL` | 同年全部技术点观察新增引用数 |
+| 份额 | `paper_share`, `citation_share` | `DECIMAL(18,12)` | 技术点占同年观察总量比例 |
+| 标准化 | `paper_activity_score` | `DECIMAL(9,6) NOT NULL` | 同年同主Subfield论文活跃度百分位分 |
+| 标准化 | `citation_attention_score` | `DECIMAL(9,6) NOT NULL` | 同年同主Subfield引用关注度百分位分 |
+| 指数 | `hotspot_score` | `DECIMAL(9,6) NOT NULL` | 0.60论文活跃度加0.40引用关注度 |
+| 曲线 | `hotspot_score_yoy_change` | `DECIMAL(9,6)` | 同比变化量；首年为空 |
+| 曲线 | `hotspot_score_yoy_rate` | `DECIMAL(18,8)` | 同比增长率；首年或上年为0时为空 |
+| 曲线 | `rolling_3y_score` | `DECIMAL(9,6) NOT NULL` | 三年移动平均热度 |
+| 状态 | `trend_status` | `VARCHAR(32) NOT NULL` | BASELINE/RISING/STABLE/DECLINING/INSUFFICIENT_EVIDENCE |
+| 状态 | `coverage_status` | `VARCHAR(32) NOT NULL` | 本版本固定COMPLETE |
+| 血缘 | `source_cluster_paper_snapshot_id` | `VARCHAR(32) NOT NULL` | 技术—论文Snapshot |
+| 血缘 | `source_work_count_by_year_snapshot_id` | `VARCHAR(32) NOT NULL` | 年度引用Snapshot |
+| 血缘 | `source_topic_snapshot_id` | `VARCHAR(32) NOT NULL` | Topic学科归属Snapshot |
+| 审计 | `metrics_as_of_date` | `DATE NOT NULL` | 指标统计截止日 |
+| 审计 | `metric_definition_version` | `VARCHAR(64) NOT NULL` | 指标口径版本 |
+| 审计 | `data_version` | `BIGINT NOT NULL` | 行级数据版本 |
+| 审计 | `update_time` | `DATETIME(3) NOT NULL` | UTC生成时间 |
+
 #### 24.12.10 `ads_technology_potential_dimension`
 
 候选技术产业化潜力的分维度评分。逻辑 Key：`technology_node_id, model_version, scenario_id, dimension_code`。
@@ -3923,6 +3991,10 @@ v1.4实际发布19,430条评估：`DISRUPTIVE_CANDIDATE` 92条、`NOT_FLAGGED` 3
 | 身份 | `assessment_id` | `VARCHAR(64) NOT NULL` | 评估确定性ID |
 | 身份 | `technology_node_id` | `VARCHAR(64)` | 候选技术节点ID |
 | 展示 | `technology_name_original` | `STRING` | 评估时固定的原始名称 |
+| 展示 | `technology_name_zh` | `STRING` | 从已批准、内容哈希固定的翻译交付seed冗余的中文技术名称 |
+| 学科 | `leading_topic_id` | `VARCHAR(64)` | 从画像冗余的OpenAlex来源Topic ID（`T…`） |
+| 学科 | `leading_topic_name_zh` | `STRING` | 已批准中文本地化优先、DWD中文名回退的Topic名称快照 |
+| 学科 | `leading_topic_name_en` | `STRING` | DWD英文名优先、OpenAlex原始名回退的Topic名称快照 |
 | 版本 | `model_version` | `VARCHAR(64)` | 固定模型版本 |
 | 结论 | `disruption_status` | `VARCHAR(32)` | 候选、观察、未标记或证据不足 |
 | 指标 | `disruption_proxy_score` | `DECIMAL(9,6)` | 论文证据代理综合分，不是概率 |
@@ -3943,8 +4015,25 @@ v1.4实际发布19,430条评估：`DISRUPTIVE_CANDIDATE` 92条、`NOT_FLAGGED` 3
 | 状态 | `assessment_status` | `VARCHAR(64)` | 是否满足最低论文证据门槛 |
 | 状态 | `assessment_method` | `VARCHAR(64)` | 固定论文证据代理方法 |
 | 边界 | `interpretation_note` | `STRING` | 页面必须展示的解释边界 |
+| 模型详情 | `detail_content` | `STRING` | 智谱仅基于固定评分、代表论文与代表专利生成的中文详细内容 |
+| 模型详情 | `impact_assessment` | `STRING` | 智谱生成的潜在科研影响、技术转化影响与不确定性评估 |
+| 模型审计 | `detail_generation_method` | `VARCHAR(64)` | 固定为证据约束摘要方法 |
+| 模型审计 | `detail_model_version`、`detail_prompt_version` | `VARCHAR` | 模型与Prompt版本 |
+| 模型审计 | `detail_review_status` | `VARCHAR(32)` | 首版固定`PENDING_REVIEW`，不得冒充专家确认结论 |
+| 模型审计 | `detail_generated_at` | `DATETIME(3)` | UTC生成时间 |
+| 模型证据 | `detail_evidence_paper_count`、`detail_evidence_patent_count` | `INT` | 实际进入模型上下文的代表论文、专利数量 |
 | 审计 | `metrics_as_of_date`, `metric_definition_version` | `DATE/VARCHAR` | 统计截止日与口径版本 |
 | 审计 | `data_version`, `update_time` | `BIGINT/DATETIME(3)` | 数据版本与生成时间 |
+
+详情字段的正式上游发布为
+`iceberg.technology_disruption_dwd_v1_20261030.dwd_technology_disruption_detail`。Doris仅冗余当前
+92条候选的展示字段，DWD保留provider、逐条input_hash、固定评估版本和公共血缘字段。首版文本按
+操作方明确指示原样发布；`detail_review_status=PENDING_REVIEW`必须与正文同时查询和展示，不能因已
+进入DWD/ADS就解释为专家已确认。
+
+2026-10-30生产对账：DWD Snapshot `3485583994851802092`共92行；Doris当前模型版本的92条
+`DISRUPTIVE_CANDIDATE`均已写入详情，`data_version=202610290801`，详情和影响评估缺失数均为0，
+论文与专利证据计数总和均为726。其他状态行的详情字段保持NULL。
 
 ### 24.14 技术点名称全文索引（6.0.1）
 
