@@ -2,7 +2,7 @@
 
 ## 1. 主体名称与边界
 
-**Schema version：6.18.0。** 本文件是下游 Doris ADS 逻辑结构与业务命名的唯一真实来源；
+**Schema version：6.28.0。** 本文件是下游 Doris ADS 逻辑结构与业务命名的唯一真实来源；
 可执行物理 DDL 包括 `sql/doris/` 下的 Talent、Institution 基线文件及版本化
 `ads_schema_*` 迁移文件；新增公共学科维表的 DDL 为
 [`sql/doris/ads_schema_1_7_0_publication_profiles.sql`](sql/doris/ads_schema_1_7_0_publication_profiles.sql)；
@@ -30,6 +30,31 @@ MVP论文摘要扩展迁移为
 [`sql/doris/ads_schema_6_17_0_project_shenzhen_simulated_amount.sql`](sql/doris/ads_schema_6_17_0_project_shenzhen_simulated_amount.sql)；
 技术点年度热度、论文和新增引用曲线迁移为
 [`sql/doris/ads_schema_6_18_0_technology_hotspot_yearly.sql`](sql/doris/ads_schema_6_18_0_technology_hotspot_yearly.sql)；
+深圳机构Field与Primary Topic项目关联资金物化迁移为
+[`sql/doris/ads_schema_6_19_0_shenzhen_institution_funding.sql`](sql/doris/ads_schema_6_19_0_shenzhen_institution_funding.sql)，
+发布SQL为
+[`sql/doris/publish_shenzhen_institution_funding_v1.sql`](sql/doris/publish_shenzhen_institution_funding_v1.sql)；
+深圳机构关联项目全额经费主画像字段迁移为
+[`sql/doris/ads_schema_6_20_0_institution_project_funding.sql`](sql/doris/ads_schema_6_20_0_institution_project_funding.sql)，
+发布SQL为
+[`sql/doris/publish_institution_project_funding_v1.sql`](sql/doris/publish_institution_project_funding_v1.sql)；
+机构技术力中文名称快照迁移为
+[`sql/doris/ads_schema_6_21_0_institution_technology_power_name_zh.sql`](sql/doris/ads_schema_6_21_0_institution_technology_power_name_zh.sql)，
+回填SQL为
+[`sql/doris/publish_institution_technology_power_name_zh_v1.sql`](sql/doris/publish_institution_technology_power_name_zh_v1.sql)；
+科研资源短板、十城基准与Subfield年度趋势迁移为
+[`sql/doris/ads_schema_6_25_0_resource_shortage.sql`](sql/doris/ads_schema_6_25_0_resource_shortage.sql)，
+发布入口为[`scripts/publish_resource_shortage_v1.sh`](scripts/publish_resource_shortage_v1.sh)；
+科研资源统一项目金额与来源字段迁移为
+[`sql/doris/ads_schema_6_27_0_resource_shortage_unified_funding.sql`](sql/doris/ads_schema_6_27_0_resource_shortage_unified_funding.sql)；
+科研资源优化建议及逐指标证据迁移为
+[`sql/doris/ads_schema_6_28_0_resource_optimization_recommendation.sql`](sql/doris/ads_schema_6_28_0_resource_optimization_recommendation.sql)，
+发布SQL为
+[`sql/doris/publish_resource_optimization_recommendation_v1.sql`](sql/doris/publish_resource_optimization_recommendation_v1.sql)；
+智能推荐与动态更新迁移为
+[`sql/doris/ads_schema_6_26_0_smart_recommendation.sql`](sql/doris/ads_schema_6_26_0_smart_recommendation.sql)，
+首版发布SQL为
+[`sql/doris/publish_smart_recommendation_mvp_v1.sql`](sql/doris/publish_smart_recommendation_mvp_v1.sql)；
 ORCID 经历及机构扩展迁移为
 [`sql/doris/ads_schema_1_8_0_orcid_experience.sql`](sql/doris/ads_schema_1_8_0_orcid_experience.sql)；
 人才—项目关系迁移为
@@ -168,7 +193,7 @@ Topic论文全球国家当前快照迁移为
 ## 2. 公共约束
 
 - 数据库：`gkx_technology_analysis_dev`；存储引擎：Apache Doris OLAP。
-- 当前 153 张表均为 `UNIQUE KEY` + Merge-on-Write 当前状态表；事实与画像表按其主体 ID
+- 当前 188 张表均为 `UNIQUE KEY` + Merge-on-Write 当前状态表；事实与画像表按其主体 ID
   HASH 分桶，低基数机构类型维表使用 1 个桶。
 - 所有平台主体 ID 使用 `VARCHAR(64)`，与任何单一来源 ID 解耦；外部 ID 通过持久 identity
   bridge 映射，不由来源 ID、姓名、批次顺序或行号推导。
@@ -260,12 +285,20 @@ Topic论文全球国家当前快照迁移为
 | `ads_talent_project` | 一名人才关联一个科研项目一行 | `talent_id, project_id` | 1.9.0新增并发布 |
 | `ads_project_institution` | 一个项目关联一个机构一行 | `project_id, institution_id` | 1.4.0新增 |
 | `ads_project_topic` | 一个项目关联一个Topic一行 | `project_id, topic_id` | 1.4.0新增 |
+| `ads_shenzhen_institution_field_funding` | 一家深圳机构一个Field一行 | `institution_id, field_id` | 6.19.0新增并发布 |
+| `ads_shenzhen_institution_direction_funding` | 一家深圳机构一个Primary Topic一行 | `institution_id, primary_topic_id` | 6.19.0新增并发布；携带Subfield和Field |
 | `ads_talent_yearly_location` | 一名人才一年一个观察位置一行 | `talent_id, statistics_year, location_id` | 4.5.0已发布 |
 | `ads_geo_yearly_metrics` | 一个位置一个自然年一行 | `location_id, statistics_year` | 1.6.0已发布 |
 | `ads_geo_yearly_discipline_metrics` | 一个位置一年一个Topic一行 | `location_id, statistics_year, topic_id` | 1.6.0已发布 |
 | `ads_topic_country_snapshot` | 一个Topic在一个国家/地区的当前完整年度论文分布快照 | `topic_id, country_location_id` | 6.1.0新增并发布 |
 | `ads_geo_yearly_institution_type_metrics` | 一个位置一年一种机构类型一行 | `location_id, statistics_year, institution_type_id` | 1.6.0已发布 |
 | `ads_geo_yearly_index` | 一个位置一年一种指数一行 | `location_id, statistics_year, index_code` | 1.6.0预留空表 |
+| `ads_resource_benchmark_city` | 一个基准版本的一座城市一行 | `benchmark_version, city_location_id` | 6.25.0新增并发布固定十城基准 |
+| `ads_city_subfield_resource_yearly` | 一座基准城市一年一个Subfield一行 | `city_location_id, statistics_year, subfield_id` | 6.25.0新增并发布2015—2025完整网格 |
+| `ads_institution_subfield_resource_yearly` | 一家十城机构一年一个有证据Subfield；深圳补齐零值网格 | `institution_id, statistics_year, subfield_id` | 6.25.0新增并发布 |
+| `ads_research_resource_shortage_yearly` | 一个城市或机构一年一个Subfield的一项资源指标 | `target_type, target_id, statistics_year, subfield_id, metric_code, benchmark_version` | 6.25.0新增；差距超过50%标关键短板 |
+| `ads_resource_optimization_recommendation` | 一个城市或机构一个年度一个Subfield一条聚合优化建议 | `recommendation_id` | 6.28.0新增；仅使用已评估、正值、关键短板 |
+| `ads_resource_optimization_recommendation_evidence` | 一条优化建议的一项来源短板指标证据 | `recommendation_id, metric_code, benchmark_version` | 6.28.0新增；可回溯目标、基准、差距和覆盖状态 |
 | `ads_technology_profile` | 一个技术点一行 | `technology_node_id` | 4.6.0新增；6.0.0确认为ETO Cluster技术点 |
 | `ads_technology_graph_edge` | 一条候选技术关系一行 | `edge_id` | 4.6.0新增并发布 |
 | `ads_technology_graph_node` | 一个可视化技术节点一行 | `technology_node_id` | 4.7.0新增，携带主簇群与演进摘要 |
@@ -347,6 +380,18 @@ Topic论文全球国家当前快照迁移为
 | `ads_research_problem_strategic_advice` | 一条问题或学科范围的战略建议 | `advice_id` | 5.15.0补充正式Topic/Field/Domain建议 |
 | `ads_research_problem_update_signal` | 一个问题的一条增量变化信号 | `signal_id` | 5.4.0新增；等待跨发布比较 |
 | `ads_research_problem_collaboration_recommendation` | 一个问题的一个潜在合作领域推荐 | `recommendation_id` | 5.11.0新增并发布 |
+| `ads_talent_capability_model` | 一个已发布人员能力与问题匹配模型版本 | `model_version` | 6.22.0新增并发布 |
+| `ads_talent_capability_assessment` | 一名人才在一个固定模型下的人才级能力评分 | `talent_id, model_version` | 6.22.0新增并发布 |
+| `ads_talent_capability_dimension_metric` | 一名人才一个评分维度下的一项解释指标 | `talent_id, model_version, dimension_code, metric_code` | 6.22.0新增并发布 |
+| `ads_talent_research_problem_discipline_match_topic` | 一名人才与一个深圳相关问题的一个候选Topic证据 | `talent_id, problem_id, topic_id, match_model_version` | 6.22.0新增并发布 |
+| `ads_talent_research_problem_discipline_match` | 一名人才与一个深圳相关基础研究问题的匹配结果 | `talent_id, problem_id, match_model_version` | 6.22.0新增并发布 |
+| `ads_recommendation_run` | 一次智能推荐模型运行一行 | `recommendation_run_id` | 6.26.0新增并发布 |
+| `ads_scientific_update_signal` | 一次运行中一个主体的一条新增或变更信号 | `signal_id` | 6.26.0新增并发布 |
+| `ads_recommendation_paper` | 一次运行的一篇Top论文 | `recommendation_run_id, paper_id` | 6.26.0新增并发布 |
+| `ads_recommendation_talent` | 一次运行推荐的一名高H指数人才 | `recommendation_run_id, talent_id` | 6.26.0新增并发布 |
+| `ads_recommendation_resource_direction` | 一次运行推荐的一个Topic资源方向 | `recommendation_run_id, topic_id` | 6.26.0新增并发布 |
+| `ads_recommendation_investment_direction` | 一次运行推荐的一个Technology投资方向 | `recommendation_run_id, technology_node_id` | 6.26.0新增并发布 |
+| `ads_recommendation_evidence` | 一个推荐结果的一条可追溯证据 | `recommendation_run_id, recommendation_type, recommendation_id, evidence_id` | 6.26.0新增并发布 |
 
 ## 4. `ads_talent_profile`
 
@@ -1604,6 +1649,15 @@ publication 分配新 ID。
 | 指标 | `cited_by_count` | `BIGINT` | 发布口径内论文当前被引总次数 |
 | 指标 | `talent_count` | `BIGINT` | 发布口径内关联人才数 |
 | 指标 | `project_count` | `BIGINT` | 当前机构关联的去重科研项目总数；直接机构关系优先，受资助论文机构仅作兜底 |
+| 经费 | `associated_project_funding_amount_cny` | `DECIMAL(24,4)` | 关联项目人民币金额全额之和；等于真实额加模拟额，跨机构不可加总 |
+| 经费 | `associated_project_funding_real_amount_cny` | `DECIMAL(24,4)` | `SOURCE_CONVERTED`项目的来源换算金额之和 |
+| 经费 | `associated_project_funding_simulated_amount_cny` | `DECIMAL(24,4)` | `SIMULATED_SHENZHEN_MEDIAN_V1`项目的模拟金额之和 |
+| 经费 | `associated_project_funding_real_project_count` | `BIGINT` | 具有来源换算金额的关联去重项目数 |
+| 经费 | `associated_project_funding_simulated_project_count` | `BIGINT` | 具有模拟金额的关联去重项目数 |
+| 经费 | `associated_project_funding_real_coverage_rate` | `DECIMAL(9,6)` | 真实项目数除以真实与模拟项目数之和 |
+| 经费 | `associated_project_funding_amount_mix_type` | `VARCHAR(32)` | REAL_ONLY/SIMULATED_ONLY/MIXED/NO_PROJECT_EVIDENCE |
+| 经费 | `associated_project_funding_scope_status` | `VARCHAR(64)` | 固定ASSOCIATED_PROJECT_FULL_AMOUNT_NOT_DISBURSEMENT |
+| 经费 | `associated_project_funding_version` | `VARCHAR(64)` | 关联项目经费范围、求和与真假拆分口径版本 |
 | 合作总量 | `collaborator_institution_count` | `BIGINT` | 跨年份、跨已发布合作证据去重的合作机构数 |
 | 合作总量 | `collaborative_paper_count` | `BIGINT` | 关联2至10家机构的MVP core合作论文去重数 |
 | 合作总量 | `collaborative_patent_count` | `BIGINT` | 至少两家confirmed assignee机构共同关联的专利publication去重数 |
@@ -1619,6 +1673,14 @@ publication 分配新 ID。
 
 机构论文与引用指标必须按批准的发布数据口径重算，不能直接复制来源 full 快照聚合值。
 机构主画像不提供 `h_index`。
+
+6.20.0只为当前有效深圳机构发布关联项目全额经费：先按`institution_id, project_id`去重，再把该机构
+每个关联项目的`ads_project_profile.amount_cny`计入一次，不采用机构权重。一个项目关联多家机构时会在
+每家机构各计全额，因此该字段适合单机构展示和比较，但禁止跨机构求和解释为深圳经费总量；跨机构、
+学科和研究方向汇总必须使用§18.1的证据权重分配表。无项目证据的深圳机构金额和项目数写0并标记
+`NO_PROJECT_EVIDENCE`；非深圳机构保持NULL，表示本版本未发布。金额只是关联项目金额，不是机构实际
+到账、承担额或深圳财政投入。详细方法与字段使用见
+[`docs/institution_project_funding_profile_v1.md`](docs/institution_project_funding_profile_v1.md)。
 
 合作总量不能从 `ads_institution_collaboration_yearly` 的机构对计数直接求和。一篇三机构论文会形成
 多个机构对，但在每家机构的 `collaborative_paper_count` 中只能按 `institution_id, work_id` 计一次；
@@ -2206,10 +2268,16 @@ v2 的 `mapping_coverage_rate` 分母是两类证据并集的全部关联专利�
 MVP 分数。该分数只表示机构在固定 MVP 观察集合中的相对位置，不表示科研投入、专利所有权、
 工程设施或产业化能力。
 
+`institution_name_zh`只做展示冗余，不参与基准总体、标准化、评分或排名。发布必须按
+`institution_id`从`ads_institution_profile.name_zh`复制所有非空中文名，不使用默认名称或机器翻译
+填补来源空值；画像没有中文名时本字段保持NULL。机构画像中文名发生变化时，应以更高`data_version`
+重新同步该快照。
+
 | 字段组 | 字段 | Doris 类型 | 说明 |
 |---|---|---|---|
 | Key 与展示 | `institution_id` | `VARCHAR(64) NOT NULL` | 机构平台ID |
 | Key 与展示 | `institution_name` | `STRING NOT NULL` | 机构当前发布名称快照 |
+| Key 与展示 | `institution_name_zh` | `STRING` | 机构中文名称快照；冗余自`ads_institution_profile.name_zh`，来源无中文名时为空 |
 | Key 与展示 | `institution_type_id` | `VARCHAR(32) NOT NULL` | 机构类型稳定代码 |
 | 原始指标 | `paper_count` | `BIGINT NOT NULL` | 发布MVP core中的机构去重论文数 |
 | 原始指标 | `cited_by_count` | `BIGINT NOT NULL` | 上述论文截至统计日的累计被引次数 |
@@ -2550,6 +2618,23 @@ Grant ID 只通过 identity bridge 映射。开始年优先采用来源 `start_y
 确定性生成0.8000至1.2000系数，因此同一项目重跑结果不变。模拟值只写`amount_cny`，不修改来源
 `amount`、`currency`、汇率及归一状态。聚合和导出必须同时返回`amount_cny_value_type`，不得把
 `SIMULATED_SHENZHEN_MEDIAN_V1`解释为真实拨款、项目承担金额或财政投入事实。
+
+### 18.1 深圳机构学科与研究方向项目关联资金
+
+`ads_shenzhen_institution_field_funding`按`institution_id, field_id`物化Field概览；
+`ads_shenzhen_institution_direction_funding`按`institution_id, primary_topic_id`物化研究方向明细，并
+携带Topic所属Subfield和Field。每个项目只使用`ads_project_topic.is_primary=true`的唯一Topic，避免
+普通Topic多值造成金额重复。
+
+项目可能关联多家机构。发布先对至少关联一家深圳机构的项目读取全部机构关系，再按机构
+`evidence_paper_count`占项目全部机构证据数的比例分配金额；全部证据数为0时才等分。非深圳机构参与
+分母后再过滤深圳机构，禁止把跨城项目全额归给深圳。Field表从方向表聚合，不独立重算来源，必须按
+机构和Field对账项目数、方向数、合计金额、真实金额和模拟金额。
+
+两表分别保存`real_amount_cny`和`simulated_amount_cny`，`allocated_amount_cny`严格等于二者之和；
+`amount_scope_status`固定为`PROJECT_RELATED_NOT_DISBURSEMENT`。完整字段、公式、前端查询、发布结果和
+恢复命令见
+[`docs/shenzhen_institution_funding_ads_v1.md`](docs/shenzhen_institution_funding_ads_v1.md)。
 
 `ads_talent_project` 是人才与科研项目的完整 ADS 关系入口，粒度为一名人才关联一个项目一行，
 逻辑主键为 `talent_id, project_id`。字段如下：
@@ -3566,12 +3651,18 @@ set +a
 | 时间 | `first_observed_year` | `INT` | 首次观察年份 |
 | 时间 | `latest_observed_year` | `INT` | 最近观察年份 |
 | 指标 | `evidence_paper_count` | `BIGINT` | 支持信号的论文数 |
-| 状态与口径 | `translation_status` | `VARCHAR(32)` | 翻译完成状态 |
-| 版本与审计 | `translation_version` | `VARCHAR(64)` | 翻译规则或模型版本 |
+| 状态与口径 | `translation_status` | `VARCHAR(32)` | 翻译完成状态；DeepSeek草稿为DRAFT_COMPLETE |
+| 版本与审计 | `translation_version` | `VARCHAR(64)` | 翻译规则或模型版本；热点信号首版为technology_hotspot_signal_zh_v1 |
 | 版本与审计 | `metrics_as_of_date` | `DATE` | 指标统计截止日 |
 | 版本与审计 | `metric_definition_version` | `VARCHAR(64)` | 指标口径版本 |
 | 版本与审计 | `data_version` | `BIGINT NOT NULL` | 同一业务Key的单调数据版本 |
 | 版本与审计 | `update_time` | `DATETIME(3) NOT NULL` | UTC生成时间 |
+
+热点信号中文翻译按规范化原文去重调用DeepSeek，再展开回全部信号逻辑Key；执行方法见
+[`docs/technology/TECHNOLOGY_HOTSPOT_SIGNAL_TRANSLATION.md`](docs/technology/TECHNOLOGY_HOTSPOT_SIGNAL_TRANSLATION.md)。
+候选信号的技术性筛选必须按技术点整体比较，入选项的技术相似度和主题相关度必须同时达到发布门槛，
+最多保留一项且允许全部拒绝；待执行流程、备份和恢复
+方法见[`docs/technology/TECHNOLOGY_HOTSPOT_SIGNAL_FILTER.md`](docs/technology/TECHNOLOGY_HOTSPOT_SIGNAL_FILTER.md)。
 
 #### 24.12.9 `ads_technology_hotspot_snapshot`
 
@@ -5808,3 +5899,612 @@ relation_type='APPLICATION' -> industry_chain_stage='DOWNSTREAM'
 ./scripts/compose.sh up -d --wait --wait-timeout 300
 ./scripts/publish_sz_gkx_industry_v1.sh
 ```
+
+## 44. 人员能力与深圳基础研究问题匹配 ADS（6.22.0）
+
+本组表只对`ads_research_problem_institution`中能够连接确认、有效深圳机构的问题发布人才匹配。
+深圳使用稳定Location ID `loc_E16782C21F18EBF8A59C1E98F9C9860B`判定，不按名称模糊搜索。
+当前范围为163个问题、642条问题—深圳机构关系和65家机构；问题侧1,695条Topic关系完整映射到865个
+平台Topic，映射缺失为0。人才论文和Topic严格使用2000—2025完整自然年，政治倾向因无来源数据按
+业务规则统一为50分并参与综合评分，同时以`NO_DATA_DEFAULT_AVERAGE`披露无证据状态。
+
+### 44.1 `ads_talent_capability_model`
+
+一行一个不可变评分模型版本，逻辑Key为`model_version`。权重或阈值变化必须发布新版本。
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `model_version` | `VARCHAR(64) NOT NULL` | 人员能力综合评分模型版本 |
+| `model_name` | `VARCHAR(256) NOT NULL` | 模型中文名称 |
+| `assessment_scope` | `VARCHAR(64) NOT NULL` | 适用范围；当前`SHENZHEN_RESEARCH_PROBLEM` |
+| `window_start_year/window_end_year` | `SMALLINT NOT NULL` | 完整论文观察窗，当前2000和2025 |
+| `research_perseverance_weight` | `DECIMAL(9,6) NOT NULL` | 科研毅力综合权重，当前0.25 |
+| `innovation_capability_weight` | `DECIMAL(9,6) NOT NULL` | 创新能力综合权重，当前0.25 |
+| `discipline_match_weight` | `DECIMAL(9,6) NOT NULL` | 学科匹配度综合权重，当前0.40 |
+| `political_orientation_weight` | `DECIMAL(9,6) NOT NULL` | 政治倾向综合权重，当前0.10 |
+| `political_orientation_default_score` | `DECIMAL(9,6) NOT NULL` | 无数据时统一平均分，当前50 |
+| `minimum_topic_paper_count` | `BIGINT NOT NULL` | 候选Topic最低论文数，当前3 |
+| `minimum_topic_volume_score` | `DECIMAL(9,6) NOT NULL` | 合格Topic最低论文量百分位，当前50 |
+| `minimum_topic_expertise_score` | `DECIMAL(9,6) NOT NULL` | 合格Topic最低专业水平分，当前60 |
+| `strong_topic_paper_count` | `BIGINT NOT NULL` | 强Topic最低论文数，当前5 |
+| `strong_topic_expertise_score` | `DECIMAL(9,6) NOT NULL` | 强Topic最低专业水平分，当前75 |
+| `minimum_problem_weight_coverage` | `DECIMAL(9,6) NOT NULL` | 合格Topic最低问题权重覆盖，当前0.30 |
+| `minimum_discipline_match_score` | `DECIMAL(9,6) NOT NULL` | 最低学科匹配度，当前60 |
+| `overall_score_formula` | `STRING NOT NULL` | 四维综合评分公式文本 |
+| `source_snapshot_ids` | `JSON NOT NULL` | 论文、Topic、问题、机构和映射固定输入版本 |
+| `model_status` | `VARCHAR(32) NOT NULL` | `ACTIVE/DRAFT/RETIRED`，当前ACTIVE |
+| `metrics_as_of_date` | `DATE NOT NULL` | 指标统计截止日 |
+| `data_version/update_time` | `BIGINT/DATETIME(3) NOT NULL` | 数据版本和UTC生成时间 |
+
+### 44.2 `ads_talent_capability_assessment`
+
+保存一名人才一个固定值的科研毅力、创新能力、全部问题总学科匹配度、政治倾向和人才级综合分；
+问题级学科匹配度查询§44.5。逻辑Key为`talent_id, model_version`。
+
+| 字段组 | 字段 | 类型 | 说明 |
+|---|---|---|---|
+| Key | `talent_id/model_version` | `VARCHAR NOT NULL` | 人才ID和模型版本 |
+| 科研毅力 | `eligible_paper_count` | `BIGINT NOT NULL` | 2000—2025去重论文数 |
+| 科研毅力 | `first_paper_year` | `SMALLINT` | 观察窗内首篇论文年 |
+| 科研毅力 | `observation_year_count` | `INT NOT NULL` | `2025-first_paper_year+1` |
+| 科研毅力 | `active_year_count` | `INT NOT NULL` | 至少发表一篇论文的年份数 |
+| 科研毅力 | `active_year_ratio` | `DECIMAL(9,6) NOT NULL` | 活跃年份数/观察年数 |
+| 科研毅力 | `longest_active_year_streak` | `INT NOT NULL` | 最长连续发表年份数 |
+| 科研毅力 | `longest_active_year_streak_ratio` | `DECIMAL(9,6) NOT NULL` | 最长连续活跃年数/观察年数 |
+| 科研毅力 | `paper_count_percentile_score` | `DECIMAL(9,6) NOT NULL` | 论文数固定总体平均并列百分位分 |
+| 科研毅力 | `active_year_ratio_score` | `DECIMAL(9,6) NOT NULL` | 活跃年份比例百分位分 |
+| 科研毅力 | `active_streak_ratio_score` | `DECIMAL(9,6) NOT NULL` | 连续活跃比例百分位分 |
+| 科研毅力 | `research_perseverance_score` | `DECIMAL(9,6) NOT NULL` | `0.50*论文量+0.30*活跃年份+0.20*连续活跃` |
+| 创新能力 | `distinct_topic_count` | `BIGINT NOT NULL` | 2000—2025论文的去重Topic数 |
+| 创新能力 | `effective_topic_count` | `DECIMAL(18,8) NOT NULL` | `exp(-sum(p_t*ln(p_t)))`，`p_t`为Topic论文计数份额 |
+| 创新能力 | `primary_field_id` | `VARCHAR(64)` | Topic论文计数最多的Field；并列按ID |
+| 创新能力 | `paper_count_band` | `VARCHAR(32) NOT NULL` | `1_5/6_10/11_20/21_50/51_100/100_PLUS` |
+| 创新能力 | `topic_count_percentile_score` | `DECIMAL(9,6) NOT NULL` | 同主要Field和论文规模组Topic数百分位 |
+| 创新能力 | `effective_topic_percentile_score` | `DECIMAL(9,6) NOT NULL` | 同组有效Topic数百分位 |
+| 创新能力 | `innovation_capability_score` | `DECIMAL(9,6) NOT NULL` | `0.70*Topic数分+0.30*有效Topic数分` |
+| 政治倾向 | `political_orientation_score` | `DECIMAL(9,6) NOT NULL` | 当前所有人才固定50 |
+| 政治倾向 | `political_orientation_status` | `VARCHAR(64) NOT NULL` | 当前`NO_DATA_DEFAULT_AVERAGE` |
+| 总学科匹配 | `problem_count` | `BIGINT NOT NULL` | 总分分母；当前固定163个深圳相关问题 |
+| 总学科匹配 | `candidate_problem_count` | `BIGINT NOT NULL` | 至少有一个3篇论文候选Topic的问题数 |
+| 总学科匹配 | `qualified_problem_count` | `BIGINT NOT NULL` | 通过全部问题匹配门槛的问题数 |
+| 总学科匹配 | `problem_coverage_ratio` | `DECIMAL(9,6) NOT NULL` | `candidate_problem_count/problem_count` |
+| 总学科匹配 | `discipline_match_score` | `DECIMAL(9,6) NOT NULL` | 163个问题级学科匹配度等权平均；缺失问题按0 |
+| 总学科匹配 | `best_problem_id` | `VARCHAR(256)` | 问题级学科匹配度最高的问题；并列按问题ID |
+| 总学科匹配 | `best_problem_match_score` | `DECIMAL(9,6) NOT NULL` | 最佳问题学科匹配度；无候选为0 |
+| 综合 | `overall_score` | `DECIMAL(9,6) NOT NULL` | 25%毅力+25%创新+40%总学科匹配+10%政治倾向 |
+| 综合 | `overall_rank` | `BIGINT NOT NULL` | 固定人才总体内人才级综合分稳定排名 |
+| 治理 | `benchmark_talent_count` | `BIGINT NOT NULL` | 科研毅力固定基准总体人数 |
+| 治理 | `assessment_status` | `VARCHAR(32) NOT NULL` | 当前发布合格行为COMPLETE |
+| 来源 | `paper_snapshot_id/topic_snapshot_id` | `VARCHAR(128) NOT NULL` | 固定论文和Topic输入标识 |
+| 版本 | `metrics_as_of_date/data_version/update_time` | `DATE/BIGINT/DATETIME(3)` | 统计截止日、版本和UTC生成时间 |
+
+人才级总学科匹配度明确使用全部163个问题作为等权分母：
+
+```text
+discipline_match_score(talent)
+  = sum(discipline_match_score(talent, problem), all 163 problems) / 163
+```
+
+没有生成问题候选行的组合按0计。该分数衡量人才对深圳相关基础研究问题集合的整体覆盖，不替代
+`best_problem_match_score`和具体问题匹配结果；专长集中人才的总分可能较低，但其最佳问题分仍可很高。
+
+### 44.3 `ads_talent_capability_dimension_metric`
+
+前端点击评分维度时读取。一行是一项确定性指标，逻辑Key为
+`talent_id, model_version, dimension_code, metric_code`。
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `talent_id/model_version` | `VARCHAR NOT NULL` | 人才ID和模型版本 |
+| `dimension_code` | `VARCHAR(64) NOT NULL` | `RESEARCH_PERSEVERANCE/INNOVATION_CAPABILITY/POLITICAL_ORIENTATION` |
+| `metric_code` | `VARCHAR(64) NOT NULL` | 维度内稳定指标代码 |
+| `dimension_name/metric_name` | `VARCHAR NOT NULL` | 需求名称和详细指标中文名 |
+| `raw_value` | `DECIMAL(24,8)` | 原始值；政治倾向因无证据为NULL |
+| `normalized_score` | `DECIMAL(9,6) NOT NULL` | 标准化分或政治倾向固定分 |
+| `metric_weight` | `DECIMAL(9,6) NOT NULL` | 指标在所属维度内权重 |
+| `weighted_contribution` | `DECIMAL(12,8) NOT NULL` | `normalized_score*metric_weight` |
+| `calculation_method` | `VARCHAR(128) NOT NULL` | 稳定计算方法代码 |
+| `calculation_description` | `STRING NOT NULL` | 公式、基准和解释边界 |
+| `evidence_count` | `BIGINT NOT NULL` | 支撑论文、年份或Topic数；政治倾向为0 |
+| `metric_status` | `VARCHAR(64) NOT NULL` | `CALCULATED/NO_DATA_DEFAULT_AVERAGE` |
+| `metrics_as_of_date/data_version/update_time` | 多类型 | 公共统计与版本字段 |
+
+### 44.4 `ads_talent_research_problem_discipline_match_topic`
+
+只保存人才在问题Topic下至少3篇论文的候选证据，不把单篇偶然命中物化为匹配。问题的OpenAlex Topic
+先经`ads_discipline_topic.openalex_topic_id`映射为平台`topic_id`。逻辑Key为
+`talent_id, problem_id, topic_id, match_model_version`。
+
+| 字段组 | 字段 | 类型 | 说明 |
+|---|---|---|---|
+| Key | `talent_id/problem_id/topic_id/match_model_version` | `VARCHAR NOT NULL` | 人才、问题、平台Topic和模型版本 |
+| 身份 | `source_openalex_topic_id` | `VARCHAR(64) NOT NULL` | 问题与论文共同使用的来源Topic ID |
+| 展示 | `topic_name_zh/topic_name_en/field_id` | 多类型 | Topic中英文名和Field快照 |
+| 问题 | `is_leading_topic` | `BOOLEAN NOT NULL` | 是否为问题Leading Topic |
+| 问题 | `evidence_work_count/primary_work_count` | `BIGINT NOT NULL` | 问题Topic证据论文和Primary论文数 |
+| 问题 | `problem_topic_weight` | `DECIMAL(18,12) NOT NULL` | 问题内归一化Topic重要性 |
+| 人才 | `talent_topic_paper_count` | `BIGINT NOT NULL` | 人才2000—2025该Topic去重论文数 |
+| 人才 | `talent_topic_citation_count` | `BIGINT NOT NULL` | 上述论文当前非负累计被引之和 |
+| 人才 | `talent_topic_citation_per_paper` | `DECIMAL(18,8) NOT NULL` | 篇均累计引用，存在年龄效应 |
+| 人才 | `talent_topic_leadership_paper_count` | `BIGINT NOT NULL` | 第一作者或通讯作者论文并集去重数 |
+| 人才 | `talent_topic_leadership_ratio` | `DECIMAL(9,6) NOT NULL` | 领导力论文数/Topic论文数 |
+| 人才 | `talent_topic_recent_5y_paper_count` | `BIGINT NOT NULL` | 2021—2025该Topic去重论文数 |
+| 分项 | `topic_paper_volume_score` | `DECIMAL(9,6) NOT NULL` | 同Topic论文数平均并列百分位分 |
+| 分项 | `topic_citation_impact_score` | `DECIMAL(9,6) NOT NULL` | 同Topic篇均引用百分位分 |
+| 分项 | `topic_leadership_score` | `DECIMAL(9,6) NOT NULL` | 同Topic领导力比例百分位分 |
+| 分项 | `topic_recent_activity_score` | `DECIMAL(9,6) NOT NULL` | 同Topic近五年论文比例百分位分 |
+| 分项 | `topic_expertise_score` | `DECIMAL(9,6) NOT NULL` | `0.45*论文量+0.30*引用+0.15*领导力+0.10*近期活跃` |
+| 门槛 | `minimum_paper_threshold` | `BIGINT NOT NULL` | 候选最低论文数，当前3 |
+| 门槛 | `minimum_expertise_threshold` | `DECIMAL(9,6) NOT NULL` | 合格最低专业分，当前60 |
+| 结果 | `is_qualified_topic` | `BOOLEAN NOT NULL` | 同时满足论文量分不低于50且专业分不低于60 |
+| 结果 | `is_strong_topic` | `BOOLEAN NOT NULL` | 论文数至少5且专业分至少75 |
+| 结果 | `weighted_match_contribution` | `DECIMAL(18,12) NOT NULL` | 合格时`problem_topic_weight*topic_expertise_score`，否则0 |
+| 结果 | `qualification_reason` | `VARCHAR(128) NOT NULL` | `STRONG/QUALIFIED/LOW_VOLUME_PERCENTILE/LOW_EXPERTISE` |
+| 版本 | `metrics_as_of_date/data_version/update_time` | 多类型 | 公共统计与版本字段 |
+
+问题Topic权重使用：
+
+```text
+importance_raw = ln(1 + evidence_work_count + 2 * primary_work_count)
+               * (is_leading_topic ? 1.25 : 1.00)
+problem_topic_weight = importance_raw / sum(importance_raw within problem)
+```
+
+### 44.5 `ads_talent_research_problem_discipline_match`
+
+一名人才与一个深圳相关基础研究问题一行，是匹配列表、排名和报告主表。逻辑Key为
+`talent_id, problem_id, match_model_version`。
+
+| 字段组 | 字段 | 类型 | 说明 |
+|---|---|---|---|
+| Key | `talent_id/problem_id/match_model_version` | `VARCHAR NOT NULL` | 人才、问题和模型版本 |
+| 范围 | `is_shenzhen_related_problem` | `BOOLEAN NOT NULL` | 是否由确认深圳机构关系进入范围；当前均TRUE |
+| 范围 | `shenzhen_institution_count` | `BIGINT NOT NULL` | 该问题关联去重深圳机构数 |
+| 问题 | `problem_topic_count/leading_topic_count` | `BIGINT NOT NULL` | 问题全部Topic和Leading Topic数 |
+| 候选 | `candidate_topic_count` | `BIGINT NOT NULL` | 人才至少3篇论文的候选问题Topic数 |
+| 合格 | `qualified_topic_count/strong_topic_count` | `BIGINT NOT NULL` | 合格和强匹配Topic数 |
+| 合格 | `qualified_leading_topic_count/strong_leading_topic_count` | `BIGINT NOT NULL` | 合格和强匹配Leading Topic数 |
+| 覆盖 | `candidate_topic_weight_coverage` | `DECIMAL(9,6) NOT NULL` | 候选Topic覆盖的问题权重 |
+| 覆盖 | `qualified_topic_weight_coverage` | `DECIMAL(9,6) NOT NULL` | 合格Topic覆盖的问题权重 |
+| 学科匹配度 | `discipline_match_score` | `DECIMAL(9,6) NOT NULL` | `sum(problem_topic_weight*合格Topic专业分)` |
+| 排名 | `match_rank` | `BIGINT NOT NULL` | 问题内合格优先、学科匹配度降序、人才ID升序的稳定排名 |
+| 门槛 | `has_strong_leading_topic` | `BOOLEAN NOT NULL` | 是否有强匹配Leading Topic |
+| 门槛 | `is_eligible_match` | `BOOLEAN NOT NULL` | 是否通过联合推荐门槛 |
+| 状态 | `match_status` | `VARCHAR(64) NOT NULL` | `QUALIFIED/BELOW_EXPERTISE_THRESHOLD/INSUFFICIENT_EVIDENCE` |
+| 状态 | `eligibility_reason` | `STRING NOT NULL` | 通过或失败原因 |
+| 来源 | `problem_snapshot_id/talent_topic_snapshot_id/topic_mapping_version` | `VARCHAR NOT NULL` | 问题、人才Topic和映射输入版本 |
+| 版本 | `metrics_as_of_date/data_version/update_time` | 多类型 | 公共统计与版本字段 |
+
+人才只有满足以下全部条件才标记`is_eligible_match=true`：
+
+```text
+(strong_leading_topic_count >= 1 OR qualified_topic_count >= 2)
+AND qualified_topic_weight_coverage >= 0.30
+AND discipline_match_score >= 60
+```
+
+### 44.6 实际发布、查询与边界
+
+当前发布`model_version='talent_problem_match_shenzhen_v1'`、`data_version=202610311200`：人才能力
+99,996行、维度解释599,976行、Topic匹配证据2,059,636行、人才—问题候选1,142,501行；7,949行
+通过门槛，覆盖148个问题和5,351名人才。其余15个问题没有人才通过当前严格门槛，应展示“暂无达到
+当前论文水平阈值的人才”，不得自动降低阈值或把候选冒充合格匹配。
+
+完整开发查询、导出字段和解释边界见
+[`docs/talent_problem_match_shenzhen_v1.md`](docs/talent_problem_match_shenzhen_v1.md)。发布入口：
+
+```bash
+./scripts/compose.sh up -d --wait --wait-timeout 300
+./scripts/publish_talent_problem_match_shenzhen_v1.sh
+uv run --frozen pytest -q tests/test_talent_problem_match.py
+```
+
+## 45. 深圳科研资源短板与趋势
+
+6.25.0新增四张表，服务深圳与固定科技发达城市同行组的Subfield资源比较、趋势节点下钻、机构筛选和
+关键短板标注。固定版本`cn_advanced_city_10_v1_20261031`包含北京、上海、深圳、广州、杭州、南京、
+武汉、成都、西安和苏州；深圳城市基准严格排除深圳自身，使用其余九城等权均值。正式比较只覆盖
+2015—2025完整自然年；截至2026-09-18的2026部分年度不进入短板表。
+
+### 45.1 `ads_resource_benchmark_city`
+
+一行一个基准版本内城市，逻辑Key为`benchmark_version, city_location_id`。`is_target_city`只对深圳为真，
+`is_peer_city`只对其余九城为真；`benchmark_weight`v1固定为1。名单、位置ID、纳入原因和有效年度全部
+版本化，不得在发布SQL内用城市名称临时匹配或原地改变历史版本。
+
+### 45.2 `ads_city_subfield_resource_yearly`
+
+逻辑Key为`city_location_id, statistics_year, subfield_id`，固定发布10城×11年×252个Subfield完整网格。
+`paper_count`为城市全计数，`paper_fractional_count`按同一论文涉及的基准城市数等权分配；正式论文差距
+使用后者。`publication_cohort_cited_by_count`表示当年发表论文截至指标日累计被引，`citation_count`
+表示固定MVP论文在该自然年新收到的引用分数计数，两者不得混用。`talent_count`直接按城市、年度、
+Subfield、来源人才ID去重，不从Topic人才数求和。
+
+项目金额按全部项目机构关系的`evidence_paper_count`分配，全部证据为0时等分；先纳入跨城机构分母，
+再汇总到基准城市。产品统一读取`funding_amount_cny`，不区分真实和模拟金额：已有正人民币金额直接
+使用；缺失金额以固定中位数581,984.8125元乘项目ID确定性0.8000—1.2000系数估算。每个进入年度、
+Primary Topic、Subfield和十城机构范围的项目都参与金额计算，`funding_amount_project_count`必须等于
+`project_count`且`funding_amount_coverage_rate=1`。`funding_amount_source`使用
+`SOURCE_ONLY/ESTIMATED_ONLY/MIXED/NO_PROJECT`披露来源构成，`funding_amount_method`固定保存算法版本。
+原`real_funding_cny/simulated_funding_cny`仅保留历史审计，不作为产品查询或短板判定字段。统一金额仍
+表示项目关联分配值，不是实际拨款、到账、承担额或地方财政投入。
+
+### 45.3 `ads_institution_subfield_resource_yearly`
+
+逻辑Key为`institution_id, statistics_year, subfield_id`。十城有论文、引用或人才证据的机构发布观察行；
+深圳机构额外补齐全部年度和Subfield零值网格，使完全没有某学科证据的机构也可被筛选和识别。论文、
+年度新增引用、人才和资金语义与城市表一致；机构比较按`institution_type_id + statistics_year +
+subfield_id`建立九城同行总体，不把高校、企业、医院和政府科研机构混为同一基准。
+
+### 45.4 `ads_research_resource_shortage_yearly`
+
+本表采用指标长表，`target_type`为`CITY/INSTITUTION`，`metric_code`当前为城市
+`PAPER_FRACTIONAL_COUNT/CITATION_COUNT/TALENT_COUNT/PROJECT_FUNDING_CNY`或机构
+`PAPER_COUNT/CITATION_COUNT/TALENT_COUNT/PROJECT_FUNDING_CNY`。城市基准方法固定为
+`PEER_CITY_MEAN_9`；机构固定为`SAME_TYPE_PEER_INSTITUTION_MEAN`且有效同行少于5家时不评估。
+
+固定公式为：
+
+```text
+resource_ratio = target_value / benchmark_value
+gap_rate = max(0, (benchmark_value - target_value) / benchmark_value)
+gap_rate > 0.50 => CRITICAL_SHORTAGE
+0.20 < gap_rate <= 0.50 => SHORTAGE
+0 <= gap_rate <= 0.20 => BALANCED
+target_value > benchmark_value => ADVANTAGE
+```
+
+基准为空或为0时使用`NO_VALID_BENCHMARK`；机构同行不足使用`INSUFFICIENT_PEERS`。资金统一金额覆盖率
+固定为1，包含估算的单元使用`coverage_status='COMPLETE_WITH_ESTIMATION'`。引用和人才均是固定MVP观察范围的
+`PARTIAL`代理指标，允许比较但前端必须展示覆盖说明，不能解释为完整引用流或实际在岗科研人口。
+完整字段、查询和执行说明见
+[`docs/resource_shortage_v1.md`](docs/resource_shortage_v1.md)。
+
+## 46. 智能推荐与动态更新（6.26.0）
+
+本组表已通过6.26.0 Doris迁移、固定配置和可重跑发布SQL落库。首版运行
+`smart_rec_2026_20260918_v1`已发布：1条运行、3条新成果信号、3篇Top论文、3名推荐
+人才、3个Topic资源方向、78个Technology代理投资方向和87条证据。
+
+### 46.1 可行性结论与MVP口径
+
+方案在当前MVP数据上可实现，但不能把“最新”、“高H指数”和“Topic关联Technology”作为
+隐含口径。首版建议固定为`smart_recommendation_mvp_v1`：
+
+1. “2026年参考了发表的论文”解释为`publication_year=2026`的已发布MVP core论文；不是
+   “2026年收到的引用”。如果业务实际要求后者，必须单独读取`dwd_work_count_by_year.year=2026`
+   的年度新增引用，不得沿用`ads_paper_profile.cited_by_count`。
+2. 高H指数人才池限定为已发布MVP人才中`h_index_score>=99`的前1%，并列值全部保留。
+   `h_index`和`h_index_score`只表示固定400万篇MVP core观察集合，不是人才的全球完整H指数。
+3. 候选论文必须至少有一名署名人才进入上述人才池；按`cited_by_count DESC,
+   publication_date DESC, paper_id ASC`稳定排序，全局取三篇。引用数为指标截止日的累计值，
+   2026论文存在明显的发表时间暴露差异，首版只能作为新成果关注度代理。
+4. 人才推荐不复制全部论文作者。每篇入选论文只保留高H指数人才池内`h_index DESC,
+   citations_count DESC, talent_id ASC`的第一名；同一人才命中多篇时合并为一条推荐。
+5. 资源配置方向只使用三篇论文的`primary_topic_id`，按支撑论文数、最高引用数和Topic ID
+   稳定排序；不将一篇论文的全部次要Topic扩张成资源建议。
+6. 投资方向首版只能使用已有`ads_technology_profile.leading_topic_id`作为
+   `LEADING_TOPIC_PROXY_V1`映射：先把平台Topic ID还原到OpenAlex Topic ID，再匹配所有以它为
+   leading Topic的Technology。该关系是多对多代理，不是专家确认的投资因果关系；无匹配时
+   必须显示“暂无可追溯Technology映射”，不允许按名称模糊猜测。
+
+因此，本MVP能给出“基于固定科研观察集的候选建议”，不能宣称已得到完整人才排名、实际
+资源需求或投资回报预测。实际投资决策还需引入专利、项目、市场、政策、标准、成本及专家
+审核；不得将本表的代理排名直接用于自动资金配置。
+
+#### 46.1.1 完整计算公式与稳定裁决
+
+以一次运行`r`为单位，令`Y=r.publication_year`、`K=r.top_paper_limit`、
+`H=r.high_h_index_score_threshold`。首版分别为2026、3和99。
+
+```text
+high_h_talent_set(r)
+  = { t | t.h_index_score >= H }
+
+candidate_paper_set(r)
+  = distinct { p |
+      p.publication_year = Y
+      AND p.primary_topic_id IS NOT NULL
+      AND exists authorship(p, t), t in high_h_talent_set(r) }
+
+paper_rank(p)
+  = row_number over candidate_paper_set(r)
+    order by p.cited_by_count DESC,
+             p.publication_date DESC,
+             p.paper_id ASC
+
+recommended_paper_set(r)
+  = { p | paper_rank(p) <= K }
+```
+
+`cited_by_count`是`metrics_as_of_date`截止日累计引用，不是2026年度新增引用。
+对每篇入选论文，人才二次筛选为：
+
+```text
+recommended_talent_for_paper(p)
+  = first { t | authorship(p, t) AND t in high_h_talent_set(r) }
+    order by t.h_index DESC,
+             t.citations_count DESC,
+             t.talent_id ASC
+
+supporting_paper_ids(t)
+  = distinct sorted { p.paper_id |
+      p in recommended_paper_set(r)
+      AND recommended_talent_for_paper(p) = t }
+
+talent_recommendation_rank(t)
+  = row_number order by
+      min(paper_rank(p), p in supporting_paper_ids(t)) ASC,
+      t.h_index DESC,
+      t.talent_id ASC
+```
+
+同一人才被多篇论文选中时只保留一条人才推荐。一个资源Topic的聚合和排名为：
+
+```text
+resource_topic_set(r)
+  = distinct { p.primary_topic_id | p in recommended_paper_set(r) }
+
+supporting_paper_count(topic)
+  = count(distinct p.paper_id where p.primary_topic_id = topic)
+
+max_paper_cited_by_count(topic)
+  = max(p.cited_by_count where p.primary_topic_id = topic)
+
+best_paper_rank(topic)
+  = min(p.paper_rank where p.primary_topic_id = topic)
+
+resource_direction_rank(topic)
+  = row_number order by
+      supporting_paper_count DESC,
+      max_paper_cited_by_count DESC,
+      best_paper_rank ASC,
+      topic_id ASC
+```
+
+Technology映射及排名为：
+
+```text
+technology_matches(topic, technology)
+  iff ads_discipline_topic.topic_id = topic
+  AND ads_discipline_topic.openalex_topic_id
+      = ads_technology_profile.leading_topic_id
+
+source_topic_ids(technology)
+  = distinct sorted { topic | technology_matches(topic, technology) }
+
+supporting_paper_ids(technology)
+  = union supporting_paper_ids(topic), topic in source_topic_ids(technology)
+
+investment_direction_rank(technology)
+  = row_number order by
+      min(resource_direction_rank(topic)) ASC,
+      cardinality(supporting_paper_ids(technology)) DESC,
+      ads_technology_profile.paper_count DESC,
+      technology_node_id ASC
+```
+
+本版没有权重求和、资金额或投资回报分；`evidence_weight`因此保持NULL。更新信号与
+幂等哈希为：
+
+```text
+signal_type(entity, current_run, previous_run)
+  = NEW,     if entity exists in current_run and not in comparable previous_run
+  = CHANGED, if entity exists in both runs and current_row_hash <> previous_row_hash
+  = no row,  otherwise
+
+current_row_hash
+  = SHA-256(canonical business fields joined with "|")
+
+input_hash
+  = SHA-256(model_version, parameters, ordered source snapshot identifiers)
+
+output_hash
+  = SHA-256(ordered paper IDs, ordered talent IDs,
+            ordered resource Topic IDs, ordered Technology IDs)
+
+evidence_hash
+  = SHA-256(evidence entity ID, calculation inputs, mapping method when applicable)
+```
+
+首次运行`previous_recommendation_run_id IS NULL`，因此只对入选论文发布`NEW/NEW_PUBLICATION`，
+不伪造`CHANGED`。完整业务原因字段分别由`selection_reason`或`recommendation_reason`
+承载；可机读溯源由`ads_recommendation_evidence.calculation_step`、
+`calculation_description`、`evidence_value_snapshot`和`source_snapshot_id`承载。
+
+### 46.2 `ads_recommendation_run`
+
+一次不可变输入上的推荐运行一行，逻辑Key为`recommendation_run_id`。
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `recommendation_run_id` | `VARCHAR(64) NOT NULL` | 由模型版本、输入Snapshot和参数哈希确定的运行ID |
+| `model_version` | `VARCHAR(64) NOT NULL` | 首版`smart_recommendation_mvp_v1` |
+| `run_status` | `VARCHAR(32) NOT NULL` | `BUILDING/VALIDATED/PUBLISHED/FAILED` |
+| `publication_year` | `SMALLINT NOT NULL` | 首版为2026 |
+| `top_paper_limit` | `INT NOT NULL` | 首版为3 |
+| `high_h_index_score_threshold` | `DECIMAL(9,6) NOT NULL` | 首版为99 |
+| `talent_selection_rule/paper_selection_rule` | `STRING NOT NULL` | 完整门槛、排序和并列裁决文本 |
+| `topic_selection_rule/technology_mapping_rule` | `STRING NOT NULL` | Topic及Technology映射口径 |
+| `source_snapshot_ids` | `JSON NOT NULL` | 人才、署名、论文、Topic、身份映射和Technology固定输入 |
+| `metrics_as_of_date` | `DATE NOT NULL` | H指数与引用数截止日 |
+| `previous_recommendation_run_id` | `VARCHAR(64)` | 用于变更比较的上一已发布运行 |
+| `input_hash/output_hash` | `VARCHAR(64) NOT NULL` | 规范化输入与输出SHA-256 |
+| `generated_at/data_version/update_time` | 多类型 | UTC生成时间与公共版本字段 |
+
+### 46.3 `ads_scientific_update_signal`
+
+本表不由时间字段直接猜测“新”。`NEW`表示当前已发布运行存在、上一已发布运行不存在；
+`CHANGED`表示同一主体的规范化业务哈希变化。逻辑Key为`signal_id`。
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `signal_id/recommendation_run_id` | `VARCHAR(64) NOT NULL` | 信号ID和当前运行ID |
+| `entity_type/entity_id` | `VARCHAR(32)/VARCHAR(64) NOT NULL` | `PAPER/TALENT/INSTITUTION/TOPIC/TECHNOLOGY`及平台ID |
+| `signal_type` | `VARCHAR(32) NOT NULL` | `NEW/CHANGED` |
+| `change_category` | `VARCHAR(64) NOT NULL` | `NEW_PUBLICATION/CITATION_CHANGED/AFFILIATION_CHANGED/PROFILE_CHANGED/MAPPING_CHANGED` |
+| `changed_fields` | `ARRAY<STRING> NOT NULL` | 白名单化变化字段；NEW可为空数组 |
+| `previous_value_snapshot/current_value_snapshot` | `JSON` | 只保留有界展示值，完整事实回查固定上游 |
+| `previous_row_hash/current_row_hash` | `VARCHAR(64)` | 前后规范化业务哈希；当前值必填 |
+| `previous_data_version/current_data_version` | `BIGINT` | 前后来源版本 |
+| `detected_at/data_version/update_time` | 多类型 | UTC检测时间与公共版本字段 |
+
+机构变更只能在可比的两个机构发布版本间产生；首次运行没有上一版时只生成`NEW`，
+不生成伪`CHANGED`。重试同一`recommendation_run_id`必须得到相同信号集合。
+
+### 46.4 `ads_recommendation_paper`
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `recommendation_run_id/paper_id` | `VARCHAR(64) NOT NULL` | 运行和论文平台ID |
+| `paper_rank` | `INT NOT NULL` | 全局稳定排名1—3 |
+| `publication_date/publication_year` | `DATE/SMALLINT NOT NULL` | 发表日期和年份 |
+| `cited_by_count` | `BIGINT NOT NULL` | 截至`metrics_as_of_date`的累计引用 |
+| `primary_topic_id` | `VARCHAR(64) NOT NULL` | 资源方向所用平台Primary Topic |
+| `eligible_high_h_talent_ids` | `ARRAY<VARCHAR(64)> NOT NULL` | 使论文进入候选的高H人才集合 |
+| `recommended_talent_ids` | `ARRAY<VARCHAR(64)> NOT NULL` | 作者内二次筛选后的人才ID |
+| `selection_reason/selection_rule_version` | `STRING/VARCHAR(64) NOT NULL` | 可展示原因和固定规则版本 |
+| `paper_snapshot_id/authorship_snapshot_id` | `VARCHAR(128) NOT NULL` | 论文及署名证据版本 |
+| `metrics_as_of_date/data_version/update_time` | 多类型 | 指标截止日与公共版本字段 |
+
+### 46.5 `ads_recommendation_talent`
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `recommendation_run_id/talent_id` | `VARCHAR(64) NOT NULL` | 运行和人才ID |
+| `recommendation_rank` | `INT NOT NULL` | 按支撑论文最佳排名、H指数和人才ID裁决 |
+| `h_index/h_index_score/h_index_rank` | 多类型 | 固定MVP core人才总体的H指数、百分位分和稳定排名 |
+| `supporting_paper_ids` | `ARRAY<VARCHAR(64)> NOT NULL` | 支持推荐的入选论文，至少一篇 |
+| `supporting_paper_count/max_paper_cited_by_count` | `BIGINT NOT NULL` | 支持数和最高论文引用数 |
+| `recommendation_reason/selection_rule_version` | `STRING/VARCHAR(64) NOT NULL` | 原因和规则版本 |
+| `talent_snapshot_id/metrics_as_of_date` | `VARCHAR(128)/DATE NOT NULL` | 人才指标版本与截止日 |
+| `data_version/update_time` | `BIGINT/DATETIME(3) NOT NULL` | 公共版本字段 |
+
+### 46.6 `ads_recommendation_resource_direction`
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `recommendation_run_id/topic_id` | `VARCHAR(64) NOT NULL` | 运行和平台Topic ID |
+| `topic_name_zh/topic_name_en` | `STRING` | 固定学科维表名称快照 |
+| `direction_rank` | `INT NOT NULL` | 资源方向排名 |
+| `supporting_paper_ids/supporting_talent_ids` | `ARRAY<VARCHAR(64)> NOT NULL` | 论文与人才证据 |
+| `supporting_paper_count/max_paper_cited_by_count` | `BIGINT NOT NULL` | 排名原始指标 |
+| `recommendation_reason` | `STRING NOT NULL` | 只声明“候选资源方向”，不生成资金额 |
+| `topic_snapshot_id/data_version/update_time` | 多类型 | Topic版本与公共版本字段 |
+
+### 46.7 `ads_recommendation_investment_direction`
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `recommendation_run_id/technology_node_id` | `VARCHAR(64) NOT NULL` | 运行和候选技术点ID |
+| `technology_name_zh/technology_name_en` | `STRING` | 固定Technology快照名称 |
+| `direction_rank` | `INT NOT NULL` | 按Topic排名、支持论文数、Technology论文数和ID裁决 |
+| `source_topic_ids` | `ARRAY<VARCHAR(64)> NOT NULL` | 导出该Technology的资源Topic |
+| `supporting_paper_ids/supporting_talent_ids` | `ARRAY<VARCHAR(64)> NOT NULL` | 上游论文和人才证据 |
+| `mapping_method` | `VARCHAR(64) NOT NULL` | 首版`LEADING_TOPIC_PROXY_V1` |
+| `mapping_status` | `VARCHAR(32) NOT NULL` | `PROXY_MATCHED/REVIEWED/REJECTED`；首版只能为PROXY_MATCHED |
+| `mapping_version/technology_source_release_id` | `VARCHAR(128) NOT NULL` | Topic身份映射与Technology来源发布版本 |
+| `recommendation_reason/limitation_note` | `STRING NOT NULL` | 推荐原因和非投资因果声明 |
+| `data_version/update_time` | `BIGINT/DATETIME(3) NOT NULL` | 公共版本字段 |
+
+### 46.8 `ads_recommendation_evidence`
+
+一行是一个推荐结果的一条证据，用于“查看推荐来源及模型依据”。逻辑Key为
+`recommendation_run_id, recommendation_type, recommendation_id, evidence_id`。
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `recommendation_run_id` | `VARCHAR(64) NOT NULL` | 关联运行 |
+| `recommendation_type/recommendation_id` | `VARCHAR(32)/VARCHAR(64) NOT NULL` | `PAPER/TALENT/RESOURCE_DIRECTION/INVESTMENT_DIRECTION`及结果ID |
+| `evidence_id/evidence_type/evidence_entity_id` | 多类型 | 稳定证据ID、`PAPER/TALENT_METRIC/TOPIC_MAP/TECHNOLOGY_MAP`和实体ID |
+| `evidence_rank/evidence_weight` | `INT/DECIMAL(9,6)` | 展示顺序和权重；无权重模型时保持NULL |
+| `evidence_value_snapshot` | `JSON NOT NULL` | 如H指数、引用数、Primary Topic和mapping method等有界快照 |
+| `source_table/source_business_key/source_snapshot_id` | `STRING NOT NULL` | 真实上游表、业务Key和Snapshot |
+| `calculation_step/calculation_description` | `VARCHAR(64)/STRING NOT NULL` | 稳定步骤代码与人类可读依据 |
+| `evidence_hash` | `VARCHAR(64) NOT NULL` | 规范化证据SHA-256 |
+| `data_version/update_time` | `BIGINT/DATETIME(3) NOT NULL` | 公共版本字段 |
+
+### 46.9 发布门禁和前端展示
+
+发布必须验证：固定输入Snapshot全部存在；三篇论文的年份、排名、署名和人才门槛
+合法；人才、Topic和Technology的证据引用完整；同一输入重跑的`output_hash`一致；前后运行
+仅在输入版本可比时产生`CHANGED`。如果2026年MVP core尚未发布、不足3篇，或其
+`metrics_as_of_date`早于论文发表日，运行必须失败或明确发布少于3篇的降级状态，不得用
+2025论文静默补齐。
+
+前端“新”/“变动”标识必须读取`ads_scientific_update_signal.signal_type`，不按当前时间现场猜测；
+每张推荐卡必须展示`metrics_as_of_date`、模型版本、覆盖边界和至少一条可点击证据。
+Technology卡须额外显示“基于Leading Topic代理映射，未经投资审核”。
+
+当前发布入口和回归测试为：
+
+```bash
+./scripts/compose.sh up -d --wait --wait-timeout 300
+./scripts/publish_smart_recommendation_mvp_v1.sh
+uv run --frozen pytest -q tests/test_smart_recommendation_ads.py
+```
+
+首版重跑后行数保持`1/3/3/3/78/87`（运行/论文信号/论文/人才与资源Topic/
+Technology/证据），逻辑Key重复、论文规则违反、人才门槛违反、Topic孤儿、Technology孤儿和
+无证据推荐均为0。
+
+## 47. 科研资源配置与优化建议（6.28.0）
+
+本组表仅将2025年`ads_research_resource_shortage_yearly`中同时满足
+`assessment_status='ASSESSED'`、`is_critical_shortage=true`和`target_value>0`的记录认定为首版
+“真实可行动关键短板”。零观测记录、不可评估记录和普通短板不生成建议。首版不生成管理机制改进建议，
+也不调用大模型；方案、优先级和预期效果均由`resource_optimization_rule_v1`确定性产生。
+
+同一`target_type + target_id + statistics_year + subfield_id`的多项短板合并为一条建议，避免论文、引用、
+人才和资金分别生成重复方案。2025年7,952条来源短板聚合为4,625条建议；每条建议可通过证据表回溯
+原始指标。
+
+### 47.1 `ads_resource_optimization_recommendation`
+
+逻辑Key为`recommendation_id`，ID由目标类型、目标ID、年度、Subfield、基准版本和建议规则版本确定性
+生成。`institution_id`只在`target_type='INSTITUTION'`时等于`target_id`，城市建议保持NULL；该显式字段
+只服务机构视图，不改变短板表的多态目标模型。机构`target_name`及建议标题优先使用
+`ads_institution_profile.name_zh`，只有中文名为空时才回退短板来源名称。
+
+三种视图直接读取同一张表：按学科使用`subfield_id/subfield_name_zh`，按机构使用
+`institution_id/target_name`，按研究方向使用`field_id/field_name_zh`。`scope_type`区分
+`CITY_SUBFIELD/INSTITUTION_SUBFIELD`。
+
+优先级满分100分，固定公式为：
+
+```text
+priority_score = avg_gap_rate * 40
+               + shortage_metric_count / 4 * 20
+               + persistence_rate * 20
+               + confidence_score * 20
+
+priority_score >= 75 => HIGH
+60 <= priority_score < 75 => MEDIUM
+priority_score < 60 => LOW
+```
+
+`persistence_rate`只看2023—2025同一目标、Subfield和当前短板指标满足正值关键短板的年度比例；
+`confidence_score`按`COMPLETE=1.0`、`COMPLETE_WITH_ESTIMATION=0.8`、其他部分覆盖`=0.6`计算。
+优先级是规划排序，不是因果效果评分。
+
+`recommendation_category`当前为`COMPREHENSIVE_CAPACITY`、`RESOURCE_INPUT`、`OUTPUT_IMPACT`、
+`TALENT`、`FUNDING`、`OUTPUT`、`IMPACT`或`MULTI_RESOURCE`，不含管理机制类别。
+`implementation_plan`保存可展开的具体方案；
+`expected_effect`统一表述为1—3年规划目标，首阶段把相关差距率降至50%以内，必须用后续同口径数据验证，
+不得解释为已保证的因果效果。
+
+### 47.2 `ads_resource_optimization_recommendation_evidence`
+
+逻辑Key为`recommendation_id, metric_code, benchmark_version`。每行保存来源短板的`target_value`、
+`benchmark_value`、`gap_rate`、`coverage_status`和`coverage_note`。发布门禁要求证据全部满足
+`target_value>0`且`gap_rate>0.5`，建议无孤儿、主表`evidence_count`与证据实数完全一致。
+
+当前执行入口和说明为：
+
+```bash
+./scripts/publish_resource_optimization_recommendation_v1.sh
+uv run --frozen --group integration pytest -q tests/test_resource_optimization_recommendation.py
+```
+
+完整字段、查询示例和发布结果见
+[`docs/resource_optimization_recommendation_v1.md`](docs/resource_optimization_recommendation_v1.md)。

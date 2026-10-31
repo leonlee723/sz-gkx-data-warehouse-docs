@@ -6,6 +6,154 @@
 - MINOR：向后兼容地新增表、字段或指标。
 - PATCH：不改变接口的说明、约束或索引修正。
 
+## 6.28.0 — 2026-10-31
+
+- 新增`ads_resource_optimization_recommendation`和
+  `ads_resource_optimization_recommendation_evidence`，支持优化建议条目、展开实施方案、确定性优先级、
+  预期效果以及按Subfield、机构、Field三个维度切换。
+- 首版只使用2025年已评估、`is_critical_shortage=true`且`target_value>0`的真实可行动关键短板；
+  7,952条逐指标证据按目标实体和Subfield合并为4,625条建议，不将零观测网格冒充确定短板。
+- 优先级由差距严重度40%、指标广度20%、2023—2025持续性20%和覆盖可信度20%确定性计算；当前
+  HIGH 909条、MEDIUM 2,664条、LOW 1,052条。方案由固定规则模板生成，不依赖大模型稳定性。
+- 首版不处理管理机制改进，不宣称因果效果；预期效果是1—3年规划目标，必须用后续同口径数据验证。
+- 建议表显式提供`institution_id`用于机构视图，但短板表继续以`target_type + target_id`表达多态目标，
+  避免重复字段不一致。
+- 机构建议名称在发布时重新关联`ads_institution_profile.name_zh`，仅在中文名为空时回退来源名称；重发后
+  4,406条机构建议名称全部与机构画像中文名一致，建议标题不一致为0。
+
+## 6.27.0 — 2026-10-31
+
+- `ads_city_subfield_resource_yearly`和`ads_institution_subfield_resource_yearly`新增统一资金金额、参与金额
+  计算项目数、估算项目数、金额覆盖率、来源构成和方法版本6个字段。产品统一读取
+  `funding_amount_cny`，不再区分真实与模拟金额。
+- 已有正人民币金额优先使用；缺失金额以固定中位数581,984.8125元乘
+  `project_id + resource_funding_v2`确定性CRC32系数估算，系数范围0.8000—1.2000，同一项目幂等重跑
+  金额不变。原项目画像金额和类型不改写。
+- v2发布中城市表3,058,066个机构项目成员和机构表2,918,101个机构项目成员全部参与金额计算，
+  `project_count=funding_amount_project_count`且`funding_amount_coverage_rate=1`，不一致均为0。
+- 短板资金指标改为`PROJECT_FUNDING_CNY`；包含估算时明确标记
+  `coverage_status='COMPLETE_WITH_ESTIMATION'`。统一金额是项目关联权重分配值，不是实际拨款、到账、
+  承担额或地方财政投入。
+
+## 6.26.0 — 2026-10-31
+
+- 完成智能推荐与动态更新的方案评估和7张ADS逻辑表设计：版本化运行、主体更新信号、
+  Top论文、人才推荐、Topic资源方向、Technology投资方向和通用证据链。
+- 首版口径建议固定为`smart_recommendation_mvp_v1`：高H指数人才为MVP core人才中
+  `h_index_score>=99`的前1%；只从这些人才署名的2026年MVP core论文中按截止日
+  累计引用稳定选出全局Top 3。
+- 每篇论文只推荐高H候选中H指数最高的一人，跨论文去重；资源方向只使用入选论文
+  Primary Topic，避免次要Topic扩张。
+- Topic到Technology首版只允许使用`ads_technology_profile.leading_topic_id`的
+  `LEADING_TOPIC_PROXY_V1`多对多代理，强制披露非投资因果、非专家审核边界；无匹配不猜测。
+- `NEW/CHANGED`必须通过前后已发布运行的存在性与规范化业务哈希比较产生，不按当前
+  时间猜测；每个推荐必须能追溯模型版本、输入Snapshot、原始指标和计算步骤。
+- 新增6.26.0 Doris迁移、固定发布配置、可重跑发布SQL、执行脚本和Schema测试；实际新增
+  7张物理表，ADS物理表总数由179增至186。
+- 已发布`smart_rec_2026_20260918_v1`：1条运行、3条NEW论文信号、3篇Top论文、
+  3名人才、3个Primary Topic资源方向、78个Technology代理投资方向和87条证据。
+  发布核验见`reports/smart_recommendation_mvp_v1_20261031/publication_report.json`。
+- `ADS_SCHEMA.md`集中记录高H人才池、候选论文、Top 3、人才二次筛选与去重、
+  资源Topic聚合与排名、Topic—Technology映射与排名、NEW/CHANGED、input/output/evidence
+  哈希全部公式和稳定并列裁决，与已执行发布SQL一致。
+
+## 6.25.0 — 2026-10-31
+
+- 新增`ads_resource_benchmark_city`，冻结北京、上海、深圳、广州、杭州、南京、武汉、成都、西安和苏州
+  十城基准；深圳只与排除自身后的九城等权均值比较。
+- 新增`ads_city_subfield_resource_yearly`和`ads_institution_subfield_resource_yearly`，按2015—2025
+  完整年度发布Subfield论文、年度新增引用、可观测人才、项目和真实/模拟资金。城市表发布完整零值网格，
+  深圳机构也补齐完全无学科证据的零值行。
+- 新增`ads_research_resource_shortage_yearly`指标长表，保存目标、同行均值/中位数/四分位、资源比例、
+  差距率、同比和评估状态；`gap_rate>0.50`自动标记`CRITICAL_SHORTAGE`。
+- 论文正式比较使用跨基准城市分数计数；人才按城市/机构、年度、Subfield和人才重新去重；引用使用
+  `dwd_work_count_by_year`年度新增引用，不把发表年度累计被引冒充年度引用流。
+- 真实资金覆盖率不足50%时标记`NOT_ASSESSABLE`，模拟金额不进入正式短板判定。金额仍为项目关联权重
+  分配值，不解释为实际拨款或地方财政投入。
+
+## 6.24.0 — 2026-10-31
+
+- 将`ads_talent_research_problem_discipline_match`严格规范为人才—问题匹配事实表，删除冗余的
+  `research_perseverance_score`、`innovation_capability_score`、`political_orientation_score`和
+  `overall_score`；前三项及人才级四维综合分只保存在`ads_talent_capability_assessment`。
+- 问题级`match_rank`改为按`is_eligible_match DESC, discipline_match_score DESC, talent_id ASC`
+  稳定排序，不再混入人才级能力或综合分。
+- 删除的三个分项在人才级表完整保留，学科匹配度仍保留人才总分和每个问题独立分，不造成事实损失。
+- 新增6.24.0迁移、发布SQL和Schema测试；前端同时展示人才能力与问题匹配时必须按
+  `talent_id + model_version`显式连接人才级主表。
+
+## 6.23.0 — 2026-10-31
+
+- 修正人员能力层级：科研毅力、创新能力和政治倾向均只在
+  `ads_talent_capability_assessment`保存一名人才一个权威值；问题匹配表中的同名列只是便捷查询快照，
+  不按问题重新计算。
+- `ads_talent_capability_assessment`新增全部问题总学科匹配度、163个问题总数、候选/合格问题数、覆盖率、
+  最佳问题及其分数、人才级四维综合分和稳定排名。
+- 人才总学科匹配度固定为163个深圳相关基础研究问题的独立学科匹配度等权平均；未形成候选的问题按0，
+  同时保留最佳问题分，避免把整体覆盖和单项专长混为一谈。
+- 当前99,996名人才总学科匹配度范围0—55.213683，中位数0.281778；人才级综合分范围
+  5.131120—73.887002，稳定排名1—99,996。聚合结果与问题级明细逐人才对账差异为0。
+- 新增可重跑6.23.0迁移和发布阶段人才总分回填；前端人员卡片应读取人才级主表，只有选择具体问题后
+  才读取问题级学科匹配度。
+
+## 6.22.0 — 2026-10-31
+
+- 新增`ads_talent_capability_model`、`ads_talent_capability_assessment`和
+  `ads_talent_capability_dimension_metric`，按2000—2025完整论文窗发布99,996名人才的科研毅力、
+  创新能力和政治倾向及599,976条可点击解释指标。
+- 政治倾向当前没有来源数据，按业务规则所有人才统一50分并参与综合评分；同时固定保存
+  `NO_DATA_DEFAULT_AVERAGE`、原始值NULL和证据数0，禁止冒充事实型个人属性测量。
+- 新增`ads_talent_research_problem_discipline_match_topic`和
+  `ads_talent_research_problem_discipline_match`，只针对与确认深圳机构有关的163个基础研究问题计算。
+  当前范围含642条问题—机构关系、1,695条问题—Topic关系和865个完整映射Topic。
+- 人才至少在问题Topic发表3篇论文才进入候选；专业水平按论文量45%、篇均引用30%、第一/通讯作者
+  领导力15%、2021—2025近期活跃10%计算。合格Topic还要求论文量百分位不低于50且专业分不低于60；
+  强Topic要求至少5篇且专业分不低于75。
+- 学科匹配度按问题Topic重要性权重乘合格Topic专业水平分求和；只有强Leading Topic或至少两个合格
+  Topic、合格权重覆盖不低于30%、学科匹配度不低于60时才进入正式匹配。
+- 实际发布2,059,636条人才—问题—Topic证据和1,142,501条人才—问题候选；7,949条通过全部门槛，
+  覆盖148个问题和5,351名人才。15个问题当前无合格人才，保留空结果，不自动降低阈值。
+- 新增固定配置、可重跑流式发布入口、Schema/公式/数据质量测试及
+  `docs/talent_problem_match_shenzhen_v1.md`完整开发查询与导出说明。
+
+## 6.21.0 — 2026-10-30
+
+- `ads_institution_technology_power`新增可空`institution_name_zh`，按`institution_id`冗余
+  `ads_institution_profile.name_zh`，前端无需回连机构画像即可显示中文机构名。
+- 当前64,698条技术力记录全部能关联机构画像，其中5,114条具有非空中文名并完成回填；其余59,584条
+  因画像本身没有中文名而保持NULL，不使用默认名或机器翻译伪造中文名称。
+- 回填采用Doris Unique Key部分列更新，不重算或改变技术力原始指标、四项分数、综合分和排名；原始
+  全量技术力发布SQL也已加入中文名，保证后续重发字段不丢失。
+- 新增迁移、独立幂等发布脚本、来源一致性门禁和文档说明。
+
+## 6.20.0 — 2026-10-30
+
+- `ads_institution_profile`新增关联项目经费总额、真实/模拟金额、真实/模拟项目数、真实覆盖率、金额构成、
+  范围状态和口径版本9个字段；当前仅发布129家有效深圳机构。
+- 经费总额按`institution_id, project_id`去重后对关联项目`amount_cny`全额求和，同一项目在一家机构只
+  计一次；项目关联多家机构时在每家各计全额，因此机构字段禁止跨机构求和解释为深圳经费总量。
+- 114家有项目证据机构按`SOURCE_CONVERTED`与`SIMULATED_SHENZHEN_MEDIAN_V1`拆分金额和项目数；15家
+  无项目证据机构写0并标记`NO_PROJECT_EVIDENCE`，非深圳机构保持NULL。
+- 范围状态固定为`ASSOCIATED_PROJECT_FULL_AMOUNT_NOT_DISBURSEMENT`，明确金额不是机构实际拨款、到账、
+  承担额或深圳财政投入。新增可重跑发布脚本、测试及完整方法文档。
+- 当前发布129家机构，其中114家有项目、15家无项目；148,340条机构—项目成员中真实3,061条、模拟
+  145,279条。机构行核验合计951.938亿元，仅用于完整性对账且含跨机构重复，不是深圳经费总量。
+
+## 6.19.0 — 2026-10-30
+
+- 新增`ads_shenzhen_institution_field_funding`，按深圳机构×Field物化项目数、Primary Topic数、
+  真实/模拟/合计人民币金额、真实覆盖率和模拟金额占比。
+- 新增`ads_shenzhen_institution_direction_funding`，按深圳机构×唯一Primary Topic物化研究方向资金，
+  同行携带Subfield和Field中英文层级，供前端直接筛选和下钻。
+- 对至少关联一家深圳机构的项目先读取全部机构关系，再按`evidence_paper_count`分配机构权重；无证据
+  时等分。权重在过滤深圳机构前计算，避免把跨城项目全额归给深圳。
+- Field表严格从方向表聚合；当前发布Field表1,645行、方向表22,857行，覆盖114家深圳机构、26个
+  Field、226个Subfield和2,507个Primary Topic，两表项目成员计数148,340及三类金额完全一致。
+- 分配金额合计11,518,629,513.7712元，其中来源换算629,729,812.2442元、模拟金额
+  10,888,899,701.5270元；金额只表示项目关联分配值，不表示机构实际拨款或到账。
+- 新增迁移、发布SQL、幂等脚本、测试及
+  `docs/shenzhen_institution_funding_ads_v1.md`完整方法说明。
+
 ## 6.18.0 — 2026-10-30
 
 - 新增`ads_technology_hotspot_yearly`，按19,430个技术点×2015—2026完整年度网格发布论文数、年度新增
@@ -23,6 +171,22 @@
 - 2026-10-30完成正式发布：Iceberg Snapshot为`3887317550858712591`，Iceberg与Doris均为233,160行、
   19,430个技术点和12个年度；论文总数90,911、年度新增引用总数87,235,893，逐年行数及汇总完全一致，
   重复Key、负计数、越界分数、非法状态和非`COMPLETE`行均为0。
+- 增加`ads_technology_hotspot_signal.signal_text_zh`的DeepSeek去重翻译脚本和操作手册；当前97,119行
+  信号仅有65,960个唯一原文，脚本以原文哈希缓存，同一原文只提交一次模型，再展开回全部信号Key。
+  脚本从项目`.env`读取`DEEPSEEK_API_KEY`和`DEEPSEEK_MODEL`，不要求命令行导出密钥。本项不改变表
+  结构。2026-10-31已完成DeepSeek生成和Doris加载：97,119行中文全部非空，全部使用
+  `DRAFT_COMPLETE / technology_hotspot_signal_zh_v1 / data_version=202610301951`；重复Key、空Key及同一
+  原文多译均为0。译文仍是待审核草稿，来源原文中的页面元数据式噪声不会因翻译而成为真实技术热点。
+- 为热点信号增加待执行的DeepSeek技术性筛选脚本：按技术点整体比较2—6个候选，只允许`SELECT_ONE`
+  或`REJECT_ALL`，从而保证每个技术点最多保留一个明确技术热点。v2要求技术相似度和与所属技术点的
+  主题相关度同时不低于70分，并将每批降为10项；`--max-calls`严格覆盖HTTP重试、并发和拆批请求。
+  2026-10-31真实试跑20个技术点，2次请求生成8项保留和12项全拒绝，结构校验及语义抽查通过。
+  生成阶段不修改Doris；发布动作要求
+  显式确认，并在替换Serving表前保留97,119行完整备份和已校验阶段表。执行手册见
+  `docs/technology/TECHNOLOGY_HOTSPOT_SIGNAL_FILTER.md`。2026-10-31已完成全量生成和Doris发布：19,430个
+  技术点全部完成决策，9,018个技术点各保留一个热点，10,412个技术点不保留热点；目标表9,018行，
+  重复Key、单技术点多热点、非v2版本行均为0。原始97,119行完整保存在
+  `ads_technology_hotspot_signal_unfiltered_20261031`，阶段表保留9,018行用于对账和恢复。
 
 ## 6.17.0 — 2026-10-30
 
