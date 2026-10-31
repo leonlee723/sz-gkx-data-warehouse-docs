@@ -2,7 +2,7 @@
 
 ## 1. 主体名称与边界
 
-**Schema version：6.28.0。** 本文件是下游 Doris ADS 逻辑结构与业务命名的唯一真实来源；
+**Schema version：6.30.0。** 本文件是下游 Doris ADS 逻辑结构与业务命名的唯一真实来源；
 可执行物理 DDL 包括 `sql/doris/` 下的 Talent、Institution 基线文件及版本化
 `ads_schema_*` 迁移文件；新增公共学科维表的 DDL 为
 [`sql/doris/ads_schema_1_7_0_publication_profiles.sql`](sql/doris/ads_schema_1_7_0_publication_profiles.sql)；
@@ -6508,3 +6508,301 @@ uv run --frozen --group integration pytest -q tests/test_resource_optimization_r
 
 完整字段、查询示例和发布结果见
 [`docs/resource_optimization_recommendation_v1.md`](docs/resource_optimization_recommendation_v1.md)。
+
+## 48. 基础研究成果评估演示（6.29.0）
+
+本版本把`ads_research_problem_paper.evidence_level='DIRECT'`与`ads_paper_profile`的交集定义为一期
+“基础研究成果”。当前DIRECT关系1,294条，其中342篇具有MVP平台论文画像，另外952篇仅有
+`openalex:`来源ID回退，不进入本评估。342篇成果覆盖216个基础研究问题。
+
+本功能是显式演示评估：论文题名、摘要、发表时间、引用、FWCI、Topic、署名机构以及论文—专利/项目
+连接属于观测或确定性派生数据；四维评分中的固定代理项、演示期刊影响因子、历史评分曲线、未来预测和
+推荐属于`SYNTHETIC_SIMULATION`或`MIXED`。所有包含模拟值的行必须同时发布
+`is_synthetic=true`和`review_status='PENDING_REVIEW'`，不得作为专家结论、真实期刊影响因子、投资承诺
+或成果转化事实。
+
+四维及综合分均为0—100：
+
+```text
+scientific_value = 45% FWCI百分位 + 25%引用百分位
+                 + 15% Topic广度百分位 + 15%固定理论价值代理
+application_potential = 35%关联专利百分位 + 15%关联授权专利百分位
+                      + 15%关联项目百分位 + 35%固定应用代理
+innovation = 35% FWCI百分位 + 25% Topic广度百分位 + 40%固定创新代理
+academic_impact = 55%引用百分位 + 35% FWCI百分位 + 10%机构广度百分位
+overall_value = 30%科学价值 + 25%应用潜力 + 20%创新性 + 25%学术影响力
+```
+
+固定代理使用`CRC32(paper_id + component + simulation_seed)`生成，种子和版本公开保存，重跑结果稳定。
+论文—专利和论文—项目连接只在同一DIRECT问题内按`evidence_work_ids`核验，授权只表示
+`grant_date IS NOT NULL`，不表示专利当前有效或论文已经转化。
+
+### 48.1 表与逻辑Key
+
+| 表 | 逻辑Key | 用途 |
+|---|---|---|
+| `ads_research_outcome_release` | `release_id` | 发布范围、输入版本、模拟版本和边界 |
+| `ads_research_outcome_profile` | `release_id, outcome_id` | 342篇成果画像、四维分、综合分和规则说明 |
+| `ads_research_outcome_problem` | `release_id, outcome_id, problem_id` | 成果—基础研究问题DIRECT关系 |
+| `ads_research_outcome_discipline` | `release_id, outcome_id, topic_id` | Topic/Field/Domain筛选桥接 |
+| `ads_research_outcome_institution` | `release_id, outcome_id, institution_id` | 复用机构Top 20论文证据的署名机构筛选桥接及覆盖状态 |
+| `ads_research_outcome_dimension` | `release_id, outcome_id, dimension_code` | 雷达图和多成果对比 |
+| `ads_research_outcome_metric` | `release_id, outcome_id, metric_code` | 指标原值、来源、计算方法和真假标识 |
+| `ads_research_outcome_yearly_metric` | `release_id, outcome_id, statistics_year, metric_code` | 2015—2026演示评分轨迹 |
+| `ads_research_outcome_forecast` | `release_id, outcome_id, forecast_model_version, forecast_year, target_metric` | 2027—2029未回测演示预测 |
+| `ads_research_outcome_recommendation` | `release_id, recommendation_id` | 投入、转化和跟进三类演示建议 |
+
+`outcome_id`首版等于平台`paper_id`。对比分析不建立用户临时表，前端按选择的`outcome_id`直接查询
+`ads_research_outcome_dimension`。列表和总览使用主表，学科、机构和问题筛选分别连接三张桥接表。
+
+机构桥接首版复用`ads_institution_paper`，该来源只保存每家机构的Top 20代表论文，因此机构筛选为部分
+覆盖，不得把没有机构桥接行解释为论文没有署名机构；完整机构筛选需后续单独物化342篇论文的全量
+`dwd_work_authorship_institution`关系。
+
+年度四维曲线是从发表年（早于2015的从2015开始）到2026年的确定性演示轨迹，不是历史时点重新计算；
+未来三年全部固定`forecast_status='AI_ESTIMATED_NOT_BACKTESTED'`、`is_backtested=false`。
+
+### 48.2 前端“计算依据”展示契约
+
+用户点击科学价值、应用潜力、创新性或学术影响力时，前端应打开指标详情抽屉或弹窗。这里的“计算依据”
+不是只显示一段模型说明，而是按以下四层固定展示；前端不得自行修改权重、用空值补0或把模拟值改写为
+事实值。
+
+#### 48.2.1 第一层：本成果的指标结果
+
+从`ads_research_outcome_dimension`读取：
+
+| 页面内容 | 字段 | 说明 |
+|---|---|---|
+| 指标名称 | `dimension_name_zh` | 科学价值、应用潜力、创新性或学术影响力 |
+| 指标得分 | `dimension_score` | 0—100分 |
+| 综合价值权重 | `dimension_weight` | 该维度进入综合价值的权重 |
+| 对综合价值的贡献 | `weighted_contribution` | `dimension_score * dimension_weight` |
+| 同批排名和百分位 | `dimension_rank/dimension_percentile` | 只在当前342篇固定总体内比较 |
+| 计算方法 | `score_method` | 当前为`HYBRID_RULE_DETERMINISTIC_DEMO_V1` |
+| 简要解释 | `assessment_summary_zh` | 面向用户的口径说明 |
+| 数据性质 | `value_nature/is_synthetic/review_status` | 必须与分数同时展示 |
+
+例如`dimension_score=82.641783`、`dimension_weight=0.30`时，页面应显示“科学价值82.64分，
+占综合价值30%，贡献24.79分”，不能把82.64直接称为综合价值。
+
+#### 48.2.2 第二层：固定公式
+
+前端按`dimension_code`使用下表，不根据中文名称猜测公式：
+
+| `dimension_code` | 页面公式 | 分项性质 |
+|---|---|---|
+| `SCIENTIFIC_VALUE` | `45%×FWCI百分位 + 25%×引用百分位 + 15%×Topic广度百分位 + 15%×理论价值代理` | 前三项派生，理论价值代理为模拟 |
+| `APPLICATION_POTENTIAL` | `35%×关联专利百分位 + 15%×关联授权专利百分位 + 15%×关联项目百分位 + 35%×应用代理` | 连接数为派生，应用代理为模拟 |
+| `INNOVATION` | `35%×FWCI百分位 + 25%×Topic广度百分位 + 40%×创新代理` | 前两项派生，创新代理为模拟 |
+| `ACADEMIC_IMPACT` | `55%×引用百分位 + 35%×FWCI百分位 + 10%×机构广度百分位` | 全部为确定性派生 |
+
+综合价值固定显示为：
+
+```text
+30%×科学价值 + 25%×应用潜力 + 20%×创新性 + 25%×学术影响力
+```
+
+百分位总体固定为本发布的342篇成果，使用Doris`percent_rank()`；NULL FWCI位于排序最低端。固定代理使用
+公开的`simulation_seed`与成果`paper_id`计算，公式见本节开头。页面必须在含代理项的维度旁显示
+“含模拟指标”；学术影响力可显示“确定性派生”。
+
+#### 48.2.3 第三层：本成果的证据指标
+
+先读取`ads_research_outcome_dimension.evidence_metric_codes`确定应解释的指标，再从
+`ads_research_outcome_metric`读取实际可展示的指标行：
+
+| 页面内容 | 字段 |
+|---|---|
+| 指标名称与代码 | `metric_name_zh/metric_code` |
+| 原始值与单位 | `numeric_value/text_value/value_unit` |
+| 标准化分、权重和贡献 | `normalized_score/metric_weight/weighted_contribution` |
+| 数据来源 | `source_table/source_field` |
+| 计算方法 | `calculation_method` |
+| 覆盖状态 | `coverage_status` |
+| 真假属性 | `value_nature/is_synthetic` |
+
+真假属性的前端文案固定为：
+
+| `value_nature` | 页面标签 | 解释 |
+|---|---|---|
+| `OBSERVED` | 来源事实 | 直接读取论文画像等事实字段 |
+| `DERIVED` | 计算指标 | 从固定来源确定性计算，不是来源原始字段 |
+| `MIXED` | 混合评估 | 同时包含事实/派生指标和模拟代理 |
+| `SYNTHETIC_SIMULATION` | 模拟数据 | 仅用于功能演示，不得作为事实引用 |
+
+6.29.0已经保存引用、FWCI、关联专利、关联授权专利、关联项目、演示期刊影响因子和四维最终分；但基础
+指标行的`normalized_score/metric_weight/weighted_contribution`当前为空，且Topic广度百分位、机构广度
+百分位和三个固定代理尚未逐项物化。因此当前页面可以展示“固定公式 + 原始值 + 来源 + 真假属性”，但
+不能声称已经提供每个分项的逐项加总复算。字段为空时显示“暂未物化”，禁止前端自行填0或随机补值。
+
+#### 48.2.4 第四层：历史趋势与成果分布
+
+历史趋势读取`ads_research_outcome_yearly_metric`，按当前成果和对应`metric_code`排序展示
+`statistics_year/metric_value`。这些曲线固定标记`SYNTHETIC_SIMULATION`，页面标题必须使用“演示评分
+轨迹”，不能称为真实历史评价。
+
+相关成果分布从同一发布的`ads_research_outcome_dimension.dimension_score`按10分区间现场聚合。分布表示
+342篇固定成果之间的横向位置，不表示全球论文分布或学科总体分布。
+
+#### 48.2.5 前端查询顺序
+
+点击一个维度后依次执行：
+
+```sql
+-- 1. 得分、综合权重、贡献和指标代码
+SELECT dimension_code,dimension_name_zh,dimension_score,dimension_weight,
+       weighted_contribution,dimension_rank,dimension_percentile,
+       assessment_summary_zh,evidence_metric_codes,value_nature,is_synthetic,review_status
+FROM ads_research_outcome_dimension
+WHERE release_id=:release_id AND outcome_id=:outcome_id AND dimension_code=:dimension_code;
+
+-- 2. 当前已物化的原始依据和来源
+SELECT metric_code,metric_name_zh,numeric_value,text_value,value_unit,
+       normalized_score,metric_weight,weighted_contribution,
+       source_table,source_field,calculation_method,value_nature,is_synthetic,coverage_status
+FROM ads_research_outcome_metric
+WHERE release_id=:release_id AND outcome_id=:outcome_id AND dimension_code=:dimension_code
+ORDER BY weighted_contribution DESC,metric_code;
+
+-- 3. 对应演示轨迹
+SELECT statistics_year,metric_value,value_nature,is_synthetic,coverage_status
+FROM ads_research_outcome_yearly_metric
+WHERE release_id=:release_id AND outcome_id=:outcome_id AND metric_code=:score_metric_code
+ORDER BY statistics_year;
+
+-- 4. 同维度成果分布
+SELECT floor(dimension_score/10)*10 score_bucket,count(*) outcome_count
+FROM ads_research_outcome_dimension
+WHERE release_id=:release_id AND dimension_code=:dimension_code
+GROUP BY 1 ORDER BY 1;
+```
+
+`score_metric_code`映射固定为`SCIENTIFIC_VALUE_SCORE`、`APPLICATION_POTENTIAL_SCORE`、
+`INNOVATION_SCORE`或`ACADEMIC_IMPACT_SCORE`。前端不得使用演示期刊影响因子替代FWCI，也不得把论文—
+专利连接解释为成果已授权、已许可或已转化。
+
+### 48.3 成果趋势、节点案例与范围预测（6.30.0）
+
+6.30.0新增4张表，补齐理论价值增长、应用性提升、学术影响力演变、趋势节点详情以及按学科或机构筛选
+的范围趋势和预测。所有趋势均固定在2015—2026观察窗；2027—2029为未回测演示预测。
+
+| 表 | 逻辑Key | 用途 |
+|---|---|---|
+| `ads_research_outcome_yearly_evidence` | `release_id, outcome_id, statistics_year` | 单篇成果年度引用分配、专利/授权/项目事件及三项价值分 |
+| `ads_research_outcome_scope_yearly` | `release_id, scope_type, scope_id, statistics_year, metric_code` | GLOBAL、Topic、Field、Domain、Institution范围年度趋势 |
+| `ads_research_outcome_trend_case` | `release_id, scope_type, scope_id, statistics_year, metric_code, outcome_id` | 每个趋势节点最多5篇重点成果 |
+| `ads_research_outcome_scope_forecast` | `release_id, scope_type, scope_id, forecast_model_version, forecast_year, target_metric` | 范围级2027—2029预测值和区间 |
+
+#### 48.3.1 单篇成果年度证据
+
+`ads_research_outcome_yearly_evidence`发布：
+
+| 功能 | 字段 | 性质 |
+|---|---|---|
+| 理论价值增长 | `theoretical_value_score` | 复用科学价值演示轨迹，`SYNTHETIC_SIMULATION` |
+| 应用性提升 | `application_value_score` | 应用潜力演示轨迹，`MIXED` |
+| 应用年度事件 | `new_patent_link_count/new_granted_patent_count/new_project_link_count` | 按专利公开年、授权年、项目有效开始年确定性派生 |
+| 学术影响力演变 | `academic_impact_score` | 引用与FWCI驱动的演示轨迹，`MIXED` |
+| 年度新增引用 | `annual_citation_count` | 从当前累计引用按二次增长曲线确定性分配，模拟 |
+| 累计引用 | `cumulative_citation_count` | 上述年度分配累计；2026值必须等于当前论文累计引用 |
+
+当前来源没有论文历史时点理论价值和完整逐年引用事件，因此理论价值曲线和年度引用分配不得显示为历史
+事实。`citation_allocation_method='CUMULATIVE_CITATION_QUADRATIC_ALLOCATION_V1'`用于明确该边界。专利和
+项目年度事件来自已有连接事实，但“连接”仍不等于已完成成果转化。
+
+#### 48.3.2 学科、机构和全局趋势
+
+`ads_research_outcome_scope_yearly.scope_type`固定为`GLOBAL/TOPIC/FIELD/DOMAIN/INSTITUTION`。每个
+`scope_id + statistics_year + metric_code`保存：
+
+```text
+outcome_count/new_outcome_count          成果总数和当年新发表成果数
+metric_value                             分数指标等权平均；事件指标为合计
+metric_total/metric_p50/metric_min/max   合计、中位数和范围
+metric_change/year_over_year_growth_rate 与上一观察年的变化
+observed_outcome_count                   只使用派生事实事件的成果数
+synthetic_outcome_count                  含模拟值的成果数
+coverage_rate/coverage_status            覆盖和机构代理边界
+```
+
+`metric_code`固定包括`THEORETICAL_VALUE_SCORE`、`APPLICATION_VALUE_SCORE`、
+`ACADEMIC_IMPACT_SCORE`、`ANNUAL_CITATION_COUNT`、`NEW_PATENT_LINK_COUNT`、
+`NEW_GRANTED_PATENT_COUNT`和`NEW_PROJECT_LINK_COUNT`。
+
+学科范围使用342篇成果完整Primary Topic及其Field、Domain父链。机构范围对原有122篇成果使用
+`relation_nature='OBSERVED_AUTHORSHIP'`的机构Top 20论文证据；其余220篇使用每个基础问题匹配排名前3的
+`relation_nature='PROBLEM_CANDIDATE_PROXY'`深圳机构代理。代理只用于完成机构筛选演示，不表示论文由该
+机构署名。当前机构桥接共1,220行、覆盖342篇成果和643家机构，其中署名证据652行、问题候选代理568行。
+
+#### 48.3.3 趋势节点和重点案例
+
+点击趋势节点先读取`ads_research_outcome_scope_yearly`的成果数量、指标值、变化和同比，再按相同
+`scope_type/scope_id/statistics_year/metric_code`查询`ads_research_outcome_trend_case`。案例按当年指标值
+降序、变化值降序和`outcome_id`稳定排序，每个节点最多5篇。
+
+案例卡展示`title/publication_year/metric_value/metric_change/problem_ids/institution_ids`及
+`selection_reason_zh`。`institution_relation_scope='CONTAINS_PROBLEM_CANDIDATE_PROXY'`时必须显示
+“机构为问题候选代理，非论文署名”提示。
+
+#### 48.3.4 范围预测
+
+`ads_research_outcome_scope_forecast`把同一范围内单篇成果预测等权聚合，发布预测均值、上下界、来源成果
+数和历史观察年数。全部行固定：
+
+```text
+forecast_status = AI_ESTIMATED_NOT_BACKTESTED
+is_backtested = false
+value_nature = SYNTHETIC_SIMULATION
+is_synthetic = true
+```
+
+它可以驱动可视化预测报告，但不能解释为经训练、回测或校准的领域/机构预测。
+
+前端趋势查询：
+
+```sql
+SELECT statistics_year,outcome_count,new_outcome_count,metric_value,metric_p50,
+       metric_change,year_over_year_growth_rate,value_nature,is_synthetic,coverage_status
+FROM ads_research_outcome_scope_yearly
+WHERE release_id=:release_id AND scope_type=:scope_type AND scope_id=:scope_id
+  AND metric_code=:metric_code
+ORDER BY statistics_year;
+
+SELECT case_rank,outcome_id,title,publication_year,metric_value,metric_change,
+       problem_ids,institution_ids,selection_reason_zh,value_nature,
+       institution_relation_scope
+FROM ads_research_outcome_trend_case
+WHERE release_id=:release_id AND scope_type=:scope_type AND scope_id=:scope_id
+  AND statistics_year=:statistics_year AND metric_code=:metric_code
+ORDER BY case_rank;
+
+SELECT forecast_year,target_metric,forecast_value,lower_bound,upper_bound,
+       source_outcome_count,forecast_status,value_nature,is_synthetic,coverage_status
+FROM ads_research_outcome_scope_forecast
+WHERE release_id=:release_id AND scope_type=:scope_type AND scope_id=:scope_id
+  AND target_metric=:target_metric
+ORDER BY forecast_year;
+```
+
+执行入口：
+
+```bash
+./scripts/publish_research_outcome_trend_v1.sh
+uv run --frozen pytest -q tests/test_research_outcome_trend.py
+```
+
+执行入口：
+
+```bash
+./scripts/publish_research_outcome_assessment_demo_v1.sh
+uv run --frozen pytest -q tests/test_research_outcome_assessment.py
+```
+
+完整字段和前端查询示例见
+[`docs/research_outcome_assessment_demo_v1.md`](docs/research_outcome_assessment_demo_v1.md)。
+
+2026-10-31当前发布：成果342、问题关系342、Primary Topic关系342、机构关系1,220、四维记录1,368、
+指标依据3,420、年度轨迹9,055、单篇预测5,130、建议1,026；新增成果年度证据1,811、范围年度趋势
+41,153、趋势节点案例22,881和范围预测10,944。累计引用终值对账、分数范围、主Key、节点Top 5、案例
+外键和模拟标识异常均为0。

@@ -6,6 +6,35 @@
 - MINOR：向后兼容地新增表、字段或指标。
 - PATCH：不改变接口的说明、约束或索引修正。
 
+## 6.30.0 — 2026-10-31
+
+- 新增`ads_research_outcome_yearly_evidence`、`ads_research_outcome_scope_yearly`、
+  `ads_research_outcome_trend_case`和`ads_research_outcome_scope_forecast`，补齐成果理论价值、应用性和学术
+  影响力年度轨迹、趋势节点数量/变化/重点案例、学科与机构趋势以及范围预测。
+- 发布1,811条成果年度证据、41,153条范围年度趋势、22,881条节点Top案例和10,944条范围预测；覆盖
+  GLOBAL、238个Topic、26个Field、4个Domain和643家机构。
+- 机构桥接由122篇署名证据成果扩展为342篇功能覆盖：原652条Top 20署名证据保持不变，其余220篇增加
+  568条问题候选机构代理。代理显式标记`PROBLEM_CANDIDATE_PROXY`，不得解释为论文署名。
+- 理论价值和年度引用历史没有真实时点来源，继续标记模拟；专利公开、授权和项目启动年度连接为确定性
+  派生。范围预测是单篇未回测预测的等权聚合，统一标记`AI_ESTIMATED_NOT_BACKTESTED`。
+- 发布校验中累计引用2026终值与当前累计引用不一致、重复Key、分数越界、超过Top 5、案例孤儿和预测
+  标识异常均为0。
+
+## 6.29.0 — 2026-10-31
+
+- 新增基础研究成果评估演示的10张Doris ADS表，只处理
+  `ads_research_problem_paper.evidence_level='DIRECT'`与`ads_paper_profile`交集中的342篇MVP论文；
+  1,294条DIRECT候选中的952条来源ID回退论文不进入本次评估。
+- 发布科学价值、应用潜力、创新性和学术影响力四维评分、综合分、逐项计算依据、2015—2026演示轨迹、
+  2027—2029未回测预测以及投入/转化/跟进建议。
+- 来源引用、FWCI、Topic、机构和论文—专利/项目连接保持观测或确定性派生语义；固定代理分、演示期刊
+  影响因子、历史评分轨迹、预测和建议全部通过`value_nature/is_synthetic/review_status`明确标识。
+- 首版不调用大模型，所有模拟项使用公开固定种子和CRC32确定性生成，规则解释文本由模板产生；重复发布
+  可复算，不把演示数据冒充专家审核或真实成果转化结论。
+- 机构桥接首版复用既有`ads_institution_paper`的机构Top 20代表论文关系，属于部分覆盖；主画像机构数仍
+  使用论文级全量计数，缺少桥接行不能解释为无署名机构。
+- 新增6.29.0 DDL、发布SQL、固定配置、执行脚本、Schema测试和发布验证报告。
+
 ## 6.28.0 — 2026-10-31
 
 - 新增`ads_resource_optimization_recommendation`和
