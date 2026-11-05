@@ -2,10 +2,68 @@
 
 ## 1. 主体名称与边界
 
-**Schema version：6.30.0。** 本文件是下游 Doris ADS 逻辑结构与业务命名的唯一真实来源；
+**Schema version：9.9.0。** 本文件是下游 Doris ADS 逻辑结构与业务命名的唯一真实来源；
 可执行物理 DDL 包括 `sql/doris/` 下的 Talent、Institution 基线文件及版本化
 `ads_schema_*` 迁移文件；新增公共学科维表的 DDL 为
 [`sql/doris/ads_schema_1_7_0_publication_profiles.sql`](sql/doris/ads_schema_1_7_0_publication_profiles.sql)；
+人才公开资料、简介、证据、荣誉/经历候选与媒体报道迁移为
+[`sql/doris/ads_schema_6_32_0_talent_public_enrichment.sql`](sql/doris/ads_schema_6_32_0_talent_public_enrichment.sql)；
+经核验荣誉详情迁移为
+[`sql/doris/ads_schema_6_33_0_talent_honor_detail.sql`](sql/doris/ads_schema_6_33_0_talent_honor_detail.sql)；
+荣誉详情双语名称与两院院士匹配发布迁移为
+[`sql/doris/ads_schema_9_9_0_talent_honor_bilingual_academician.sql`](sql/doris/ads_schema_9_9_0_talent_honor_bilingual_academician.sql)；
+15人科研诚信演示分迁移为
+[`sql/doris/ads_schema_6_34_0_talent_integrity_score_demo.sql`](sql/doris/ads_schema_6_34_0_talent_integrity_score_demo.sql)；
+15人媒体报道情感与风险初评迁移为
+[`sql/doris/ads_schema_6_35_0_talent_media_sentiment.sql`](sql/doris/ads_schema_6_35_0_talent_media_sentiment.sql)；
+15人媒体热点话题与价值观来源证据迁移为
+[`sql/doris/ads_schema_6_36_0_talent_topic_value.sql`](sql/doris/ads_schema_6_36_0_talent_topic_value.sql)；
+15人政治展示分及子项证据迁移为
+[`sql/doris/ads_schema_6_37_0_talent_political_score_demo.sql`](sql/doris/ads_schema_6_37_0_talent_political_score_demo.sql)；
+ADS候选队列表移除迁移为
+[`sql/doris/ads_schema_7_0_0_remove_candidate_tables.sql`](sql/doris/ads_schema_7_0_0_remove_candidate_tables.sql)；
+机构新闻冗余人才/经历数组移除迁移为
+[`sql/doris/ads_schema_8_0_0_institution_news_cleanup.sql`](sql/doris/ads_schema_8_0_0_institution_news_cleanup.sql)；
+颠覆性技术候选市场热度模型估计迁移为
+[`sql/doris/ads_schema_8_1_0_technology_market_heat.sql`](sql/doris/ads_schema_8_1_0_technology_market_heat.sql)；
+前沿技术证据与转化风险迁移为
+[`sql/doris/ads_schema_8_2_0_technology_hotspot_risk.sql`](sql/doris/ads_schema_8_2_0_technology_hotspot_risk.sql)；
+技术年度投资额人民币规则模拟迁移为
+[`sql/doris/ads_schema_8_3_0_technology_investment_estimate.sql`](sql/doris/ads_schema_8_3_0_technology_investment_estimate.sql)；
+媒体聚焦文章关系、日指标、来源—目标边和总览迁移为
+[`sql/doris/ads_schema_8_5_0_media_focus.sql`](sql/doris/ads_schema_8_5_0_media_focus.sql)；
+媒体热点、情感偏向和媒体—技术耦合估算迁移为
+[`sql/doris/ads_schema_8_6_0_media_focus_insights.sql`](sql/doris/ads_schema_8_6_0_media_focus_insights.sql)；
+热点热度和月度增长迁移为
+[`sql/doris/ads_schema_8_7_0_media_hotspot_growth.sql`](sql/doris/ads_schema_8_7_0_media_hotspot_growth.sql)；
+热点热度历史回填和首月100%增长口径修正为
+[`sql/doris/ads_schema_8_8_0_media_growth_baseline.sql`](sql/doris/ads_schema_8_8_0_media_growth_baseline.sql)；
+媒体—技术年度趋势、原始政策词证据和滞后相关迁移为
+[`sql/doris/ads_schema_8_9_0_media_technology_yearly_trend.sql`](sql/doris/ads_schema_8_9_0_media_technology_yearly_trend.sql)；
+机构代表专利虚拟技术转化额及机构合计迁移为
+[`sql/doris/ads_schema_8_10_0_institution_patent_transfer_amount.sql`](sql/doris/ads_schema_8_10_0_institution_patent_transfer_amount.sql)，
+发布入口为
+[`scripts/publish_institution_patent_transfer_amount_v1.sh`](scripts/publish_institution_patent_transfer_amount_v1.sh)；
+媒体来源画像规范化及来源—目标边冗余字段移除迁移为
+[`sql/doris/ads_schema_9_0_0_media_source_profile.sql`](sql/doris/ads_schema_9_0_0_media_source_profile.sql)；
+媒体来源中文展示名迁移为
+[`sql/doris/ads_schema_9_1_0_media_source_name_zh.sql`](sql/doris/ads_schema_9_1_0_media_source_name_zh.sql)，
+固定翻译映射为
+[`config/media_source_name_zh_v1.json`](config/media_source_name_zh_v1.json)；
+媒体最新新闻突发候选、触发原因和简报草稿迁移为
+[`sql/doris/ads_schema_9_2_0_media_breaking_event_candidate.sql`](sql/doris/ads_schema_9_2_0_media_breaking_event_candidate.sql)；
+媒体—技术完整相关矩阵、Granger预测检验、滚动耦合与机制草稿迁移为
+[`sql/doris/ads_schema_9_5_0_media_technology_coupling_analysis.sql`](sql/doris/ads_schema_9_5_0_media_technology_coupling_analysis.sql)；
+媒体网络影响力代理、文章关键词频次、固定官网刊登路径和目标地域桥表迁移为
+[`sql/doris/ads_schema_9_6_0_media_network_interaction.sql`](sql/doris/ads_schema_9_6_0_media_network_interaction.sql)；
+媒体智能推荐卡片、逐篇相似度证据和事实三元组迁移为
+[`sql/doris/ads_schema_9_7_0_media_smart_recommendation.sql`](sql/doris/ads_schema_9_7_0_media_smart_recommendation.sql)，
+发布入口为
+[`scripts/publish_media_smart_recommendations_v1.sh`](scripts/publish_media_smart_recommendations_v1.sh)；
+人才—企业合作画像、合作项目/论文/专利下钻和非空版本化合作分迁移为
+[`sql/doris/ads_schema_9_8_0_talent_institution_cooperation.sql`](sql/doris/ads_schema_9_8_0_talent_institution_cooperation.sql)，
+发布入口为
+[`scripts/publish_talent_institution_cooperation_v1.sh`](scripts/publish_talent_institution_cooperation_v1.sh)；
 MVP论文摘要扩展迁移为
 [`sql/doris/ads_schema_6_7_0_paper_abstract.sql`](sql/doris/ads_schema_6_7_0_paper_abstract.sql)；
 专利分析分类、申请人及机构下钻扩展迁移为
@@ -103,6 +161,13 @@ ORCID 经历及机构扩展迁移为
 [`sql/doris/ads_schema_3_0_0_talent_profile_cleanup.sql`](sql/doris/ads_schema_3_0_0_talent_profile_cleanup.sql)，
 执行和核验见
 [`docs/ads_schema_3_0_0_talent_profile_cleanup.md`](docs/ads_schema_3_0_0_talent_profile_cleanup.md)。
+人才级产业力汇总结果与主画像投影迁移为
+[`sql/doris/ads_schema_9_3_0_talent_industrial_capability.sql`](sql/doris/ads_schema_9_3_0_talent_industrial_capability.sql)，
+发布和核验见
+[`docs/talent_industrial_capability_v1.md`](docs/talent_industrial_capability_v1.md)。
+人才—产业节点评分增加论文基础、小样本收缩和学术门槛的迁移为
+[`sql/doris/ads_schema_9_4_0_talent_industry_activity_scoring.sql`](sql/doris/ads_schema_9_4_0_talent_industry_activity_scoring.sql)，
+发布与人才级汇总必须按v2链路依次重算。
 人才 taxonomy 与统一属性关系重构迁移为
 [`sql/doris/ads_schema_3_0_0_talent_taxonomy_unification.sql`](sql/doris/ads_schema_3_0_0_talent_taxonomy_unification.sql)，
 执行和人才分类方案见
@@ -143,6 +208,10 @@ ORCID 经历及机构扩展迁移为
 [`sql/doris/ads_schema_4_8_0_talent_current_institution_location.sql`](sql/doris/ads_schema_4_8_0_talent_current_institution_location.sql)。
 人才本人论文被本人关联专利引用指标迁移为
 [`sql/doris/ads_schema_4_9_0_talent_research_to_patent.sql`](sql/doris/ads_schema_4_9_0_talent_research_to_patent.sql)。
+人才已观察引用中的本人自引、他引与他引率迁移为
+[`sql/doris/ads_schema_6_31_0_talent_observed_citation.sql`](sql/doris/ads_schema_6_31_0_talent_observed_citation.sql)，
+固定口径、执行与查询说明见
+[`docs/talent_observed_citation_mvp_v1.md`](docs/talent_observed_citation_mvp_v1.md)。
 机构学科画像项目数回填与核验入口为
 [`sql/doris/ads_schema_4_9_1_institution_discipline_project_count.sql`](sql/doris/ads_schema_4_9_1_institution_discipline_project_count.sql)。
 Topic论文全球国家当前快照迁移为
@@ -193,7 +262,7 @@ Topic论文全球国家当前快照迁移为
 ## 2. 公共约束
 
 - 数据库：`gkx_technology_analysis_dev`；存储引擎：Apache Doris OLAP。
-- 当前 188 张表均为 `UNIQUE KEY` + Merge-on-Write 当前状态表；事实与画像表按其主体 ID
+- 当前 203 张表均为 `UNIQUE KEY` + Merge-on-Write 当前状态表；事实与画像表按其主体 ID
   HASH 分桶，低基数机构类型维表使用 1 个桶。
 - 所有平台主体 ID 使用 `VARCHAR(64)`，与任何单一来源 ID 解耦；外部 ID 通过持久 identity
   bridge 映射，不由来源 ID、姓名、批次顺序或行号推导。
@@ -208,6 +277,18 @@ Topic论文全球国家当前快照迁移为
 | 表 | 粒度 | UNIQUE KEY | 状态 |
 |---|---|---|---|
 | `ads_talent_profile` | 一名人才一行 | `talent_id` | 已发布 |
+| `ads_talent_integrity_score_demo` | 一名人才在一个固定演示评分版本一行 | `talent_id, score_version` | 6.34.0新增；非事实认定 |
+| `ads_talent_media_sentiment_assessment` | 一名人才在一个固定媒体评估版本一行 | `talent_id, assessment_version` | 6.35.0新增；有限样本初评 |
+| `ads_talent_topic_value_summary` | 一名人才的一个标准话题或价值主题一行 | `release_id, talent_id, expression_type, expression_code` | 6.36.0新增；保存提及次数 |
+| `ads_talent_topic_value_evidence` | 一篇报道对一个话题或价值主题的一条来源证据一行 | `release_id, expression_evidence_id` | 6.36.0新增；支持点击下钻 |
+| `ads_talent_political_assessment_demo` | 一名人才在一个固定政治展示分版本一行 | `talent_id, assessment_version` | 6.37.0新增；非政治推断 |
+| `ads_talent_political_subscore_demo` | 一名人才的科学精神或一个价值主题子项一行 | `talent_id, assessment_version, subscore_code` | 6.37.0新增；支持子项展示 |
+| `ads_talent_political_subscore_evidence` | 一个政治展示分子项的一条指标或来源证据一行 | `talent_id, assessment_version, subscore_evidence_id` | 6.37.0新增；支持点击下钻 |
+| `ads_talent_public_enrichment` | 一名人才在一个公开资料采集发布中的可展示快照一行 | `talent_id, release_id` | 6.32.0新增并发布15人MVP |
+| `ads_talent_profile_evidence` | 一个发布中的一条人才字段断言一行 | `release_id, assertion_id` | 6.32.0新增并发布 |
+| `ads_talent_biography_evidence` | 一个发布中的一段简介底稿一行 | `release_id, biography_source_id` | 6.32.0新增并发布 |
+| `ads_talent_honor_detail` | 一个发布中的一项经核验奖项或学术身份一行 | `release_id, honor_detail_id` | 6.33.0新增；9.9.0增加中英文名称并接入两院院士匹配发布 |
+| `ads_talent_media_report` | 一个发布中的一条人才媒体报道候选一行 | `release_id, media_mention_id` | 6.32.0新增并发布；情感/风险未计算 |
 | `ads_talent_potential_result` | 一名人才一个潜力模型版本一行 | `talent_id, model_version` | 4.2.0新增并发布MVP v1 |
 | `ads_talent_taxonomy` | 一个不可变人才 taxonomy 发布一行 | `taxonomy_id, release_id` | 3.0.0统一语义 |
 | `ads_talent_taxonomy_node` | 一个 taxonomy release 的一个节点一行 | `taxonomy_id, release_id, node_id` | 3.0.0新增 |
@@ -215,6 +296,7 @@ Topic论文全球国家当前快照迁移为
 | `ads_talent_taxonomy_relation` | 一名人才与一个 taxonomy 节点的一条关系一行 | `talent_taxonomy_relation_id` | 3.0.0新增 |
 | `ads_talent_taxonomy_metrics` | 一个 taxonomy release 的一个节点聚合一行 | `taxonomy_id, release_id, node_id` | 3.0.0新增 |
 | `ads_talent_experience` | 一名人才一段经历一行 | `talent_id, experience_id` | 1.8.0 已发布 ORCID 教育/工作经历 |
+| `ads_institution_news` | 一家正式履历机构一条官网新闻一行 | `release_id, institution_news_id` | 8.0.0 删除冗余人才/经历数组 |
 | `ads_talent_research_achievement` | 一名人才一项代表成果一行 | `talent_id, achievement_id` | 已发布 |
 | `ads_talent_topic_profile` | 一名人才一个 Topic 一行 | `talent_id, topic_id` | 已发布 |
 | `ads_talent_collaborator` | 一条有向人才合作关系一行 | `talent_id, collaborator_talent_id` | 已发布 |
@@ -224,10 +306,14 @@ Topic论文全球国家当前快照迁移为
 | `ads_talent_mobility_event` | 一名人才一次严格识别的迁移事件一行 | `mobility_event_id` | 4.5.0新增并发布 |
 | `ads_talent_mobility_yearly_flow` | 一年一条地区/机构/Field有向流向边一行 | `flow_id` | 4.5.0新增并发布 |
 | `ads_talent_mobility_flow_detail` | 一条流向边一个TopN明细项一行 | `flow_id, detail_type, detail_id, related_detail_id` | 4.5.0新增并发布 |
-| `ads_talent_institution_cooperation` | 一名人才一个合作机构一行 | `talent_id, institution_id` | 预留 |
+| `ads_talent_institution_cooperation` | 一名人才一个合作机构一行 | `talent_id, institution_id` | 9.8.0发布企业合作MVP v1 |
+| `ads_talent_institution_cooperation_project` | 一名人才与一家机构的一个合作项目一行 | `talent_id, institution_id, project_id` | 9.8.0新增；同篇受资助论文证据 |
+| `ads_talent_institution_cooperation_paper` | 一名人才与一家机构在一个项目下的一篇共同论文一行 | `talent_id, institution_id, project_id, paper_id` | 9.8.0新增；完整论文证据 |
+| `ads_talent_institution_cooperation_patent` | 一名人才与一家机构的一件共同专利一行 | `talent_id, institution_id, patent_id` | 9.8.0新增；confirmed assignee证据 |
 | `ads_talent_patent` | 一名人才一件专利一行 | `talent_id, patent_id` | 已发布 |
 | `ads_talent_patent_cited_paper` | 一名人才的一件专利引用一篇论文一行 | `talent_id, patent_id, paper_id` | 已发布 |
 | `ads_talent_research_to_patent_metrics` | 一名人才一个不可变指标版本一行 | `talent_id, metric_version` | 4.9.0新增 |
+| `ads_talent_observed_citation_metrics` | 一名人才一个不可变已观察引用指标版本一行 | `talent_id, metric_version` | 6.31.0新增并发布MVP v1 |
 | `ads_paper_profile` | 一篇发布 MVP core 论文一行 | `paper_id` | 1.7.0新增并发布 |
 | `ads_patent_profile` | 一件 MVP Google Patent publication 一行 | `patent_id` | 1.7.0新增并发布 |
 | `ads_patent_cited_paper` | 一件专利引用一篇发布 MVP core 论文一行 | `patent_id, paper_id` | 1.7.0新增并发布 |
@@ -279,6 +365,7 @@ Topic论文全球国家当前快照迁移为
 | `ads_sz_gkx_industry_cluster_subfield` | 一个集群关联一个Subfield一行 | `cluster_code, subfield_id` | 6.5.0自动批准并发布 |
 | `ads_sz_gkx_industry_cluster_topic` | 一个集群关联一个Topic一行 | `cluster_code, topic_id` | 6.5.0按Subfield继承；6.6.0增加产业链位置 |
 | `ads_talent_industry_activity` | 一名人才在一个分类体系的一个产业节点一行 | `talent_id, taxonomy_id, industry_id` | 2.2.0新增并发布 |
+| `ads_talent_industrial_capability_result` | 一名人才在一个产业力模型版本一行 | `talent_id, model_version` | 9.3.0新增；论文基础覆盖全体人才，产业活动证据可空 |
 | `ads_technology_commercial_value_simulation` | 一个固定目录技术的一个模拟版本一行 | `catalog_release_id, tech_id, simulation_version` | 2.3.0新增并发布；仅限模拟 |
 | `ads_talent_industry_capability_simulation` | 一名人才在一个产业节点的一个模拟版本一行 | `talent_id, taxonomy_id, industry_id, simulation_version` | 4.1.0统一为全量覆盖模拟；仅限模拟 |
 | `ads_project_profile` | 一个科研项目一行 | `project_id` | 1.4.0新增 |
@@ -398,9 +485,11 @@ Topic论文全球国家当前快照迁移为
 一名人才一行的当前主画像。论文指标必须由发布的 MVP core 数据重算，不读取 OpenAlex full
 中 `dwd_author.works_count` 或 `dwd_author.cited_by_count` 作为 ADS 指标。
 
-主画像不保存未定义的单值产业力。人才在各产业节点的当前可解释结果必须查询
-`ads_talent_industry_activity.industry_activity_score`；该分数是产业技术活动分，不得命名或映射为完整
-`industrial_capability`。如果未来需要跨产业的人才级单值，必须先定义聚合规则、比较总体、覆盖状态和独立版本。
+主画像不保存未定义的单值产业力。9.3.0起，人才级单值只能使用
+`ads_talent_industrial_capability_result`定义的版本化论文基础—产业证据聚合结果，并将当前版本投影到
+`industrial_capability_*`字段。人才在各产业节点的结果仍查询
+`ads_talent_industry_activity.industry_activity_score`；该分数是节点级产业技术活动分，不得直接取最大值或任意一行
+伪造人才级产业力。
 
 | 字段组 | 字段 | Doris 类型 | 说明 |
 |---|---|---|---|
@@ -460,8 +549,43 @@ Topic论文全球国家当前快照迁移为
 | 评分 | `potential_score_version` | `VARCHAR(64)` | 当前投影的潜力模型版本 |
 | 评分 | `potential_metric_coverage` | `DECIMAL(5,4)` | 当前潜力模型实际进入综合分的权重和，0至1 |
 | 评分 | `potential_metrics_as_of_date` | `DATE` | 当前潜力结果的指标统计截止日 |
+| 产业力 | `industrial_capability_score` | `DECIMAL(9,6)` | 当前人才级产业力综合分，范围0–94.9；必须结合证据状态解释 |
+| 产业力 | `industrial_capability_level` | `VARCHAR(32)` | 当前分数档位代码：`WEAK/POTENTIAL_FOUNDATION/RESEARCH_FOUNDATION/INITIAL/STRONG/OUTSTANDING/LEADING` |
+| 产业力 | `industrial_capability_research_score` | `DECIMAL(9,6)` | 论文数、被引、MVP core H指数和CWTS Core来源分得到的0–100论文科研基础分 |
+| 产业力 | `industrial_capability_industry_score` | `DECIMAL(9,6)` | 二级产业小样本收缩、Top 3加权和有界广度奖励后的0–100产业活动证据分；无证据时为NULL |
+| 产业力 | `industrial_capability_evidence_status` | `VARCHAR(32)` | `RESEARCH_ONLY`或`INDUSTRY_EVIDENCE`；区分仅论文推导与已有产业活动事实 |
+| 产业力 | `industrial_capability_primary_industry_id` | `VARCHAR(64)` | 小样本收缩后得分最高的二级产业ID；无产业证据时为NULL |
+| 产业力 | `industrial_capability_source_industry_count` | `INT` | 参与汇总的二级产业数；无产业证据时为0 |
+| 产业力 | `industrial_capability_strong_industry_count` | `INT` | 收缩后产业分不低于70的二级产业数 |
+| 产业力 | `industrial_capability_score_version` | `VARCHAR(64)` | 当前投影的人才级产业力模型版本 |
+| 产业力 | `industrial_capability_research_as_of_date` | `DATE` | 论文科研基础输入统计截止日 |
+| 产业力 | `industrial_capability_industry_as_of_date` | `DATE` | 产业活动输入统计截止日；`RESEARCH_ONLY`时为NULL |
+| 诚信演示分 | `research_integrity_score` | `DECIMAL(5,2)` | 0至100当前展示分；本版为人工固定演示值 |
+| 诚信演示分 | `research_integrity_rating` | `VARCHAR(16)` | 分数不低于92显示“优秀”，否则“普通” |
+| 诚信演示分 | `research_integrity_score_version` | `VARCHAR(64)` | 当前投影的固定评分版本 |
+| 诚信演示分 | `research_integrity_score_nature` | `VARCHAR(64)` | 本版固定`SYNTHETIC_DEMO_NOT_EVIDENCE_BASED` |
+| 媒体舆情 | `media_sentiment_score` | `DECIMAL(5,2)` | 当前30条媒体报道按人才聚合的百分制分数 |
+| 媒体舆情 | `media_sentiment_rating` | `VARCHAR(16)` | 分数不低于85为“正面”，否则“普通” |
+| 媒体舆情 | `media_risk_level` | `VARCHAR(16)` | 基于有限报道显式风险词的初步等级 |
+| 媒体舆情 | `media_sentiment_reason` | `STRING` | 报道数、奖项/科研贡献信号、风险词和样本限制说明 |
+| 媒体舆情 | `media_sentiment_assessment_version` | `VARCHAR(64)` | 当前投影的固定评估版本 |
+| 媒体舆情 | `media_sentiment_score_nature` | `VARCHAR(64)` | 本版固定`RULE_BASED_LIMITED_MEDIA_SAMPLE` |
+| 政治展示分 | `political_score` | `DECIMAL(5,2)` | 科学精神与价值观各50%的产品占位分 |
+| 政治展示分 | `political_qualification_status` | `VARCHAR(16)` | 不低于75为“合格”，否则“普通” |
+| 政治展示分 | `political_scientific_spirit_score` | `DECIMAL(5,2)` | `min(H-index,100)`占位分 |
+| 政治展示分 | `political_value_orientation_score` | `DECIMAL(5,2)` | 逐价值主题子项的平均分 |
+| 政治展示分 | `political_score_reason` | `STRING` | 公式、指标、价值主题数量和限制说明 |
+| 政治展示分 | `political_assessment_version` | `VARCHAR(64)` | 当前展示分版本 |
+| 政治展示分 | `political_score_nature` | `VARCHAR(64)` | 固定`SYNTHETIC_DEMO_NOT_POLITICAL_INFERENCE` |
 | 科研指标 | `paper_count` | `BIGINT` | 累计去重论文数；NULL未计算，0确认为零；其他计数同理 |
 | 科研指标 | `citations_count` | `BIGINT` | 累计引用数 |
+| 科研指标 | `observed_citation_count` | `BIGINT` | 当前版本已观察引用边数；不是完整累计被引 |
+| 科研指标 | `observed_classifiable_citation_count` | `BIGINT` | 当前版本可判定本人自引或他引的引用边数 |
+| 科研指标 | `observed_self_citation_count` | `BIGINT` | 当前版本本人自引边数 |
+| 科研指标 | `observed_non_self_citation_count` | `BIGINT` | 当前版本他引边数 |
+| 科研指标 | `observed_non_self_citation_rate` | `DECIMAL(12,8)` | 他引数除以可判定引用数；无可判定引用时NULL |
+| 科研指标 | `observed_citation_metric_version` | `VARCHAR(64)` | 当前投影的已观察他引率指标版本 |
+| 科研指标 | `observed_citation_coverage_status` | `VARCHAR(32)` | PARTIAL/NOT_CLASSIFIABLE/NOT_AVAILABLE |
 | 科研指标 | `h_index` | `INT` | H指数 |
 | 科研指标 | `corresponding_count` | `BIGINT` | 通讯作者论文数 |
 | 科研指标 | `core_eligible_paper_count` | `BIGINT` | 主发表来源is_core为非NULL的MVP core去重论文数 |
@@ -814,18 +938,34 @@ ads_talent_taxonomy_relation         人才到直接节点的唯一 ADS 关系�
 查询包含子级的完整分类使用 closure 展开；仅展示节点统计时读取 metrics。历史复现必须显式指定
 `taxonomy_id + release_id`，不能只按名称或只按 `taxonomy_id` 查询。
 
-#### 人才分类 MVP v2
+#### 人才层次分类 MVP v5 与境外人才分类 MVP v1
 
-当前方案使用一个产品派生 taxonomy；三个分类均为独立根节点，青年人才允许与前两类重叠：
+当前方案使用两个平级的产品派生 taxonomy。人才层次分类负责学术层次和青年科研梯队；境外人才分类负责
+按当前机构所在地归属洲。二者拥有独立的 `taxonomy_id + release_id`，不得把境外地域节点挂到人才层次树中。
 
 ```text
 taxonomy_id   = talent_classification
 taxonomy_kind = DERIVED_CLASSIFICATION
-release_id    = talent_classification_mvp_v2_2026-09-18
+release_id    = talent_classification_mvp_v5_2026-11-04
 
-领军人才 leading_talent
-专家 expert
-青年人才 young_talent
+高层次学术人才 high_level_academic_talent
+├── 领军人才 leading_talent
+└── 专家 expert
+青年科研梯队 young_research_echelon
+└── 青年人才 young_talent
+```
+
+```text
+taxonomy_id   = overseas_talent_region
+taxonomy_kind = DERIVED_CLASSIFICATION
+release_id    = overseas_talent_region_mvp_v1_2026-11-04
+
+亚洲人才 asia_talent
+欧洲人才 europe_talent
+北美洲人才 north_america_talent
+南美洲人才 south_america_talent
+非洲人才 africa_talent
+大洋洲人才 oceania_talent
 ```
 
 固定基准总体是 `talent_academic_mvp_v1` 已发布且至少关联一篇 MVP core 论文的 100,000 名人才，
@@ -846,6 +986,297 @@ rank 101–200（`(0.1%, 0.2%]`）属于专家。最近 5 个自然年包含统�
 关系统一使用 `assignment_method='RULE'`、`verified_status='UNVERIFIED'`、
 `assignment_version='talent_classification_mvp_v2'`。`evidence` 至少保存评分版本、指标口径版本、
 截止日、总分、排名、基准人数、首篇论文年和累计被引。该分类是产品规则结果，不代表官方或人工评审认定。
+
+平级的境外人才分类使用 `ads_talent_profile.country_code <> 'CN'`，并将 `country_location_id` 精确连接
+`ads_location` 的 `COUNTRY` 行，以 `continent_code` 映射 `AS/EU/NA/SA/AF/OC` 六个叶节点。当前固定
+位置版本为 `location_v1_5_20261103`，六个叶节点人数分别为 3,697、5,413、6,311、130、149、1,156，
+合计 16,856。该分类只是“当前机构所在地代理”，不是国籍、公民身份、出生地或族裔判断；国家代码为空的
+61,533 人不应被当作中国人才或境外人才。香港、澳门、台湾按位置维度中的非 `CN` 代码归入亚洲节点。
+地域关系固定 `is_primary=FALSE`、`assignment_version='talent_overseas_region_mvp_v1'`，证据保存国家代码、
+国家位置ID、洲代码、位置版本和人才画像数据版本。
+
+#### 人才获奖学科分类 MVP v2
+
+人才获奖学科分类是与人才层次、境外地域平级的 `AWARD` taxonomy，只消费
+`ads_talent_honor_detail.honor_type='award' AND verification_status='verified'`；院士、Fellow和其他成员身份
+不得进入获奖判断。分类复用26个 `ads_discipline_field` 标准 Field，不维护第二套学科名称。
+
+```text
+taxonomy_id   = talent_award_field
+taxonomy_kind = AWARD
+release_id    = talent_award_field_mvp_v2_2026-11-04
+
+获奖人才 award_recipient
+├── 26个标准Field获奖人才节点（node_id=field_id）
+└── 学科暂未识别的获奖人才 unclassified_award_field
+未获任何奖项人员 no_award
+```
+
+taxonomy 本身已经表达“人才获奖学科分类”，因此不创建冗余 `award_status` 节点。`award_recipient` 与
+`no_award` 是两个平级根节点；前者只组织Field子树，后者直接接受未获奖补集关系。
+
+固定人才总体为 `score_version='talent_academic_mvp_v1'` 的100,000人。奖项来源固定为
+`talent_honor_structured_mvp_v1_20261101`：70条已核验award事实覆盖13人，全部13人均通过
+`talent_potential_mvp_v1.primary_field_id` 归入标准Field；其余99,987人按当前产品口径归入 `no_award`。
+`no_award` 的严格数据语义是“固定奖项release中没有已核验award事实”，不是超出当前数据范围的终身未获奖
+断言；该限定必须写入 relation evidence 和 metrics feature_summary。
+
+每名基准人才只写一条直接关系并设置 `is_primary=TRUE`：有已核验奖项时写主Field节点，主Field为空时写
+`unclassified_award_field`，否则写 `no_award`。不得展开人才完整 `field_ids` 数组，否则一名人才会进入十余个
+学科并放大人数。当前Field获奖人才分布为：免疫学与微生物学2、环境科学2，其余物理学与天文学、计算机
+科学、医学、材料科学、生物化学/遗传学/分子生物学、神经科学、药理学/毒理学/药剂学、心理学、能源各1。
+未命中的标准Field节点保留0人数，为后续奖项数据预留稳定筛选树。
+
+发布 SQL 为
+[`sql/doris/ads_talent_award_field_taxonomy_mvp_v2.sql`](sql/doris/ads_talent_award_field_taxonomy_mvp_v2.sql)，
+执行、查询和验收见
+[`docs/talent_award_field_taxonomy_mvp_v2.md`](docs/talent_award_field_taxonomy_mvp_v2.md)。
+
+#### 人才院士分类与人才会士分类 MVP v1
+
+院士与Fellow是可同时成立的两种学术身份，不放入同一棵互斥荣誉树，而是发布两个与获奖学科平级的
+`MEMBERSHIP` taxonomy。奖项记录不参与这两个分类；`honor_type='member'`和未命中院士规则的其他学术
+成员身份继续保留在`ads_talent_honor_detail`，不强行归入院士或Fellow。
+
+```text
+taxonomy_id = talent_academician
+release_id  = talent_academician_mvp_v1_2026-11-05
+
+中国院士 china_academician
+外国院士 foreign_academician
+无院士称号人才 no_academician
+```
+
+```text
+taxonomy_id = talent_fellow
+release_id  = talent_fellow_mvp_v1_2026-11-05
+
+会士（Fellow） fellow
+无会士称号人才 no_fellow
+```
+
+taxonomy本身已经分别表达院士和会士分类，因此不创建`academician`、`fellow_status`或统一
+`honor_status`包装节点。五个节点全部是`parent_node_id=NULL`、`node_type='ROOT'`、`node_level=1`的可选择
+根节点，各自只生成一条`depth=0`自闭包。
+
+院士分类固定使用`verification_status='verified' AND honor_type='academy_member'`：
+
+1. `china_academician`只接收授予机构为`Chinese Academy of Sciences`或
+   `Chinese Academy of Engineering`且称号不含`Foreign/外籍`的普通院士。该名称描述两院身份，不表示
+   人才国籍，当前74人。
+2. `foreign_academician`接收称号明确包含`Foreign/外籍`的外籍院士，或授予机构命中冻结外国/国际科学院
+   映射的身份。首版映射包括芬兰科学院、德国国家科学院利奥波第那、印度科学院、美国国家科学院、
+   丹麦皇家科学院和世界科学院。分类依据授予机构及称号，不依据人才国籍、姓名或当前所在地，当前16人。
+3. 一人可以同时属于中国院士和外国院士，当前重叠1人；中国院士关系Primary优先，外国院士关系仍保留但
+   `is_primary=FALSE`。两类院士并集89人，其余99,911人进入`no_academician`。
+
+会士分类固定使用`verification_status='verified' AND honor_type='fellow'`。13条Fellow详情覆盖4人，同一人才
+多个Fellow称号聚合为一条`fellow`关系；其余99,996人进入`no_fellow`。会士taxonomy严格二分，每人恰好
+一条关系和一条Primary。
+
+固定基准总体均为`score_version='talent_academic_mvp_v1'`的100,000人。正向身份关系使用
+`assignment_method='SOURCE'`、`verified_status='VERIFIED'`；`no_academician/no_fellow`补集使用
+`assignment_method='RULE'`、`verified_status='UNVERIFIED'`。补集节点只表示固定发布中未观察到对应已核验
+身份，不是终身无院士或Fellow称号断言。
+
+院士关系总数为100,001、去重人才100,000、Primary 100,000；会士三项均为100,000。关系证据保存详情数、
+授予机构数、最早/最晚可用年份、固定荣誉release、院士机构映射版本和人才画像版本。具体荣誉名称、授予
+机构、年份和来源链接仍以`ads_talent_honor_detail`为事实明细，不在分类关系中复制完整列表。
+
+发布 SQL 为
+[`sql/doris/ads_talent_academician_fellow_taxonomies_mvp_v1.sql`](sql/doris/ads_talent_academician_fellow_taxonomies_mvp_v1.sql)，
+执行与验收见
+[`docs/talent_academician_fellow_taxonomies_mvp_v1.md`](docs/talent_academician_fellow_taxonomies_mvp_v1.md)。
+
+#### 人才学科领域分类与科研活跃度分类 MVP v1
+
+两套产品派生taxonomy均固定使用`score_version='talent_academic_mvp_v1'`的100,000人，并要求每名人才在
+每个taxonomy中恰好一条直接关系、恰好一条Primary。学科分类只使用唯一主Field；活跃度分类只执行一个
+有序`CASE`，所以两套taxonomy内部的直接分类都严格互斥，人数分别可以相加为100,000。
+
+##### 人才学科领域分类
+
+```text
+taxonomy_id   = talent_discipline_field
+taxonomy_kind = DERIVED_CLASSIFICATION
+release_id    = talent_discipline_field_mvp_v1_2026-11-05
+
+4个标准Domain根节点（不可直接分配）
+└── 26个标准Field叶节点（直接分配）
+学科暂未识别人才 unclassified_discipline_field（平级可选根节点）
+```
+
+四个Domain为健康科学、社会科学、物理科学、生命科学，直接复用`ads_discipline_domain`；26个Field直接复用
+`ads_discipline_field`，节点ID固定为平台`field_id`，不维护第二套学科名称。Domain只提供树形展示与子树人数，
+人才不写Domain关系，通过closure从唯一Field关系展开。
+
+主Field固定来自`ads_talent_potential_result.model_version='talent_potential_mvp_v1'`的`primary_field_id`，指标
+截止日为2026-09-18。99,998人命中26个标准Field，2人`primary_field_id IS NULL`进入
+`unclassified_discipline_field`。四个Domain主Field人数为健康科学17,929、社会科学12,791、物理科学51,493、
+生命科学17,785，另有未识别2人，合计100,000。
+
+`ads_talent_profile.field_ids`记录人才全部MVP core论文涉及的Field：当前共1,047,456项、平均每人10.47个，
+99,235人涉及多个Field，全部展开会使分类失去主学科区分度并产生约百万关系。因此首版只写唯一
+`primary_field_id`；`field_ids`仅用于证据中的数量、一致性校验和未来独立的交叉学科分析。当前所有非空
+`primary_field_id`都包含在对应`field_ids`中，差异为0。
+
+每名人才关系固定`is_primary=TRUE`、`assignment_method='RULE'`、`verified_status='UNVERIFIED'`、
+`assignment_version='talent_discipline_field_mvp_v1'`。关系证据保存主Field模型版本、截止日、全部Field数量及
+人才画像版本，不复制完整`field_ids`数组。
+
+##### 人才科研活跃度分类
+
+```text
+taxonomy_id   = talent_research_activity
+taxonomy_kind = DERIVED_CLASSIFICATION
+release_id    = talent_research_activity_mvp_v1_2026-11-05
+
+高度活跃人才 highly_active
+持续活跃人才 sustained_active
+近期活跃人才 recent_active
+近期沉寂人才 recently_inactive
+历史活跃人才 historical_active
+活跃度未识别人才 activity_unclassified
+```
+
+六个节点都是可选择的平级根节点。2026年数据尚不完整，因此禁止用于本发布分类；近三年完整窗口固定为
+2023—2025，前置近期窗口为2021—2022。某年`paper_count>0 OR project_count>0`即记一个活跃年。项目数按
+`effective_start_year`计入启动年份，只是项目启动关联证据，不表示项目全周期持续活跃或正式项目成员身份。
+
+为降低不同学科发表习惯差异，“高度活跃”不使用全局论文阈值，而是在每个唯一主Field内按2023—2025论文
+总数升序，以`CEIL(field_cohort_count*0.75)`位置的论文数作为精确nearest-rank第75分位阈值，并在release内
+冻结。阈值范围当前为25至135篇；例如艺术与人文学科25、工程学47、医学51、物理学与天文学135。
+
+有序互斥规则和当前人数为：
+
+| 优先级 | 节点 | 规则 | 人数 |
+|---:|---|---|---:|
+| 1 | `highly_active` | 2023—2025至少2个活跃年，且论文数达到主Field P75 | 25,502 |
+| 2 | `sustained_active` | 近三年至少2个活跃年，未命中高度活跃 | 64,907 |
+| 3 | `recent_active` | 近三年恰有1个活跃年 | 6,841 |
+| 4 | `recently_inactive` | 2023—2025无活动，2021—2022有活动 | 2,334 |
+| 5 | `historical_active` | 2021—2025无活动，2021年前有活动 | 414 |
+| 6 | `activity_unclassified` | 没有可用带年份论文或项目启动证据 | 2 |
+
+规则按表中顺序只返回一个节点，六类合计100,000。关系固定`is_primary=TRUE`、
+`assignment_method='RULE'`、`verified_status='UNVERIFIED'`、
+`assignment_version='talent_research_activity_mvp_v1'`。证据保存窗口、主Field与P75阈值、近三年论文数和项目
+启动数、活跃年数、最近论文/项目启动年份及版本。该分类只描述固定数据窗口中的可观察科研活动，不表示
+在职、全职科研、退休或真实项目成员状态。
+
+发布 SQL 为
+[`sql/doris/ads_talent_discipline_activity_taxonomies_mvp_v1.sql`](sql/doris/ads_talent_discipline_activity_taxonomies_mvp_v1.sql)，
+执行与验收见
+[`docs/talent_discipline_activity_taxonomies_mvp_v1.md`](docs/talent_discipline_activity_taxonomies_mvp_v1.md)。
+
+#### 人才创新链参与类型 MVP v1
+
+当前MVP数据不能可靠判断基础研究、概念验证、实验室验证、中试验证、工程化、监管与标准化、产业化、
+市场规模化等八个创新成熟阶段。论文、项目、授权专利和论文被专利引用都不足以单独证明人才已进入中试、
+工程化或产业化。因此首版不发布虚假的八阶段结论，而是创建与人才层次、境外地域和获奖学科平级的
+“人才创新链参与类型”派生taxonomy，只描述当前数据中可直接观察的创新活动证据。
+
+```text
+taxonomy_id   = talent_innovation_chain_type
+taxonomy_kind = DERIVED_CLASSIFICATION
+release_id    = talent_innovation_chain_type_mvp_v1_2026-11-04
+
+科研创新人才 research_innovation
+专利创新人才 patent_innovation
+科技关联人才 science_technology_linkage
+创新链类型未识别人才 innovation_type_unclassified
+```
+
+taxonomy本身已经表达“人才创新链参与类型”，因此不创建包装父节点。四个分类节点均为
+`parent_node_id=NULL`、`node_type='ROOT'`、`node_level=1`的可选平级根节点；closure只保存四条
+`depth=0`自关系。该结构是平面分类，不把四类解释为先后成熟阶段。
+
+固定总体为`ads_talent_profile.score_version='talent_academic_mvp_v1'`的100,000人。每名人才按照以下优先级
+写入且只写入一条当前Primary关系：
+
+1. `research_to_patent_cited_paper_count > 0`：归入`science_technology_linkage`。
+2. 否则，`patent_application_count > 0 OR patent_grant_count > 0`：归入`patent_innovation`。
+3. 否则，`paper_count > 0 OR project_count > 0`：归入`research_innovation`。
+4. 以上均不满足：归入`innovation_type_unclassified`。
+
+该优先级只用于生成互斥主分类，保证四类人数可以相加，不表示成熟度高低。关系固定使用
+`assignment_method='RULE'`、`is_primary=TRUE`、`verified_status='UNVERIFIED'`、
+`assignment_version='talent_innovation_chain_type_mvp_v1'`；关系ID为
+`talent_innovation_chain_type_mvp_v1:{node_id}:{talent_id}`。`evidence`保存论文数、项目数、专利申请数、
+授权数、本人论文被本人关联专利引用数、指标版本、覆盖状态、统计日期和人才画像数据版本。
+
+四类的严格语义如下：
+
+| 节点 | 定义和边界 | 当前人数 |
+|---|---|---:|
+| `research_innovation` | 观察到论文或科研项目，但未观察到专利及科研—专利引用关联 | 93,510 |
+| `patent_innovation` | 观察到专利申请或授权，但未观察到科研—专利引用关联；不表示已工程化或产业化 | 5,911 |
+| `science_technology_linkage` | 固定范围内至少一篇本人论文被本人关联专利引用；不表示已技术转让或产业化 | 579 |
+| `innovation_type_unclassified` | 当前范围内没有前三类可用证据 | 0 |
+
+当前`research_to_patent_metric_version='talent_research_to_patent_citation_mvp_v1'`且覆盖状态为`PARTIAL`，
+所以未观察到科技关联不能解释为真实世界中不存在关联。学术指标截止日为2026-09-18，专利指标截止日为
+2026-10-06。四类合计100,000人，既不遗漏也不重复。
+
+本分类不能使用`industrial_capability_evidence_status`、专利模拟价值或其他模型分数替代事实证据，也不能把
+`patent_grant_count > 0`解释为工程化、把`research_to_patent_cited_paper_count > 0`解释为概念验证。未来只有
+接入样机/测试、中试、标准/审批、技术许可/转让、投产和市场采用等专项事实后，才能另建八阶段成熟度
+taxonomy，不能在本平面参与类型中原地改变节点语义。
+
+发布 SQL 为
+[`sql/doris/ads_talent_innovation_chain_type_mvp_v1.sql`](sql/doris/ads_talent_innovation_chain_type_mvp_v1.sql)，
+执行和验收见
+[`docs/talent_innovation_chain_type_mvp_v1.md`](docs/talent_innovation_chain_type_mvp_v1.md)。
+
+#### 重点项目承担人才 MVP v2
+
+该分类与人才层次、境外地域、获奖学科和创新链参与类型平级。展示名称按业务需求使用“重点项目承担人才”，
+但当前项目人员证据全部来自资助论文作者关系，因此分类的严格数据语义是“真实金额重点项目成果关联代理”，
+不是正式项目负责人、项目骨干、经费获得者或承担身份认定。
+
+```text
+taxonomy_id   = talent_key_project_engagement
+taxonomy_kind = DERIVED_CLASSIFICATION
+release_id    = talent_key_project_engagement_mvp_v2_2026-11-05
+
+重点项目承担人才 key_project_talent
+无重点项目承担人才 no_key_project_talent
+```
+
+taxonomy本身已经表达“重点项目承担人才”，因此不创建`key_project_engagement`包装节点。
+`key_project_talent`和`no_key_project_talent`直接作为两个可选择的平级根节点，均为
+`parent_node_id=NULL`、`node_type='ROOT'`、`node_level=1`；两个节点互斥，并覆盖固定
+`score_version='talent_academic_mvp_v1'`的全部100,000人。重点项目采用以下MVP金额代理规则：
+
+```sql
+amount_cny_value_type = 'SOURCE_CONVERTED'
+AND amount_cny >= 1000000
+```
+
+只使用项目来源金额经固定汇率换算的人民币金额。`SIMULATED_SHENZHEN_MEDIAN_V1`、
+`SIMULATED_GLOBAL_SHENZHEN_MEDIAN_V1`和`UNAVAILABLE`全部排除。100万元是产品固定代理阈值，不是官方
+重点项目认定标准，也不是人才个人获批、到账或承担金额。
+
+人才至少通过`ads_talent_project`关联一个合格项目时进入`key_project_talent`；否则作为固定总体补集进入
+`no_key_project_talent`。当前63,061个项目具有真实换算金额，其中38,367个不少于100万元，33,206个关联
+当前MVP人才，共形成199,777条人才—合格项目成果关系。最终叶节点人数为：
+
+| 节点 | 当前人数 | 严格数据语义 |
+|---|---:|---|
+| `key_project_talent` | 22,467 | 至少署名一个真实换算金额不少于100万元项目资助的MVP论文 |
+| `no_key_project_talent` | 77,533 | 固定数据范围内未观察到上述项目成果关联 |
+
+`ads_talent_project`当前7,702,366条关系全部为`funded_output_author`，直接Investigator和负责人关系均为0，
+所以不能证明其为项目负责人、正式成员或实际承担者；“无重点项目承担人才”也不能解释为现实世界中从未
+承担重点项目。关系统一使用`assignment_method='RULE'`、`is_primary=TRUE`、
+`verified_status='UNVERIFIED'`和`assignment_version='talent_key_project_engagement_mvp_v2'`。证据保存阈值、
+金额类型、合格项目数、最大真实换算金额、直接/负责人关系数、项目指标版本及截止日。
+
+发布 SQL 为
+[`sql/doris/ads_talent_key_project_engagement_mvp_v2.sql`](sql/doris/ads_talent_key_project_engagement_mvp_v2.sql)，
+执行和验收见
+[`docs/talent_key_project_engagement_mvp_v2.md`](docs/talent_key_project_engagement_mvp_v2.md)。v2验证后，含冗余
+包装节点的v1已从在线taxonomy表清理；历史SQL、文档和报告仅保留作审计。
 
 #### 其他称谓和单独标签
 
@@ -970,10 +1401,16 @@ node 获取名称、通过 closure 获取祖先语义。删除或重算 metrics 
 `taxonomy_id + release_id` 内解释；发布前必须保证当前关系中最多一条 Primary，不存在“跨全部
 taxonomy 的全局唯一人才层次”。未经审核的模型推荐不能写成 `verified_status='VERIFIED'`。
 
-#### `talent_classification_mvp_v2` 关系生成规则
+该表是多对多桥表，不是“一名人才一行”：同一人才可在同一 release 关联多个直接 node，也可横跨多套
+taxonomy。`taxonomy_id + release_id + node_id` 是关系的版本上下文和可校验连接键；Doris 列式存储只
+扫描查询所需列，重复低基数字段也可压缩。不得改成每人一个 node 数组，否则会削弱按节点筛选、关系级
+来源/有效期、幂等更新和唯一性校验。若未来证据大字段成为主要存储压力，可在保持本桥表键和语义不变的
+前提下，把 `reason/evidence` 拆到按关系ID连接的冷详情表，不能合并多条关系事实。
+
+#### 两个平级 taxonomy 的关系生成规则
 
 `taxonomy_id='talent_classification'`、
-`release_id='talent_classification_mvp_v2_2026-09-18'` 按以下规则写入本表：
+`release_id='talent_classification_mvp_v5_2026-11-04'` 按以下规则写入本表：
 
 1. `academic_capability_rank <= CEIL(academic_benchmark_talent_count * 0.001)`：写入
    `node_id='leading_talent'`，即学术力前 0.1% 的领军人才。
@@ -986,12 +1423,45 @@ taxonomy 的全局唯一人才层次”。未经审核的模型推荐不能写�
 4. 青年人才关系独立写入、`is_primary=FALSE`，不得因已存在领军人才或专家关系而排除；前两类关系
    `is_primary=TRUE` 且按当前区间规则互斥。
 5. 关系ID固定为
-   `talent_classification_mvp_v2:{node_id}:{talent_id}`，重跑同一固定发布不得产生重复关系。
+   `talent_classification_mvp_v5:{node_id}:{talent_id}`，重跑同一固定发布不得产生重复关系。
+
+`taxonomy_id='overseas_talent_region'`、
+`release_id='overseas_talent_region_mvp_v1_2026-11-04'` 独立写入地域关系：
+
+1. `country_code <> 'CN'` 且国家位置成功解析到六个支持洲代码之一时，按 `continent_code` 写入唯一洲节点。
+2. 六个洲节点都是该 taxonomy 的可选根节点，关系 `is_primary=FALSE`；不创建 `overseas_talent` 父节点。
+3. 关系ID固定为 `overseas_talent_region_mvp_v1:{node_id}:{talent_id}`。
+4. 人才可同时存在于人才层次分类和境外人才分类；Primary 唯一性只在各自 taxonomy release 内检查。
 
 发布 SQL 为
-[`sql/doris/ads_talent_classification_mvp_v2_publish.sql`](sql/doris/ads_talent_classification_mvp_v2_publish.sql)。
-当前固定发布预期写入领军人才 100 条、专家 900 条、青年人才 6,918 条，共 7,918 条分类关系。
-错误遗漏 rank 101–200 的 v1 release 保留历史数据但标记为 `SUPERSEDED`，业务查询不得继续使用。
+[`sql/doris/ads_talent_taxonomy_split_level_overseas.sql`](sql/doris/ads_talent_taxonomy_split_level_overseas.sql)。
+当前人才层次分类写入 7,918 条关系，境外人才分类写入 16,856 条关系。错误嵌套两者的 v4 已从 ADS 在线表
+清理；历史规则仍由版本化 SQL、文档和发布报告留档。业务查询必须先按所需 `taxonomy_id` 选择各自的
+`PUBLISHED` release。
+
+`taxonomy_id='talent_award_field'`、
+`release_id='talent_award_field_mvp_v2_2026-11-04'` 为每名固定基准人才写一条Primary关系：有已核验award
+事实且主Field非空时写 `node_id=primary_field_id`；有奖但主Field为空时写
+`unclassified_award_field`；其余人才写 `no_award`。获奖关系为 `VERIFIED`，`no_award` 补集关系为
+`UNVERIFIED`。关系ID固定为 `talent_award_field_mvp_v2:{node_id}:{talent_id}`。
+
+`taxonomy_id='talent_academician'`允许同一人才同时写入中国院士和外国院士关系，但只允许一条Primary；
+无任一正向院士关系时才写`no_academician`。`taxonomy_id='talent_fellow'`为每名基准人才写`fellow`或
+`no_fellow`之一。两个taxonomy的Primary唯一性分别校验，不能跨taxonomy互斥。
+
+`taxonomy_id='talent_discipline_field'`只按唯一`primary_field_id`或未识别补集写一条关系，不展开
+`field_ids`。`taxonomy_id='talent_research_activity'`按高度活跃到未识别的固定CASE优先级写一条关系。两套
+taxonomy都必须校验每名基准人才关系数等于1且Primary数等于1。
+
+`taxonomy_id='talent_innovation_chain_type'`、
+`release_id='talent_innovation_chain_type_mvp_v1_2026-11-04'`为每名固定基准人才写一条互斥Primary关系。
+判断顺序固定为科研—专利关联、专利成果、科研活动、未识别；不得改变CASE顺序后仍沿用同一release。
+四类全部是规则派生的`UNVERIFIED`关系，不能作为官方创新阶段或成果转化认定。
+
+`taxonomy_id='talent_key_project_engagement'`、
+`release_id='talent_key_project_engagement_mvp_v2_2026-11-05'`为固定100,000人各写一条根节点Primary关系。
+正向节点必须能连接到至少一个`SOURCE_CONVERTED`且`amount_cny>=1000000`的项目，反向节点是固定总体补集；
+不得用模拟金额生成正向关系。两类均为金额与成果关联代理产生的`UNVERIFIED`关系。
 
 ### 4.5 `ads_talent_taxonomy_metrics`
 
@@ -1020,10 +1490,40 @@ taxonomy 的全局唯一人才层次”。未经审核的模型推荐不能写�
 
 `direct_talent_count` 只统计直接分配到本节点的人才；`subtree_talent_count` 通过 closure 展开后按
 人才去重。多个子节点之间可能重叠，因此父节点人数不能简单相加子节点人数。
-`talent_classification_mvp_v2` 的三个节点都是独立根节点，因此每个节点的 `direct_talent_count`、
-`subtree_talent_count` 和 `current_talent_count` 相同。分类人数求和使用三个节点
-`SUM(direct_talent_count)`，统计的是分类关系数，允许同一青年人才与前两类分别计数；需要统计去重人才时
-必须回到 relation 使用 `COUNT(DISTINCT talent_id)`，不能把分类人数求和误称为去重人才数。
+`talent_classification_mvp_v5` 的两个根分组不接受直接分配，因此 `direct_talent_count=0`；高层次学术人才
+子树人数为 1,000，青年科研梯队子树人数为 6,918。三个学术层次叶节点的 `direct_talent_count`、
+`subtree_talent_count` 和 `current_talent_count` 分别保持 100、900、6,918。分类关系数只对三个叶节点的
+`direct_talent_count` 求和，结果为 7,918。`overseas_talent_region_mvp_v1` 的六个洲节点都是根节点，
+`direct/subtree/current` 分别相同，合计 16,856。两个 taxonomy 的人数不可直接相加为去重人才数；跨分类
+去重必须按 `talent_id` 查询 relation。
+
+`talent_award_field_mvp_v2` 的两个根节点中，`award_recipient` 子树为13人，`no_award` 为99,987人；
+`unclassified_award_field` 为0人。26个Field节点全部生成，即使当前人数为0也不删除；Field节点合计人数
+必须等于获奖人才子树人数。
+
+`talent_academician_mvp_v1`三个根节点的`direct/subtree/current`人数分别为中国院士74、外国院士16、
+无院士称号99,911；两类院士重叠1人，因此三节点人数不可相加作为总体，关系数为100,001、去重人才为
+100,000。`talent_fellow_mvp_v1`两个根节点人数为会士4、无会士称号99,996，合计100,000。正向节点的
+`verified_talent_count`等于人数，两个补集节点的`verified_talent_count=0`。
+
+`talent_discipline_field_mvp_v1`的26个Field叶节点直接人数合计99,998，未识别根节点2人；四个Domain的
+直接人数为0，子树人数合计99,998。`talent_research_activity_mvp_v1`六个平级根节点的
+`direct/subtree/current`人数依次为25,502、64,907、6,841、2,334、414、2，合计100,000。两套分类均为
+规则派生，全部节点`verified_talent_count=0`。
+
+`talent_innovation_chain_type_mvp_v1`是四个平级根节点组成的平面taxonomy，因此每个节点的
+`direct_talent_count/subtree_talent_count/current_talent_count`相同，依次为科研创新93,510、专利创新5,911、
+科技关联579、未识别0，合计100,000。所有关系均为规则派生且未经人工核验，所以
+`verified_talent_count=0`。
+
+`talent_key_project_engagement_mvp_v2`只有两个平级根节点，每个节点的
+`direct_talent_count/subtree_talent_count/current_talent_count`相同，分别为22,467和77,533，合计100,000。
+全部关系未经正式项目角色核验，因此两个节点的`verified_talent_count`均为0。
+
+人数不写入 `ads_talent_taxonomy_node`。node 属于不可变 release 的分类定义，而人数会随关系有效状态、
+统计截止日和统计口径变化；混写会迫使计数刷新修改不可变字典，并失去 `direct/subtree/current/verified`
+四种口径。节点列表展示时按 `taxonomy_id + release_id + node_id` LEFT JOIN metrics；metrics 缺失表示聚合
+尚未生成，不能默认解释为 0。
 
 ### 4.6 为什么人才 taxonomy 使用 JOIN，而不是继续扩展宽表
 
@@ -1066,8 +1566,8 @@ JOIN ads_talent_taxonomy_relation r
  AND c.release_id = r.release_id
  AND c.descendant_node_id = r.node_id
 WHERE c.taxonomy_id = 'talent_classification'
-  AND c.release_id = 'talent_classification_mvp_v2_2026-09-18'
-  AND c.ancestor_node_id = 'young_talent'
+  AND c.release_id = 'talent_classification_mvp_v5_2026-11-04'
+  AND c.ancestor_node_id = 'young_research_echelon'
   AND r.is_current = TRUE;
 ```
 
@@ -1097,6 +1597,66 @@ HAVING COUNT(*) > 1;
 
 2.0.0 classification/label 表只是历史迁移定义，已被 3.0.0 统一 taxonomy 模型取代。当前部署必须执行
 `ads_schema_3_0_0_talent_taxonomy_unification.sql`，不得向旧 classification/label 表发布新数据。
+
+### 4.7 人才公开资料增强与证据（6.32.0；7.0.0候选表边界修订）
+
+本组表服务人才详情页的基础资料、简介、经核验荣誉/经历与媒体报道展开。完整网页文档、候选队列、
+不可变发布和历史事实保存在 Iceberg DWD/DWS；ADS 只保存正式产品投影。首版发布标识为
+`talent_profile_enrichment_mvp_v1_20261101`，采集证据截止 `2026-11-01`。
+
+`ads_talent_public_enrichment` 的字段契约如下：
+
+| 字段组 | 字段 | 说明 |
+|---|---|---|
+| Key/身份 | `talent_id, release_id, openalex_author_id, orcid` | 统一人才、发布与外部身份 |
+| 展示身份 | `name, name_zh, identity_institution_name, h_index_at_selection` | 采集选择时快照，不替代主画像实时指标 |
+| 已核验资料 | `birth_year, web_url, current_title, profile_evidence_as_of_date` | 只投影 `source_confirmed` 断言；未知保持NULL |
+| 双语简介 | `talent_bio, talent_bio_en` | 基于多个来源归纳，不复制长段官方文本 |
+| 简介治理 | `biography_source_urls, biography_summary_method, biography_summary_version, biography_review_status` | 来源、方法、版本与人工审核状态 |
+| 覆盖计数 | `profile_assertion_count, image_candidate_count, biography_evidence_count, honor_candidate_count, experience_candidate_count, media_report_count` | 对应明细条数 |
+| 公共 | `data_version, update_time` | 单调版本与UTC生成时间 |
+
+其余正式明细表包含 `release_id`、各自稳定明细 ID、`talent_id`、`openalex_author_id`、
+`data_version` 和 `update_time`。专属字段如下：
+
+| 表 | 专属字段 | 语义约束 |
+|---|---|---|
+| `ads_talent_profile_evidence` | `attribute_code, value_type, value_text, document_id, source_url, evidence_text, evidence_as_of_date, claim_scope, verification_status, verified_at` | 任何出生年、主页、职称和头像展示均可回到原文证据 |
+| `ads_talent_biography_evidence` | `document_id, source_url, language, source_material, candidate_type, review_status` | 保存用于归纳简介的短底稿，不保存整页正文 |
+| `ads_talent_honor_detail` | `honor_type, organization_name, organization_name_zh, honor_name, honor_name_zh, honor_year, honor_description, honor_reason, source_url, evidence_text, source_candidate_ids, verification_status` | 一项荣誉一行；英文/原名称与中文展示名并存；介绍、年份和理由只在来源明确支持时填写，原文链接必填 |
+| `ads_talent_media_report` | `media_article_id, document_id, title, publisher, published_at_raw, published_at, canonical_url, summary_candidate, match_confidence, matched_name_variants, matched_name_language, match_basis_json, verification_status, sentiment_label, sentiment_score, risk_level, topic_codes, topic_names_zh, value_codes, value_names_zh, topic_value_context, topic_value_extraction_method, topic_value_extraction_version` | 人员匹配依据必须可解释；6.35.0写入情感/风险，6.36.0写入话题与价值主题 |
+
+7.0.0 删除 `ads_talent_image_candidate`、`ads_talent_honor_candidate` 和
+`ads_talent_experience_candidate`。对应候选数据继续保留在 Iceberg DWD/DWS，不因 ADS 删除而丢失；
+经确认的荣誉写入 `ads_talent_honor_detail`，机构已存在且解析状态为 confirmed 的履历才写入
+`ads_talent_experience`。机构未进入 `ads_institution_profile` 或仅有弱解析记录的履历继续停留在候选层。
+
+`ads_talent_profile.talent_bio/talent_bio_en` 投影双语简介；`birth_year/web_url/title` 仅从已确认断言
+部分更新。`gender` 和 `avatar_url` 不推断、不自动回填。所有简介首版为
+`AI_ASSISTED_MULTI_SOURCE_SYNTHESIS + PENDING_REVIEW`，不能解释为机构原文或已人工背书。
+
+媒体补采发布 `talent_media_refresh_mvp_v2_20261101` 不改变表结构：向
+`ads_talent_media_report` 写入15人各2条、共30条 `source_confirmed` 报道，标题、摘要和发布日期
+完整率均为100%。经数据审核，首批 `talent_profile_enrichment_mvp_v1_20261101` 的15条媒体候选已从
+ADS删除；不可变DWD历史保留审计。当前ADS只保留新发布的30条 `source_confirmed` 记录。日期来自
+发布者页面的明确日期；摘要为基于原文归纳的短摘要，日期状态与摘要方法保存在
+`match_basis_json`。6.35.0使用固定词表和可复算规则评估当前30条报道，并写入单篇情感标签、0至1分数和
+初步风险等级；人才聚合结果写入`ads_talent_media_sentiment_assessment`及人才主画像。该评估每人仅2篇
+报道，`coverage_status=LIMITED_2_ARTICLES`，不能解释为完整互联网舆情或事实风险结论。
+
+话题与价值观发布`talent_media_topic_value_mvp_v1_20261102`使用固定标准词表处理同一30条报道：
+`ads_talent_media_report`保存每篇报道的标准话题/价值主题数组和来源摘要上下文；
+`ads_talent_topic_value_summary`按人才和标准项保存去重报道提及次数；
+`ads_talent_topic_value_evidence`保存标题、媒体、发布日期、上下文、原文URL、来源类型和表达依据，支持
+点击任一话题或价值主题下钻。`PUBLIC_STATEMENT_PARAPHRASE`表示访谈/会议中的公开表述归纳，
+`SOURCE_GROUNDED_VALUE_THEME`表示来源支持的价值主题，不得展示为学者逐字引语。
+
+政治展示分发布`talent_political_score_demo_v1_20261102`只用于满足页面占位需求：科学精神子项使用
+`min(H-index,100)`，每个价值主题根据公开表述归纳或来源支持主题获得固定90/95分，两篇报道支持时
+增加2分；价值观总分为各主题平均值，政治展示分为科学精神和价值观各50%。子项与证据分别保存于
+`ads_talent_political_subscore_demo`和`ads_talent_political_subscore_evidence`。该结果明确标记
+`SYNTHETIC_DEMO_NOT_POLITICAL_INFERENCE`，不测量意识形态、政治立场、忠诚度、中立性或现实风险。
+它也不替代问题匹配模型中历史存在的`political_orientation_score=50`缺省占位口径。
 
 ## 5. `ads_talent_experience`
 
@@ -1151,6 +1711,41 @@ HAVING COUNT(*) > 1;
 已关联中国机构时，`country_name` 和 `city` 同样复用 `ads_institution_profile` 当前发布的位置
 展示值；机构画像再按 `country/province/city_location_id` 复用 `ads_location.name_zh`，无可靠
 中文名时才保留原展示值。
+
+## 5.1 `ads_institution_news`
+
+本表为机构新闻查询宽表，一家机构的一条新闻一行。机构范围只从指定重点人才的
+`ads_talent_experience` 读取，必须满足 `institution_detail_available=1` 且
+`institution_resolution_status LIKE 'confirmed%'`；`dwd_author_experience_candidate` 明确不参与。
+
+| 字段组 | 字段 | Doris 类型 | 说明 |
+|---|---|---|---|
+| Key | `release_id` | `VARCHAR(128) NOT NULL` | 不可变机构新闻发布 ID |
+| Key | `institution_news_id` | `VARCHAR(64) NOT NULL` | 机构、发布日期和标题生成的稳定新闻 ID |
+| 机构 | `institution_id` | `VARCHAR(64) NOT NULL` | 统一机构 ID |
+| 机构 | `institution_name` | `VARCHAR(512) NOT NULL` | 正式经历中的机构展示名 |
+| 机构 | `institution_name_en` | `VARCHAR(512)` | 正式经历中的机构英文名 |
+| 新闻 | `title` | `VARCHAR(2048) NOT NULL` | 新闻原始标题 |
+| 新闻 | `title_zh` | `VARCHAR(2048)` | 已核验中文标题；未翻译时为空 |
+| 新闻 | `publisher` | `VARCHAR(512) NOT NULL` | 发布方 |
+| 新闻 | `publisher_domain` | `VARCHAR(512) NOT NULL` | 发布方域名 |
+| 新闻 | `published_date` | `DATE NOT NULL` | 官网明确发布日期 |
+| 新闻 | `published_at_raw` | `VARCHAR(128) NOT NULL` | 官网日期原文 |
+| 新闻 | `canonical_url` | `VARCHAR(4096) NOT NULL` | 文章直达链接或官网列表证据链接 |
+| 新闻 | `article_url_status` | `VARCHAR(32) NOT NULL` | direct_article/listing_page_only |
+| 新闻 | `summary` | `TEXT` | 来源支持的摘要；首批缺失保持空值 |
+| 来源质量 | `source_channel` | `VARCHAR(48) NOT NULL` | official_newsroom/official_research_news/official_press_release |
+| 来源质量 | `source_language` | `VARCHAR(16) NOT NULL` | 来源语言 |
+| 来源质量 | `verification_status` | `VARCHAR(32) NOT NULL` | official_source_confirmed/review_required/rejected |
+| 来源质量 | `experience_source_table` | `VARCHAR(64) NOT NULL` | 固定为 ads_talent_experience |
+| 版本 | `data_version` | `BIGINT NOT NULL` | Unique Key sequence 版本 |
+| 版本 | `update_time` | `DATETIME(3) NOT NULL` | ADS 生成时间 UTC |
+
+首批发布 `institution_news_priority_talents_v1_20261102` 覆盖第一梯队 5 名人才正式教育/工作履历中的
+21 家已确认机构，每家 3 条、共 63 条官网新闻。直达文章链接无法从官方列表稳定解析时保留列表页，
+并以 `article_url_status=listing_page_only` 明确标识；不得把列表页冒充文章直达链接。8.0.0 删除
+`talent_ids` 与 `experience_ids`：新闻以机构为主体，消费者按 `institution_id` 连接
+`ads_talent_experience` 获取人才与经历，避免在新闻行重复保存多值关系。
 
 ## 6. `ads_talent_research_achievement`
 
@@ -1355,14 +1950,20 @@ similar_talent_id ASC` 保留 Top 3。候选不足时保留实际数量，不跨
 | 合作事实 | `patent_count` | `BIGINT` | 共同专利去重数 |
 | 合作事实 | `first_cooperation_year` | `SMALLINT` | 首次合作年 |
 | 合作事实 | `latest_cooperation_year` | `SMALLINT` | 最近合作年 |
-| 金额 | `cooperation_amount` | `DECIMAL(20,2)` | 统一折算为currency后的合作项目金额，未知或未折算不能当零 |
+| 金额 | `cooperation_amount` | `DECIMAL(20,2)` | 合作项目可用人民币金额之和，包含来源换算与明确标记的估算值；无可用金额为空 |
+| 金额 | `real_cooperation_amount` | `DECIMAL(20,2)` | `SOURCE_CONVERTED`合作项目金额之和 |
+| 金额 | `estimated_cooperation_amount` | `DECIMAL(20,2)` | `SIMULATED_*`或`LLM_ESTIMATED_*`合作项目金额之和 |
+| 金额 | `amount_value_type` | `VARCHAR(32)` | `REAL_ONLY/ESTIMATED_ONLY/MIXED/UNAVAILABLE`；无合作项目时为空 |
+| 金额 | `amount_known_project_count` | `BIGINT NOT NULL` | 具有可用人民币金额的合作项目数 |
+| 金额 | `amount_unavailable_project_count` | `BIGINT NOT NULL` | 缺少人民币金额的合作项目数 |
 | 金额 | `currency` | `VARCHAR(3)` | ISO 4217记账币种；同Key所有项目先折算到同币种 |
 | 金额 | `fx_rate_date` | `DATE` | 汇率基准日，逐笔历史汇率时不填单一日期 |
 | 金额 | `amount_conversion_policy` | `VARCHAR(128)` | 汇率来源和折算策略版本；跨币种不可直接求和 |
 | 分类与评分 | `field_ids` | `ARRAY<VARCHAR(64)>` | 涉及Field ID |
 | 分类与评分 | `topic_ids` | `ARRAY<VARCHAR(64)>` | 涉及Topic ID |
-| 分类与评分 | `cooperation_score` | `DECIMAL(10,4)` | 该人才与该机构合作评分 |
-| 分类与评分 | `cooperation_score_version` | `VARCHAR(64)` | 合作评分版本 |
+| 分类与评分 | `evidence_type_ids` | `ARRAY<VARCHAR(64)> NOT NULL` | 实际存在的共同论文、共同专利或直接项目证据类型 |
+| 分类与评分 | `cooperation_score` | `DECIMAL(10,4) NOT NULL` | 0至100合作分；每条关系必填 |
+| 分类与评分 | `cooperation_score_version` | `VARCHAR(64) NOT NULL` | 合作评分公式版本；每条关系必填 |
 | 分类与评分 | `cooperation_score_annotation` | `VARIANT` | 合作评分构成快照 |
 | 分类与评分 | `top_projects_snapshot` | `VARIANT` | 仅TopN项目展示含起止日期成果链接和经费说明，完整明细查事实层 |
 | 版本 | `metrics_as_of_date` | `DATE` | 统计截止日 |
@@ -1370,6 +1971,32 @@ similar_talent_id ASC` 保留 Top 3。候选不足时保留实际数量，不跨
 | 版本 | `update_time` | `DATETIME(3) NOT NULL` | ADS记录生成时间UTC，ETL显式提供 |
 
 企业合作查询使用本表并增加 `institution_type_id='company'`，不再维护企业专用关系表。
+
+MVP v1只有满足以下任一条件的关系进入本表：人才与企业出现在同一篇项目资助论文；人才为专利关联
+发明人且企业为同一publication的`confirmed` assignee。仅分别出现在同一项目的不同论文不构成合作。
+
+合作分版本`talent_company_cooperation_score_v1`固定为：项目数对数封顶40分、共同论文数对数封顶30分、
+共同专利数对数封顶15分、最近十年衰减15分。构成项必须同时写入`cooperation_score_annotation`，不得把
+该分解释为合同金额、合作质量认定或主体信用分。
+
+合作金额只汇总`ads_talent_institution_cooperation_project`中的项目金额。来源换算、确定性模拟和未来
+明确标记的LLM估算均可进入总额，但必须分别写入真实与估算分项；无合作项目时金额字段为空。当前没有
+预算科目和支出流水，`funding_usage_status='NOT_AVAILABLE'`，不得生成资金使用情况。
+
+### 11.1 `ads_talent_institution_cooperation_project`
+
+逻辑主键为`talent_id, institution_id, project_id`。保存项目名称、简介、起止时间、共同论文数、
+Topic/Field、来源金额、人民币金额、金额性质和资金使用覆盖状态。项目准入必须有同篇受资助论文证据。
+
+### 11.2 `ads_talent_institution_cooperation_paper`
+
+逻辑主键为`talent_id, institution_id, project_id, paper_id`。每行保存同一受资助论文中的人才作者和
+企业署名机构共同证据，以及三个固定输入Snapshot ID。
+
+### 11.3 `ads_talent_institution_cooperation_patent`
+
+逻辑主键为`talent_id, institution_id, patent_id`。机构关系只接受固定Patent Run中的
+`resolution_status='confirmed' AND is_confirmed=true`；该关系不声明专利由某个项目产生，也不表示当前权属。
 
 ## 12. `ads_talent_patent`
 
@@ -1457,6 +2084,50 @@ research_to_patent_citation_rate =
 `ads_talent_patent_cited_paper` 中 `is_paper_authored_by_talent=1` 的行。首版不做平滑、百分位或
 0–100归一化；画像中的四个同名前缀字段只是当前版本投影。由于专利、Author–Inventor 与NPL解析
 均非全球完整覆盖，当前有论文分母的人才统一标记 `PARTIAL`，不得把该比例称为商业成果转化率。
+
+### 13.0.2 `ads_talent_observed_citation_metrics`
+
+一名人才一个不可变指标版本一行。首版固定
+`metric_version='talent_observed_non_self_citation_mvp_v1'`，逻辑主键为
+`talent_id + metric_version`。该表只统计当前MVP已经物化、且指向人才MVP core论文的引用边，不能解释为
+OpenAlex或全球文献的完整他引率。
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| talent_id | VARCHAR(64) NOT NULL | North Star统一人才ID |
+| metric_version | VARCHAR(64) NOT NULL | 不可变指标版本 |
+| observed_citation_count | BIGINT NOT NULL | 当前MVP已物化引用边中指向本人MVP core论文的引用边数 |
+| classifiable_citation_count | BIGINT NOT NULL | 能够判定本人自引或他引的引用边数 |
+| self_citation_count | BIGINT NOT NULL | 引用方作者包含该人才本人的引用边数 |
+| non_self_citation_count | BIGINT NOT NULL | 引用方作者完整且不包含该人才本人的引用边数 |
+| unclassified_citation_count | BIGINT NOT NULL | 引用方署名缺失或存在空Author ID且未命中本人的引用边数 |
+| observed_cited_paper_count | BIGINT NOT NULL | 至少收到一条已观察引用边的本人去重MVP core论文数 |
+| observed_non_self_citation_rate | DECIMAL(12,8) | 他引数除以可判定引用数；分母为0时NULL |
+| coverage_status | VARCHAR(32) NOT NULL | PARTIAL/NOT_CLASSIFIABLE/NOT_AVAILABLE |
+| citation_scope | VARCHAR(64) NOT NULL | 固定`MVP_SELECTED_CITING_WORK_TO_MVP_CORE` |
+| source_core_work_snapshot_id | VARCHAR(128) NOT NULL | 固定400万MVP core Work Snapshot ID |
+| source_reference_snapshot_id | VARCHAR(128) NOT NULL | 固定MVP引用边Iceberg Snapshot ID |
+| source_authorship_snapshot_id | VARCHAR(128) NOT NULL | 固定MVP论文署名Iceberg Snapshot ID |
+| metrics_as_of_date | DATE NOT NULL | 指标统计截止日 |
+| data_version / update_time | BIGINT NOT NULL / DATETIME(3) NOT NULL | 公共版本字段 |
+
+引用边按`talent_id + citing_work_id + cited_work_id`去重。引用方作者包含该人才时记本人自引；引用方
+署名存在、全部Author ID非空且不包含该人才时记他引；其余记不可判定。确定性恒等式与公式为：
+
+```text
+classifiable_citation_count = self_citation_count + non_self_citation_count
+
+observed_citation_count =
+    classifiable_citation_count + unclassified_citation_count
+
+observed_non_self_citation_rate =
+    non_self_citation_count / classifiable_citation_count
+```
+
+`classifiable_citation_count=0`时比例必须为NULL。当前引用边只以MVP selected Work为引用方，因此有可
+判定结果也统一标记`PARTIAL`；观察到引用但均不可判定时为`NOT_CLASSIFIABLE`，未观察到引用时为
+`NOT_AVAILABLE`。画像中的七个`observed_*`字段只是当前版本便利投影；版本比较、不可判定计数、范围和
+Snapshot追溯必须读取本表。
 
 ## 13.1 `ads_paper_profile`
 
@@ -1658,6 +2329,10 @@ publication 分配新 ID。
 | 经费 | `associated_project_funding_amount_mix_type` | `VARCHAR(32)` | REAL_ONLY/SIMULATED_ONLY/MIXED/NO_PROJECT_EVIDENCE |
 | 经费 | `associated_project_funding_scope_status` | `VARCHAR(64)` | 固定ASSOCIATED_PROJECT_FULL_AMOUNT_NOT_DISBURSEMENT |
 | 经费 | `associated_project_funding_version` | `VARCHAR(64)` | 关联项目经费范围、求和与真假拆分口径版本 |
+| 专利转化模拟 | `representative_patent_transfer_amount_cny` | `DECIMAL(24,4)` | 本机构代表专利Top20虚拟技术转化额之和；不是全量专利或真实收入 |
+| 专利转化模拟 | `representative_patent_transfer_patent_count` | `BIGINT` | 参与虚拟金额求和的代表专利记录数；无代表专利机构为0 |
+| 专利转化模拟 | `representative_patent_transfer_scope_status` | `VARCHAR(64)` | 固定`REPRESENTATIVE_PATENT_TOP20_SIMULATED` |
+| 专利转化模拟 | `representative_patent_transfer_amount_version` | `VARCHAR(64)` | 代表专利虚拟转化额聚合口径与规则版本 |
 | 合作总量 | `collaborator_institution_count` | `BIGINT` | 跨年份、跨已发布合作证据去重的合作机构数 |
 | 合作总量 | `collaborative_paper_count` | `BIGINT` | 关联2至10家机构的MVP core合作论文去重数 |
 | 合作总量 | `collaborative_patent_count` | `BIGINT` | 至少两家confirmed assignee机构共同关联的专利publication去重数 |
@@ -1809,6 +2484,9 @@ openalex_work_id ASC
 | 标题 | `title`, `title_zh`, `title_en`, `title_original` | `STRING` | 多语言标题快照；中文不自动翻译 |
 | 日期 | `application_date`, `publication_date`, `grant_date`, `is_granted` | 多类型 | 申请、公开、授权日期及授权标志；不表示当前有效 |
 | 科学连接 | `cited_paper_count` | `BIGINT NOT NULL` | 成功关联MVP core的去重科学论文数 |
+| 转化模拟 | `technology_transfer_amount_cny` | `DECIMAL(24,4)` | 单条代表专利虚拟技术转化额，币种CNY；不是实际交易或许可收入 |
+| 转化模拟 | `technology_transfer_amount_value_type` | `VARCHAR(32)` | 固定`SIMULATED_RULE_V1`，前端必须展示模拟属性 |
+| 转化模拟 | `technology_transfer_amount_version` | `VARCHAR(64)` | 确定性金额计算规则版本 |
 | 关系 | `relationship_types` | `ARRAY<STRING> NOT NULL` | `CONFIRMED_ASSIGNEE`和/或`INVENTOR_AFFILIATION` |
 | 关系 | `has_confirmed_assignee`, `has_inventor_affiliation` | `TINYINT NOT NULL` | 两类证据布尔标记 |
 | 关系 | `relationship_status` | `VARCHAR(40) NOT NULL` | `ASSIGNEE_ONLY/INVENTOR_AFFILIATION_ONLY/BOTH` |
@@ -1834,6 +2512,11 @@ google_patent_publication_id ASC
 来源不能区分original/current assignee，因此仍不得解释为当前专利所有权。
 `INVENTOR_AFFILIATION`只表示可靠Author–Inventor连接下的发明人任职/署名机构关联，前端不得显示为
 “机构申请”“机构持有”或“机构拥有”。
+
+8.10.0为每条代表专利生成确定性的CNY虚拟转化额，并在机构主画像中聚合。该金额只覆盖本表Top20，
+所有记录均标记`SIMULATED_RULE_V1`；前端必须同时读取模拟标记，不能将其展示为实际成交额。全部
+机构画像均发布聚合字段，无代表专利的机构写0。公式、字段及执行方法见
+[`docs/institution_patent_transfer_amount_v1.md`](docs/institution_patent_transfer_amount_v1.md)。
 
 两张代表成果表的发布、固定Snapshot、行数核验与查询示例见
 [`docs/institution_achievement_ads_v1.md`](docs/institution_achievement_ads_v1.md)。
@@ -2392,8 +3075,12 @@ technology_power_score =
 | 项目分项分 | `lead_project_score` | `DECIMAL(9,6)` | 负责人项目数在同产业候选人才中的0–100平均并列百分位分；项目源未覆盖时为空 |
 | 项目分项分 | `direct_project_score` | `DECIMAL(9,6)` | 直接参与项目数在同产业候选人才中的0–100平均并列百分位分；项目源未覆盖时为空 |
 | 项目评分 | `project_execution_score` | `DECIMAL(9,6)` | `0.70*lead_project_score + 0.30*direct_project_score`；任一必要分项不可用时为空 |
-| 综合评分 | `activity_metric_weight_coverage` | `DECIMAL(5,4) NOT NULL` | 产业技术活动公式实际可用权重；项目可用时1.0000，否则0.6000 |
-| 综合评分 | `industry_activity_score` | `DECIMAL(9,6) NOT NULL` | 专利活动与可用项目执行背景按固定权重归一的0–100产业技术活动分；不是完整产业力 |
+| 综合评分 | `activity_metric_weight_coverage` | `DECIMAL(5,4) NOT NULL` | 产业活动证据原始公式实际可用权重；项目可用时1.0000，否则0.6000 |
+| 综合评分 | `research_foundation_score` | `DECIMAL(9,6) NOT NULL` | 论文数、被引、MVP core H指数和CWTS Core来源分得到的0–100论文科研基础分`Q` |
+| 综合评分 | `industry_evidence_score` | `DECIMAL(9,6) NOT NULL` | 专利与可用项目证据分按产业基准人数向50收缩后的0–100产业活动证据分`I` |
+| 综合评分 | `pre_gate_weighted_score` | `DECIMAL(9,6) NOT NULL` | 论文基础40%与产业证据60%的门槛前加权分：`0.40*Q+0.60*I` |
+| 综合评分 | `academic_gate_score` | `DECIMAL(9,6) NOT NULL` | 论文科研基础对节点最终分的上限：`35+0.60*Q` |
+| 综合评分 | `industry_activity_score` | `DECIMAL(9,6) NOT NULL` | `round(min(94.9,pre_gate_weighted_score,academic_gate_score),1)`；是人才在该产业节点的综合活动分，不是商业价值 |
 | 综合排名 | `industry_activity_rank` | `BIGINT NOT NULL` | 同taxonomy release、同产业固定总体中的稳定唯一降序排名 |
 | 综合排名 | `industry_activity_percentile` | `DECIMAL(9,6) NOT NULL` | 同产业固定总体中的0–100平均并列百分位，越大表示相对位置越高 |
 | 综合排名 | `benchmark_talent_count` | `BIGINT NOT NULL` | 该产业评分与排名使用的固定基准人才数 |
@@ -2408,7 +3095,7 @@ technology_power_score =
 | 产业版本 | `taxonomy_release_id` | `VARCHAR(64) NOT NULL` | 产业分类体系不可变发布版本，首版为`2018` |
 | 输入版本 | `patent_mapping_snapshot_id` | `VARCHAR(128) NOT NULL` | 固定IPC–产业展开映射Iceberg Snapshot ID |
 | 统计版本 | `metrics_as_of_date` | `DATE NOT NULL` | 专利与指标统计截止日 |
-| 统计版本 | `score_version` | `VARCHAR(64) NOT NULL` | 评分模型版本，当前固定为`talent_industry_activity_mvp_v1` |
+| 统计版本 | `score_version` | `VARCHAR(64) NOT NULL` | 评分模型版本，当前固定为`talent_industry_activity_mvp_v2` |
 | 统计版本 | `metric_definition_version` | `VARCHAR(64) NOT NULL` | 原始指标、归一化、权重和覆盖处理的口径版本 |
 | 公共版本 | `data_version` | `BIGINT NOT NULL` | 同一人才—taxonomy—产业Key的单调发布版本；重试保持一致 |
 | 公共版本 | `update_time` | `DATETIME(3) NOT NULL` | 本批ADS记录的确定性UTC生成时间 |
@@ -2451,17 +3138,42 @@ patent_activity_score =
 ```text
 project_execution_score = 0.70 * lead_project_score + 0.30 * direct_project_score
 
-industry_activity_score =
+raw_industry_evidence_score =
     (0.60 * patent_activity_score
    + 0.40 * project_execution_score [仅在非NULL时参与])
     / activity_metric_weight_coverage
 ```
 
 `activity_metric_weight_coverage` 在项目直接事实可用时为 `1.0000`，否则为 `0.6000`。当前发布的
-`ads_talent_project` 全部为 `funded_output_author`，所以项目维度保持未知，当前活动总分等于专利
+`ads_talent_project` 全部为 `funded_output_author`，所以项目维度保持未知，当前原始产业证据分等于专利
 活动分；不得把项目计数写成 0 或生成虚假的中位项目分。
 
-`score_version='talent_industry_activity_mvp_v1'`。这不是完整产业力评分。商业化六个数值字段在
+v2对原始产业证据分进行小样本收缩，并引入与人才级产业力相同的论文科研基础`Q`：
+
+```text
+research_foundation_score Q =
+    (0.15 * paper_score
+   + 0.35 * citation_score
+   + 0.35 * h_index_score
+   + 0.15 * core_source_score [仅在非NULL时参与])
+    / (0.85 + 0.15 [仅在core_source_score非NULL时参与])
+
+reliability = min(1, sqrt(benchmark_talent_count / 100))
+industry_evidence_score I =
+    50 + reliability * (raw_industry_evidence_score - 50)
+
+pre_gate_weighted_score = 0.40 * Q + 0.60 * I
+academic_gate_score = 35 + 0.60 * Q
+
+industry_activity_score =
+    round(min(94.9, pre_gate_weighted_score, academic_gate_score), 1)
+```
+
+收缩使只有1名候选人才的节点100原始证据分降为55；基准总体达100人时不再收缩。
+最终分保留一位小数且上限为94.9，不再产生99.x或100分。`industry_activity_rank`和
+`industry_activity_percentile`在同产业内按v2最终分重算；原始分项、`patent_activity_score`和项目分仍保留作为解释证据。
+
+`score_version='talent_industry_activity_mvp_v2'`。这不是完整商业价值评分。商业化六个数值字段在
 接入已核验转化与收入事实前全部保持 NULL，两个覆盖状态固定为 `NOT_AVAILABLE`，不允许填 0，
 也不允许把缺失的商业化权重重分配到当前分数。
 
@@ -2565,9 +3277,9 @@ simulated_industry_capability_score =
 `talent_id` 升序产生稳定唯一排名。平均并列百分位允许同分人才取得相同百分位。
 
 当前统一发布继续使用
-`simulation_version='talent_industry_commercial_value_simulation_v1'`，但以
-`data_version=202610140101` 覆盖该版本旧行；旧发布中 1,777 行走技术加权路径，其余 396,187 行
-为空的状态被统一升级为完整覆盖。发布必须对账 397,964 条正式活动输入与模拟输出，并校验所有
+`simulation_version='talent_industry_commercial_value_simulation_v1'`，并以
+`data_version=202611040301`引用`base_score_version='talent_industry_activity_mvp_v2'`覆盖该模拟版本旧行；
+1,777行走技术加权路径，其余396,187行走确定性兜底路径。发布必须对账397,964条正式活动输入与模拟输出，并校验所有
 模拟分、综合分、排名和百分位非空且在合法范围。这里的数量是本次固定发布事实，后续输入版本变化
 必须在发布报告中记录新数量，不得把它当作永久 Schema 常量。
 
@@ -2577,6 +3289,114 @@ simulated_industry_capability_score =
 [`sql/doris/publish_talent_industry_simulation_v1.sql`](sql/doris/publish_talent_industry_simulation_v1.sql)、
 [`config/talent_industry_commercial_value_simulation_v1.json`](config/talent_industry_commercial_value_simulation_v1.json) 和
 [`docs/talent_industry_commercial_value_simulation_v1.md`](docs/talent_industry_commercial_value_simulation_v1.md)。
+
+## 17.8 `ads_talent_industrial_capability_result`
+
+一名人才在一个不可变模型版本一行，将全体人才的论文科研基础与已发布人才—产业活动证据
+聚合为人才级产业力综合分。该分数是可解释的产业研究与技术活动指标，不是已实现商业价值、
+专利转化率、产品收入或任职于产业界的证明。完整版本结果保存于本表，当前版本便利字段投影到
+`ads_talent_profile`。
+
+| 字段 | Doris类型 | 说明 |
+|---|---|---|
+| `talent_id` | `VARCHAR(64) NOT NULL` | 平台统一人才ID |
+| `model_version` | `VARCHAR(64) NOT NULL` | 不可变模型版本，首版为`talent_industrial_capability_research_industry_v1` |
+| `research_foundation_score` | `DECIMAL(9,6) NOT NULL` | 全体人才均有的0–100论文科研基础分`Q` |
+| `industry_evidence_score` | `DECIMAL(9,6)` | 有产业证据人才的0–100汇总分`I`；无证据为NULL |
+| `pre_gate_weighted_score` | `DECIMAL(9,6)` | 有产业证据时`0.40*Q+0.60*I`；无证据时为NULL |
+| `academic_gate_score` | `DECIMAL(9,6)` | 有产业证据时的论文质量上限`35+0.60*Q`；无证据时为NULL |
+| `industrial_capability_score` | `DECIMAL(9,6) NOT NULL` | 最终0–94.9产业力综合分，保留一位小数 |
+| `industrial_capability_level` | `VARCHAR(32) NOT NULL` | 按固定阈值生成的七档分类代码 |
+| `evidence_status` | `VARCHAR(32) NOT NULL` | `RESEARCH_ONLY`或`INDUSTRY_EVIDENCE` |
+| `primary_industry_id` | `VARCHAR(64)` | 收缩分最高的二级产业ID；无产业证据为NULL |
+| `source_industry_count` | `INT NOT NULL` | 参与汇总的二级产业数；无产业证据为0 |
+| `strong_industry_count` | `INT NOT NULL` | 收缩分不低于70的二级产业数 |
+| `research_metrics_as_of_date` | `DATE NOT NULL` | 论文科研基础输入统计截止日 |
+| `industry_metrics_as_of_date` | `DATE` | 产业活动输入统计截止日；无产业证据为NULL |
+| `source_academic_score_version` | `VARCHAR(64) NOT NULL` | 论文分项输入的学术评分版本 |
+| `source_industry_score_version` | `VARCHAR(64)` | 产业活动输入评分版本；无产业证据为NULL |
+| `metric_definition_version` | `VARCHAR(64) NOT NULL` | 公式、权重、阈值和覆盖处理口径版本 |
+| `data_version` | `BIGINT NOT NULL` | 同一业务Key单调版本，重试保持一致 |
+| `update_time` | `DATETIME(3) NOT NULL` | 确定性UTC生成时间 |
+
+### 17.8.1 论文科研基础分
+
+为避免把论文数量或合作广度直接等同于论文水平，`Q`不直接复用`academic_capability`，而使用
+已发布的四个标准化分项：
+
+```text
+research_foundation_score Q =
+    (0.15 * paper_score
+   + 0.35 * citation_score
+   + 0.35 * h_index_score
+   + 0.15 * core_source_score [仅在非NULL时参与])
+    /
+    (0.85 + 0.15 [仅在core_source_score非NULL时参与])
+```
+
+`paper_score`、`citation_score`、`h_index_score`任一为NULL时发布失败，不静默降低论文质量权重。
+`core_source_score`无可评价来源时允许为NULL，其余0.85权重归一化。
+
+### 17.8.2 产业活动证据分
+
+当前模型固定使用`CN_GB4754_IPC/2018`分类体系的二级产业节点，不同时聚合门类、中类和小类，
+避免同一专利贡献在父子节点重复累加。v2节点表已经将原始专利/项目分按基准人数向50收缩，因此人才级汇总
+直接读取`ads_talent_industry_activity.industry_evidence_score`，不对`industry_activity_score`再次收缩，也不重复引入论文门槛。
+按产业证据分降序、
+`benchmark_talent_count DESC`、`industry_id ASC`稳定排序，取前三个节点：
+
+```text
+top3_score = weighted_average(top1, top2, top3; weights=0.60,0.30,0.10)
+```
+
+不足三个节点时只对实际存在权重归一化。设收缩分不低于70的二级产业数为`K`：
+
+```text
+breadth_bonus = min(5, 1.8 * log2(1 + K))
+industry_evidence_score I = min(100, top3_score + breadth_bonus)
+```
+
+### 17.8.3 人才级综合分与档位
+
+无产业活动证据时不设置固定保底分，而是按论文科研基础连续评分，并将上限限制在60分以下：
+
+```text
+if evidence_status = RESEARCH_ONLY:
+    industrial_capability_score = round(0.60 * Q, 1)
+```
+
+有产业活动证据时，论文科研基础占40%，产业活动证据占60%，同时论文科研基础构成显式上限：
+
+```text
+pre_gate_weighted_score = 0.40 * Q + 0.60 * I
+academic_gate_score = 35 + 0.60 * Q
+
+industrial_capability_score =
+    round(min(94.9, pre_gate_weighted_score, academic_gate_score), 1)
+```
+
+因此`Q=20/40/60/80/100`时，即使产业活动证据分极高，最终分也分别不得超过
+`47/59/71/83/94.9`。当前档位固定为：
+
+| 分数范围 | `industrial_capability_level` | 中文含义 |
+|---|---|---|
+| 0–19.9 | `WEAK` | 产业基础较弱 |
+| 20–39.9 | `POTENTIAL_FOUNDATION` | 产业潜在基础 |
+| 40–59.9 | `RESEARCH_FOUNDATION` | 产业研究基础 |
+| 60–69.9 | `INITIAL` | 初步产业能力 |
+| 70–79.9 | `STRONG` | 产业能力较强 |
+| 80–89.9 | `OUTSTANDING` | 产业能力突出 |
+| 90–94.9 | `LEADING` | 产业能力领先 |
+
+档位不代替`evidence_status`。`RESEARCH_ONLY`人才不得在产品中展示为已有产业活动；排名、筛选和解释必须
+允许按证据状态区分。发布必须覆盖全部`ads_talent_profile`业务Key，检查分数范围、分支公式、主产业归属、输入版本、
+主画像投影一致性和无孤儿。
+
+迁移、发布模板、配置和运行说明分别为
+[`sql/doris/ads_schema_9_3_0_talent_industrial_capability.sql`](sql/doris/ads_schema_9_3_0_talent_industrial_capability.sql)、
+[`sql/doris/publish_talent_industrial_capability_v1.sql`](sql/doris/publish_talent_industrial_capability_v1.sql)、
+[`config/talent_industrial_capability_v1.json`](config/talent_industrial_capability_v1.json) 和
+[`docs/talent_industrial_capability_v1.md`](docs/talent_industrial_capability_v1.md)。
 
 ## 18. Project ADS
 
@@ -2594,13 +3414,13 @@ Grant ID 只通过 identity bridge 映射。开始年优先采用来源 `start_y
 
 | 字段 | Doris类型 | 说明 |
 |---|---|---|
-| `amount_cny` | `DECIMAL(24,4)` | 固定汇率快照换算的人民币名义金额；来源金额非正、币种缺失或汇率缺失时为空 |
+| `amount_cny` | `DECIMAL(24,4)` | 来源金额固定汇率换算值，或缺失时的确定性模拟人民币金额 |
 | `amount_cny_exchange_rate` | `DECIMAL(18,8)` | 1单位原币对应人民币元数 |
 | `amount_cny_exchange_rate_date` | `DATE` | 该币种汇率快照日期 |
 | `amount_cny_exchange_rate_source` | `VARCHAR(64)` | 操作方提供的汇率来源类型 |
 | `amount_cny_normalization_status` | `VARCHAR(40)` | `CONVERTED_TO_CNY_FIXED_RATE/INVALID_AMOUNT/CURRENCY_MISSING/FX_RATE_MISSING`；没有来源金额时为空 |
 | `amount_cny_conversion_policy` | `VARCHAR(64)` | 当前为`FIXED_SNAPSHOT_CNY_PER_CURRENCY_UNIT_V2`；仅成功换算时填写 |
-| `amount_cny_value_type` | `VARCHAR(48) NOT NULL` | `SOURCE_CONVERTED`为来源金额换算，`SIMULATED_SHENZHEN_MEDIAN_V1`为深圳项目模拟金额，`UNAVAILABLE`为当前无人民币金额 |
+| `amount_cny_value_type` | `VARCHAR(48) NOT NULL` | `SOURCE_CONVERTED`为来源换算，`SIMULATED_SHENZHEN_MEDIAN_V1`为原深圳范围模拟，`SIMULATED_GLOBAL_SHENZHEN_MEDIAN_V1`为同规则全库扩展 |
 
 固定汇率如下；均为“1单位原币对应人民币元数”：
 
@@ -2618,6 +3438,10 @@ Grant ID 只通过 identity bridge 映射。开始年优先采用来源 `start_y
 确定性生成0.8000至1.2000系数，因此同一项目重跑结果不变。模拟值只写`amount_cny`，不修改来源
 `amount`、`currency`、汇率及归一状态。聚合和导出必须同时返回`amount_cny_value_type`，不得把
 `SIMULATED_SHENZHEN_MEDIAN_V1`解释为真实拨款、项目承担金额或财政投入事实。
+
+8.4.0对剩余全部`amount_cny IS NULL`项目使用同一冻结中位数和±20%确定性哈希规则，
+标记为`SIMULATED_GLOBAL_SHENZHEN_MEDIAN_V1`。该扩展只提供可比分析的模拟代理金额，不提高来源
+经费覆盖率；任何展示和聚合必须同时区分`SOURCE_CONVERTED`和两种`SIMULATED_*`类型。
 
 ### 18.1 深圳机构学科与研究方向项目关联资金
 
@@ -3447,11 +4271,52 @@ set +a
 | 指标 | `company_count` | `BIGINT` | 其中企业类型机构数 |
 | 指标 | `project_case_count` | `BIGINT` | 关联科研项目案例数 |
 | 指标 | `application_case_count` | `BIGINT` | 全部应用案例数；当前等于项目案例数 |
+| 投资额估算 | `annual_investment_estimate_cny` | `DECIMAL(24,2)` | 规则模拟的全球年度研发及商业化投入基准值，人民币元 |
+| 投资额估算 | `annual_investment_lower_cny` | `DECIMAL(24,2)` | 同口径规则模拟下界，人民币元 |
+| 投资额估算 | `annual_investment_upper_cny` | `DECIMAL(24,2)` | 同口径规则模拟上界，人民币元 |
+| 投资额估算 | `investment_estimate_year` | `SMALLINT` | 模拟年度；首版为2026 |
+| 投资额估算 | `investment_estimate_currency` | `CHAR(3)` | 固定为`CNY` |
+| 投资额估算 | `investment_estimate_scope` | `VARCHAR(64)` | 固定为`GLOBAL_RND_AND_COMMERCIALIZATION` |
+| 投资额估算 | `investment_estimate_status` | `VARCHAR(32)` | 固定为`RULE_SIMULATED`，不表示真实市场金额已接入 |
+| 投资额估算 | `investment_estimate_confidence` | `VARCHAR(16)` | 当前固定`LOW` |
+| 投资额估算 | `investment_estimate_basis` | `STRING` | 中文模拟算法与口径边界 |
+| 投资额估算 | `investment_estimate_uncertainties_json` | `STRING` | 主要不确定性JSON数组 |
+| 投资额血缘 | `investment_estimate_model_version` | `VARCHAR(128)` | 生成模型版本；规则模拟时为空 |
+| 投资额血缘 | `investment_estimate_prompt_version` | `VARCHAR(128)` | Prompt版本；规则模拟时为空 |
+| 投资额血缘 | `investment_estimate_method_version` | `VARCHAR(64)` | 指标定义版本 |
+| 投资额血缘 | `investment_estimate_input_hash` | `CHAR(64)` | 单条模型输入、Prompt和模型SHA-256 |
+| 投资额血缘 | `investment_estimate_release_id` | `VARCHAR(128)` | 不可变估算发布ID |
+| 投资额血缘 | `investment_estimate_generated_at` | `DATETIME(3)` | 模型生成UTC时间 |
 | 版本与审计 | `source_release_id` | `VARCHAR(128)` | 固定来源发布ID |
 | 版本与审计 | `metrics_as_of_date` | `DATE` | 指标统计截止日 |
 | 版本与审计 | `metric_definition_version` | `VARCHAR(64)` | 指标口径版本 |
 | 版本与审计 | `data_version` | `BIGINT NOT NULL` | 同一业务Key的单调数据版本 |
 | 版本与审计 | `update_time` | `DATETIME(3) NOT NULL` | UTC生成时间 |
+
+投资额首版是确定性规则模拟值，口径表述为评估年度内全球投入该技术研发、工程化和商业化活动的资本。
+它不是市场规模、收入、采购额或单纯融资额，也没有注册的不可变市场金额事实来源。ETO技术簇之间存在
+范围重叠，任何层级均不得把各技术估算金额求和解释为总投资。
+列表可展示`annual_investment_estimate_cny`，但必须同时标注“模型估算”；悬停或详情应披露上下界、
+评估年度、全球口径、低置信度和非事实提示。
+
+首版规则先在全部19,430个技术点内分别计算论文数、专利数、企业数、项目数和产业化潜力的
+`percent_rank`，再计算：
+
+```text
+investment_index = 0.20 * paper_percentile
+                 + 0.25 * patent_percentile
+                 + 0.25 * company_percentile
+                 + 0.10 * project_percentile
+                 + 0.20 * potential_percentile
+
+base_cny = 10,000,000 * 10 ^ (3 * investment_index / 100) * stage_multiplier
+lower_cny = base_cny * 0.4
+upper_cny = base_cny * 2.5
+```
+
+阶段系数为基础/早期研究0.8，概念验证、实验室验证和快速发展0.9，试点、工程化和工程验证1.0，
+监管/标准化1.1，产业化和早期商业化1.3，市场规模化1.5，未知阶段0.7。金额统一按人民币元计算并四舍
+五入到十万元。最新阶段和潜力记录按`data_version DESC, assessment_id DESC`确定。
 
 #### 24.12.2 `ads_technology_graph_edge`
 
@@ -3693,10 +4558,37 @@ set +a
 | 指标 | `hotspot_score` | `DECIMAL(9,6)` | 热点得分 |
 | 指标 | `hotspot_rank` | `BIGINT` | 热点排名 |
 | 状态与口径 | `hotspot_status` | `VARCHAR(32)` | 热点状态 |
+| 风险 | `risk_score` | `DECIMAL(9,6)` | 证据与技术转化不确定性风险分，0–100且越高风险越高；仅`ASSESSED`有效 |
+| 风险 | `risk_level` | `VARCHAR(16)` | `LOW/MEDIUM/HIGH`；仅`ASSESSED`有效 |
+| 风险 | `risk_coverage_status` | `VARCHAR(32)` | `ASSESSED/INSUFFICIENT_EVIDENCE/INSUFFICIENT_RISK_METRICS/NOT_APPLICABLE` |
+| 风险 | `risk_definition_version` | `VARCHAR(64)` | 风险公式、阈值和适用范围版本 |
+| 风险 | `risk_summary` | `STRING` | 风险等级含义和证据边界中文说明 |
 | 版本与审计 | `metrics_as_of_date` | `DATE` | 指标统计截止日 |
 | 版本与审计 | `metric_definition_version` | `VARCHAR(64)` | 指标口径版本 |
 | 版本与审计 | `data_version` | `BIGINT NOT NULL` | 同一业务Key的单调数据版本 |
 | 版本与审计 | `update_time` | `DATETIME(3) NOT NULL` | UTC生成时间 |
+
+8.2.0发布`model_version='technology_insight_mvp_v3_evidence_risk'`，由固定的
+`technology_insight_mvp_v2_eto_cluster_technology`逐行生成，不覆盖历史模型。风险适用范围只包括
+`EMERGING`、`EARLY_EMERGING`、`WATCH`和`ESTABLISHED_GROWING`；`MATURE`标记
+`NOT_APPLICABLE`，`INSUFFICIENT_EVIDENCE`不生成高、中、低等级。若四个风险输入任一缺失，标记
+`INSUFFICIENT_RISK_METRICS`且分数、等级保持NULL。
+
+风险定义版本固定为`technology_hotspot_evidence_risk_v1`，公式为：
+
+```text
+risk_score = 100 - (
+    0.25 * author_diffusion_score
+  + 0.25 * institution_diffusion_score
+  + 0.25 * impact_score
+  + 0.25 * patent_signal_score
+)
+```
+
+`risk_score >= 80`为`HIGH`，`60 <= risk_score < 80`为`MEDIUM`，低于60为`LOW`。
+该风险只衡量当前内部数据观察到的作者/机构扩散、科研影响和论文—专利连接综合支撑不足，属于证据与
+技术转化不确定性指标。它不衡量技术安全危害、伦理、监管、投资损失、市场规模或商业成功概率，不得
+用于准入、投资建议或自动决策；前端必须同时读取`risk_coverage_status`并展示该边界。
 
 #### 24.12.9a `ads_technology_hotspot_yearly`
 
@@ -4028,11 +4920,24 @@ hotspot_score = 0.60 * paper_activity_score
 | 指标 | `evidence_count` | `BIGINT` | 支持当前关系的去重证据数 |
 | 状态与口径 | `coverage_status` | `VARCHAR(64)` | 数据覆盖状态 |
 | 展示与说明 | `coverage_note` | `STRING` | 覆盖状态或缺口说明 |
+| 市场热度 | `market_heat_score` | `TINYINT` | 0–100模型估计分；仅`MARKET/MODEL_ESTIMATED`有效 |
+| 市场热度 | `market_heat_level` | `VARCHAR(32)` | `VERY_HIGH/HIGH/MEDIUM/LOW/VERY_LOW` |
+| 市场热度 | `market_heat_drivers_json` | `STRING` | 热度驱动因素JSON数组 |
+| 市场热度 | `market_heat_uncertainties_json` | `STRING` | 市场化不确定性JSON数组 |
+| 市场热度 | `market_heat_confidence` | `VARCHAR(16)` | `LOW/MEDIUM/HIGH`模型估计置信度 |
+| 市场热度 | `market_heat_estimation_basis` | `VARCHAR(128)` | 模型估计依据类型 |
+| 市场热度 | `market_heat_model_version` | `VARCHAR(128)` | 生成模型版本 |
+| 市场热度 | `market_heat_prompt_version` | `VARCHAR(128)` | Prompt版本 |
+| 市场热度 | `market_heat_generated_at` | `DATETIME(3)` | 模型生成UTC时间 |
 | 版本与审计 | `source_release_id` | `VARCHAR(128)` | 固定来源发布ID |
 | 版本与审计 | `metrics_as_of_date` | `DATE` | 指标统计截止日 |
 | 版本与审计 | `metric_definition_version` | `VARCHAR(64)` | 指标口径版本 |
 | 版本与审计 | `data_version` | `BIGINT NOT NULL` | 同一业务Key的单调数据版本 |
 | 版本与审计 | `update_time` | `DATETIME(3) NOT NULL` | UTC生成时间 |
+
+MARKET域没有注册的不可变市场事实来源时，普通技术保持`NOT_AVAILABLE`且市场热度字段为NULL。允许对明确
+标识的候选集写入`MODEL_ESTIMATED`模型估计；此状态不表示市场事实已接入，`evidence_count`保持0，且
+必须同时保留模型、Prompt、估计依据、置信度和生成时间。`coverage_note`保存面向展示的估计摘要。
 
 ### 24.13 论文证据颠覆性技术候选基线（5.18.0）
 
@@ -6552,6 +7457,10 @@ overall_value = 30%科学价值 + 25%应用潜力 + 20%创新性 + 25%学术影�
 | `ads_research_outcome_forecast` | `release_id, outcome_id, forecast_model_version, forecast_year, target_metric` | 2027—2029未回测演示预测 |
 | `ads_research_outcome_recommendation` | `release_id, recommendation_id` | 投入、转化和跟进三类演示建议 |
 
+`ads_research_outcome_recommendation.recommendation_title_zh`只保存成果中文题名，不得添加
+“科研投入建议”、“成果转化建议”或“持续跟进建议”等固定类型前缀。当来源成果没有中文题名时，
+必须先完成全量、版本化且可追溯的中文翻译，不得将英文回退值对外发布为`*_zh`字段。
+
 `outcome_id`首版等于平台`paper_id`。对比分析不建立用户临时表，前端按选择的`outcome_id`直接查询
 `ads_research_outcome_dimension`。列表和总览使用主表，学科、机构和问题筛选分别连接三张桥接表。
 
@@ -6806,3 +7715,313 @@ uv run --frozen pytest -q tests/test_research_outcome_assessment.py
 指标依据3,420、年度轨迹9,055、单篇预测5,130、建议1,026；新增成果年度证据1,811、范围年度趋势
 41,153、趋势节点案例22,881和范围预测10,944。累计引用终值对账、分数范围、主Key、节点Top 5、案例
 外键和模拟标识异常均为0。
+
+## 49. 媒体聚焦证据关系与选择性样本指标（8.5.0）
+
+本组表消费`media_focus_mvp_dws_v3_20261103`，发布ID为`media_focus_ads_v1_20261103`。输入54篇
+选择性样本、36个媒体来源和73条文章—目标关系。技术关系仅允许`review_status='HUMAN_APPROVED'`；
+机构与人才来源关系保留`SOURCE_CONFIRMED`。所有表都保存DWS release、ADS Schema版本、数据版本和
+更新时间，使用Unique Key Merge-on-Write支持同版本幂等重跑。
+
+### 49.1 `ads_media_article_relation`
+
+逻辑主键为`release_id, relation_id`。每行保存一条文章到`TECHNOLOGY/INSTITUTION/AUTHOR`的关系，
+包含媒体来源、标题、发布日期、原文URL、目标名称、关系类型、证据等级、置信度、审核状态/方法/人员/
+时间、证据文本与位置、模型和Prompt血缘、DWD Snapshot及上游release。证据文本用于页面下钻，原文
+URL必须同时展示；模型置信度不是事实概率。
+
+### 49.2 `ads_media_target_daily`
+
+逻辑主键为`release_id, statistics_date, target_type, target_id`。保存目标当天的去重文章数、来源数、
+独立编辑来源数、机构自有来源数和关系数。`coverage_status='SELECTIVE_SAMPLE'`表示仅可展示已收录报道
+时间线，不能解释为全网日声量或增长率。
+
+### 49.3 `ads_media_source_profile`
+
+逻辑主键为`release_id, media_source_id`。一行保存一个发布内的媒体来源画像，包括来源原始展示名称、
+中文展示名称`source_name_zh`、规范域名、所有者类型、编辑独立性类型、主要语言、国家或地区代码、核验
+状态和核验时间。中文名来自版本化固定翻译映射；原始名称变化时发布器拒绝复用旧翻译。来源画像直接
+来自固定的DWD媒体来源发布，不依赖该来源是否已经形成目标关系；页面来源列表和来源筛选应读取本表。
+
+### 49.4 `ads_media_source_target_edge`
+
+逻辑主键为`release_id, media_source_id, target_type, target_id, window_start_date, window_end_date`。
+保存媒体来源到目标的文章数、直接证据文章数、首末报道日期和关系类型数组。该边支持媒体—技术/机构/
+人才二部网络，不表示媒体之间的转载传播路径，也不表示统计耦合或因果关系。来源展示名称、域名、来源
+所有者类型、编辑独立性类型以及目标名称不在边表重复保存；展示时分别关联`ads_media_source_profile`和
+相应的技术、机构或人才画像表。
+
+### 49.5 `ads_media_focus_overview`
+
+逻辑主键为`release_id, window_start_date, window_end_date`。只发布可核验的媒体来源数、文章数、各目标
+类型文章数和目标数、技术关系数、人工审核技术关系数及独立来源数。首版不包含热点数量、情感占比或
+耦合分；这些功能应显示“数据未支持”，不得填默认0。
+
+## 50. 媒体热点、情感偏向与耦合估算（8.6.0）
+
+本组表消费`media_focus_insight_dws_v1_20261103`，ADS发布ID为`media_focus_ads_v2_20261103`。
+
+### 50.1 `ads_media_hotspot`
+
+逻辑主键为`hotspot_id`，共22行。每行保存原技术点、模型提炼的媒体热点名、文章/来源/关系数、情感分、
+正中负标签、置信度、理由、政策相关潜力及论文、专利、项目和规则模拟投资输入。热点名不得等于技术点
+名称。情感表示当前选择性报道的语调，不表示社会总体态度。
+
+### 50.2 `ads_media_technology_coupling`
+
+逻辑主键为`coupling_id`，共28行。字段包含`media_attention_score`、`technology_output_score`、
+`project_activity_score`、`investment_activity_score`、`policy_relevance_score`、
+`technology_development_score`、`coupling_score`、`coupling_level`和`analysis_summary`。投资输入明确为
+规则模拟，政策输入明确为`DEEPSEEK_ESTIMATED_NO_POLICY_FACT`。
+
+### 50.3 `ads_media_focus_assessment`
+
+逻辑主键为`insight_release_id`，共1行。保存22个热点、正中负数量和占比、文章数加权总体情感分、
+媒体—技术边文章数加权总体耦合分和摘要。当前总体情感57.86分（POSITIVE），正向占95.45%、中性0%、
+负向4.55%；总体耦合67.67分（MEDIUM）。所有分值均是有限样本混合估算，不是统计相关或因果事实。
+
+## 51. 热点热度、月度增长与字段注释（8.7.0）
+
+`ads_media_hotspot.heat_value`固定等于同一发布内该热点的去重`article_count`，并保存样本内排名、等级和
+`DISTINCT_ARTICLE_COUNT_IN_RELEASE`口径。该热度只比较当前54篇选择性样本，不代表全网传播量、阅读量
+或搜索热度。
+
+新增`ads_media_hotspot_monthly`，逻辑主键为`insight_release_id, hotspot_id, statistics_month`。字段
+`new_article_count`为当月新增去重新闻数，`previous_cumulative_article_count`为截止上月末累计数，
+`monthly_growth_rate`按二者相除。按当前产品口径，首月没有历史基数且有新增新闻时统一写1.0并标记
+`INITIAL_100_PERCENT`；禁止填无穷大。
+
+`media_focus_ads_v3_20261103`发布22条热点和40条热点月度记录。全部8张`ads_media%`表的208个字段均已
+写入中文Column Comment；可执行维护入口为：
+
+```bash
+.venv/bin/python -m app.media_focus.comments
+```
+
+## 52. 热点热度回填与首月增长口径修正（8.8.0）
+
+历史`media_focus_ads_v2_20261103`行早于热度字段创建，因此曾出现`heat_value=NULL`。8.8.0按已有
+`article_count`回填历史热度；当前v2、v3、v4共66条热点记录均满足`heat_value=article_count>=1`。
+
+增长率字段分为：月度明细使用`ads_media_hotspot_monthly.monthly_growth_rate`，热点当前展示使用
+`ads_media_hotspot.latest_month_growth_rate`。上月累计为0且本月有新增时两者统一为1.0（100%）；
+其他月份仍按`new_article_count / previous_cumulative_article_count`计算。
+
+## 53. 媒体—技术年度趋势与滞后相关（8.9.0）
+
+本组表消费`media_focus_trend_dws_v1_20261103`，ADS发布ID为
+`media_focus_trend_ads_v1_20261103`。全部表和字段均有中文Comment。
+
+### 53.1 `ads_media_technology_article_sentiment`
+
+逐条保存28条人工审核新闻—技术关系的模型情感分、标签、理由、原始标题和URL及完整模型血缘。年度
+正中负分布和平均分必须从该表或年度宽表读取，不得复用热点层的综合情感分冒充逐新闻事实。
+
+### 53.2 `ads_media_technology_policy_keyword_evidence`
+
+保存18条出版物—政策词类别证据，涉及5篇新闻、11篇论文和1件专利去重出版物。每行保留原始标题、
+摘要、URL、来源表、命中词JSON和次数，可从年度指标下钻到原文。论文和专利仅扫描MVP代表性成果表；
+频次不是政策文件数或政策影响分。
+
+### 53.3 `ads_media_technology_yearly_trend`
+
+逻辑主键为`trend_release_id, technology_node_id, statistics_year`，1965—2026共1,364行。当前合计
+媒体提及28、论文237、专利5,383、项目892、投融资0、政策词19次。投融资0固定带
+`NOT_AVAILABLE_ZERO_PER_REQUIREMENT`，表示缺数据按需求置零，不表示已确认没有事件。
+
+### 53.4 `ads_media_technology_lag_correlation`
+
+保存媒体提及数与论文、专利、项目、政策词、投融资的-3至+3年Pearson相关，共770行；341行可计算，
+429行因序列无方差为NULL。正滞后表示对比指标晚于媒体指标。它支持多序列探索，不支持Granger或因果
+推断。
+
+## 54. 最新新闻突发事件候选与简报草稿（9.2.0）
+
+新增`ads_media_breaking_event_candidate`，逻辑主键为`release_id, candidate_id`。当前发布从固定的
+`dwd_media_article` Snapshot按`published_at DESC, article_id DESC`稳定选择最新5篇去重文章；每篇只
+保留一行，不复用文章—目标关系表，避免多实体文章重复展示。选择口径固定为
+`LATEST_N_BY_PUBLISHED_AT`，候选状态固定为`PRELIMINARY_REVIEW_REQUIRED`。
+
+模型输入仅包含来源标题、已有摘要、来源类型及已审核文章—实体关系。输出包括候选触发原因、触发因素、
+关键事实、涉及科技/机构/人才/项目、传播渠道建议、紧迫度和中文应对简报草稿，并保存模型、Prompt、
+逐条输入Hash、DWD Snapshot和DWS release血缘。模型不得生成输入中不存在的实体ID；无摘要时不得补写
+研究方法、结果或影响范围。
+
+当前54篇新闻是选择性样本，不是持续全网监测。因此`short_term_growth_status`、
+`sentiment_anomaly_status`固定为`INSUFFICIENT_BASELINE`，`source_concentration_status`固定为
+`INSUFFICIENT_EVENT_CLUSTER_BASELINE`。本表只能驱动“突发事件候选”人工复核和简报编辑，不能宣称
+已检测到真实舆情爆发。加入监控、订阅人、通知渠道和处置状态属于下游应用控制库，不写入ADS事实表。
+
+执行入口：
+
+```bash
+./scripts/publish_media_breaking_events_v1.sh
+```
+
+## 55. 媒体—技术统计耦合分析（9.5.0）
+
+本组表消费`media_focus_coupling_dws_v1_20261104`，ADS发布ID为
+`media_focus_coupling_ads_v1_20261104`。统计范围固定为`MEDIA_MENTION_COUNT`、`PAPER_COUNT`、
+`PATENT_COUNT`和`PROJECT_COUNT`。投融资与政策指标不进入本组任何表，不发布占位行或不可用标注。
+
+### 55.1 `ads_media_technology_analysis_run`
+
+逻辑主键为`analysis_run_id`。保存输入序列release、22个主体、1965—2026窗口、年度频率、四项指标、
+最大滞后3年、滚动窗口10年、显著性阈值0.05、主体内Benjamini-Hochberg修正、输入哈希和算法版本。
+`eligible_observation_statuses_json`固定只包含`OBSERVED`和`OBSERVED_ZERO`。
+
+### 55.2 `ads_media_technology_pairwise_correlation`
+
+逻辑主键为`correlation_id`。四项指标产生`C(4,2)=6`组唯一指标对，每组计算`lag=-3…+3`，共
+`22 × 6 × 7 = 924`行。定义固定为：
+
+```text
+r(lag) = PearsonCorr(x[t], y[t + lag])
+```
+
+`lag>0`表示`metric_x`在时间上领先`metric_y`，`lag<0`表示`metric_y`领先，`lag=0`为同期相关。
+同期`lag=0`的6组结果组成4×4对称相关矩阵，对角线由前端固定显示1，不额外写自相关行。P值使用
+Pearson t统计量双侧检验；`adjusted_p_value`在同一技术全部42条滞后结果内使用BH修正。
+`is_best_lag`按绝对相关系数最大、绝对滞后最小、滞后值最小稳定破平，仅表示探索性下钻入口，不证明
+领先机制。无方差时系数与P值保持NULL并标记`INSUFFICIENT_VARIANCE`。
+
+### 55.3 `ads_media_technology_granger_causality`
+
+只对媒体与论文、专利、项目三组分别计算双向预测关系，不计算技术指标之间的Granger，也不包含投资或
+政策。每个方向分别测试1、2、3阶，共`22 × 3 × 2 × 3 = 396`行。两个序列先执行一阶差分，再建立：
+
+```text
+受限模型:   Δy[t] = c + Σ(a_i × Δy[t-i]) + ε[t]
+非受限模型: Δy[t] = c + Σ(a_i × Δy[t-i]) + Σ(b_i × Δx[t-i]) + ε[t]
+```
+
+使用嵌套OLS残差平方和F检验；有效回归样本少于30、设计矩阵奇异或残差方差不足时不输出统计量。P值在
+同一技术全部18个方向—阶数组合内做BH修正，只有`adjusted_p_value<0.05`才标记
+`is_predictively_significant=true`。`FIRST_DIFFERENCE_APPLIED`只说明执行了固定差分，不冒充ADF平稳性
+检验；结果必须称为“Granger预测关联”，不得称为真实因果。
+
+### 55.4 `ads_media_technology_rolling_coupling`
+
+媒体分别与论文、专利、项目使用10年右对齐滚动窗口，窗口结束年为热力图X轴，对比指标为Y轴，共
+`22 × 3 × (62-10+1) = 3,498`行。定义为：
+
+```text
+signed_correlation = PearsonCorr(media_window, comparison_window)
+coupling_strength  = abs(signed_correlation)
+LOW                = strength < 0.4
+MEDIUM             = 0.4 <= strength < 0.7
+HIGH               = strength >= 0.7
+```
+
+窗口任一序列无方差时强度保持NULL，等级为`NOT_CALCULABLE`。该热力图是滚动统计相关，不复用8.6.0
+静态混合估算`coupling_score`。
+
+### 55.5 `ads_media_technology_mechanism_draft`
+
+逻辑主键为`draft_id`，按22项技术×3项技术指标发布66条草稿。确定性模板引用最佳滞后相关ID和通过BH
+修正的Granger结果ID，分开保存观察模式、可能机制文字、替代解释、局限和固定非因果声明。全部草稿
+固定`review_status='PENDING_REVIEW'`，不得未经专家审核直接转成事实结论。
+
+### 55.6 数据准入与发布校验
+
+1. 只读取`observation_status IN ('OBSERVED','OBSERVED_ZERO')`的时间序列行。
+2. 指标集合必须精确等于媒体、论文、专利、项目四项；投资和政策编码出现即终止发布。
+3. 未知、缺失和未覆盖值不得改写为`OBSERVED_ZERO`。
+4. 所有不可计算结果保留NULL及明确状态，不填0。
+5. 当前媒体只有28次选择性样本提及，全部结果均为探索性MVP结果，不代表全网媒体，也不证明因果。
+
+执行命令：
+
+```bash
+.venv/bin/python -m app.media_focus.cli --config config/media_focus_mvp_v1.json \
+  --generate-coupling-analysis
+.venv/bin/python -m app.media_focus.cli --config config/media_focus_mvp_v1.json \
+  --publish-coupling-analysis
+```
+
+## 56. 媒体网络交互服务（9.6.0）
+
+本组能力继续消费`media_focus_ads_v1_20261103`的54篇选择性样本、36个媒体来源和73条文章—目标关系，
+不修改DWD/DWS。当前产品口径允许以目标的去重媒体来源数作为“影响力”代理，但必须通过
+`influence_definition='MEDIA_SOURCE_COUNT_PROXY'`保留口径，不得解释为受众规模、转载量或社会影响。
+
+### 56.1 `ads_media_target_network_metric`
+
+逻辑主键为`release_id, target_type, target_id`，当前42行，对应22项技术、5家机构和15名人才。
+`media_source_count`为报道目标的去重来源数，`article_count`为去重新闻数，`influence_value`固定等于
+`media_source_count`。前端使用`influence_value`控制科技实体/技术主题节点大小；时间范围变化时必须从
+`ads_media_article_relation`按日期重新聚合，不能复用全窗口值。
+
+### 56.2 `ads_media_article_keyword`
+
+逻辑主键为`release_id, article_id, keyword`。使用固定`media_keyword_frequency_v1`规则，对每篇文章的
+标题与可用摘要进行大小写归一、分词、停用词过滤和词频统计，每篇最多保留64个关键词。字段分别保存
+总频次、标题频次、摘要频次、文本输入Hash及提取版本。媒体节点词云按`media_source_id`聚合；目标节点
+词云先从`ads_media_article_relation`按目标取去重`article_id`，再聚合关键词，避免一篇文章因多条关系
+重复计数。
+
+### 56.3 固定官网刊登路径
+
+`ads_media_article_relation.propagation_path_type`固定为`MEDIA_WEBSITE_PUBLICATION`，中文标签
+`propagation_path_label`固定为“媒体官网刊登”。可展示的证据路径为：
+
+```text
+媒体来源 → 官网刊登文章 → 技术/机构/人才目标
+```
+
+该字段只表示文章在已核验来源网站刊登，不证明媒体间转载、引用、首发或信息扩散顺序；当前不得生成
+媒体A→媒体B的有向传播边。
+
+### 56.4 `ads_media_target_region`
+
+逻辑主键为`release_id, target_type, target_id, location_level, location_id`，只支持目标地域，不保存或
+过滤媒体来源地域。机构目标使用自身地域，人才目标使用当前机构地域，技术目标使用关联机构地域；每行
+保存地域层级、平台位置ID、中英文名称、国家代码、支持机构数及派生依据。地域筛选应使用`EXISTS`，
+避免一个目标的多个地域行放大媒体边数量。
+
+### 56.5 情感过滤边界
+
+情感筛选开启后，网络强制限定`target_type='TECHNOLOGY'`，使用
+`ads_media_technology_article_sentiment.relation_id + article_id + technology_node_id`连接
+`ads_media_article_relation`。当前28条新闻—技术关系均有情感结果；机构和人才关系不参与情感筛选，
+不得把缺失情感当作中性。
+
+## 57. 媒体智能推荐与证据溯源（9.7.0）
+
+本组表只消费`media_focus_ads_v1_20261103`的既有文章—目标关系，不扩写外部事实。首版固定发布4张
+演示卡片：材料科学实验自主系统、聚变反应堆设计与工程、Harvard Medical School和Hong-Cai Zhou，
+覆盖2项技术、1家机构和1名人物。选择是产品演示白名单，不表示全量候选中的全局Top 4。
+
+### 57.1 `ads_media_recommendation_card`
+
+逻辑主键为`release_id, recommendation_id`。每张卡片保存推荐类型、实体ID与名称、实体和全部来源证据
+的加权语义相似度、主要理由、代表报道数、完整证据数、三元组数及证据时间范围。卡片相似度按逐篇
+DeepSeek语义相似度以既有`relation_confidence`加权平均；该分数只衡量实体和当前证据文本的一致程度，
+不是事实概率、实体间相似度、全网热度或影响力。
+
+### 57.2 `ads_media_recommendation_evidence`
+
+逻辑主键为`release_id, recommendation_id, evidence_id`。一行保存卡片的一篇源文档，包含原始标题、
+来源、发布日期、原文URL、关系证据、实体—证据相似度、理由和代表性报道排名。点击“证据”必须读取
+本表全部记录，而不是只展示`representative_rank`非空的首屏Top 3。`relation_confidence`与
+`evidence_similarity_score`分别表达上游关系审核置信度和本次语义贴合度，禁止混为一个指标。
+
+### 57.3 `ads_media_recommendation_fact_triple`
+
+逻辑主键为`release_id, recommendation_id, triple_id`。每条主体—谓语—客体都绑定`evidence_id`和
+`article_id`，并保存输入中逐字出现的最短支撑片段。状态固定为`MODEL_EXTRACTED`，表示受约束抽取但
+未经独立事实核验；前端必须同时提供原文跳转，不得把模型置信度显示为事实概率。
+
+### 57.4 发布与使用边界
+
+- 机构`PUBLISHED_BY`关系只证明机构官网发布文章，不自动证明机构执行研究或受到影响。
+- 人物`SOURCE_CONFIRMED`关系只证明来源明确关联该人物，不自动认定其为意见领袖。
+- 当前54篇选择性样本不支持全网召回率、媒体共识或真实传播影响判断。
+- 推荐理由和三元组只允许使用标题、现有摘要与关系证据；模型返回未知实体/关系ID或非原文证据片段时
+  整批生成失败。
+
+执行命令：
+
+```bash
+./scripts/publish_media_smart_recommendations_v1.sh
+```
