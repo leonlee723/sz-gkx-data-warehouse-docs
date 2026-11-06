@@ -6,6 +6,32 @@
 - MINOR：向后兼容地新增表、字段或指标。
 - PATCH：不改变接口的说明、约束或索引修正。
 
+## 9.14.0 — 2026-11-06
+
+- `ads_paper_profile`向后兼容新增`primary_source_name`、`primary_source_name_zh`、
+  `primary_source_type`、`primary_source_issn_l`、`primary_source_publisher`和
+  `primary_source_is_core`六个可空便利投影。
+- 字段只按论文`primary_source_id`关联固定OpenAlex `dwd_source` Snapshot，不改变400万篇MVP core
+  论文范围、主键或论文指标；未匹配或来源本身缺失的属性保持`NULL`。
+- Publisher不使用Host Organization兜底；Core只表示CWTS Core Sources覆盖，不表示JCR分区、
+  影响因子或期刊等级。
+- 新发布使用独立`publication_ads_mvp_v3_stage`保留旧v2 Stage，不覆盖既有Iceberg对象。
+- 已向v3 Stage和Doris发布4,000,000篇，唯一`paper_id`均为4,000,000；名称、类型、ISSN-L和Core
+  状态分别覆盖3,610,407、3,610,269、3,047,976和3,610,407篇。固定Source Snapshot的中文名和
+  Publisher均无值，两个投影保持`NULL`。同版本完整重跑成功，行数和汇总不变。
+
+## 9.13.0 — 2026-11-06
+
+- 新增`ads_technology_milestone_event`，为技术趋势折线图发布起源、论文峰值、论文增长加速、首次专利和
+  首次科研项目证据五类确定性关键节点；每技术每类型最多一条。
+- 标题与摘要由固定模板生成并保持简短；首版不调用DeepSeek，模型Provider、Model、Prompt、输入Hash
+  和生成时间全部为空，事件性质固定为`DETERMINISTIC_DERIVATION`。
+- 增长加速要求上一观察年论文数大于0、当前不少于3篇且增长至少50%；峰值并列取最早年份。
+- 事件保存当前值、前值、增长率、来源表、来源逻辑记录和覆盖状态；规则节点不得展示为专家认定的重大
+  技术突破、产业化成功或因果结论。
+- 已向Iceberg `technology_ads_v2_20261026`和Doris发布75,649条：起源19,430、论文峰值19,430、
+  增长加速3,944、首次专利19,430、首次科研项目13,415；逻辑Key重复和语义违规均为0。
+
 ## 9.12.0 — 2026-11-06
 
 - 在`ads_sz_gkx_industry_cluster`原地补充2021—2025年度发展方案，不建立平行集群表，不修改DWD、

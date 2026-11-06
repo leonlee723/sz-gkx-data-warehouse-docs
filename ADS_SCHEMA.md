@@ -2,7 +2,7 @@
 
 ## 1. 主体名称与边界
 
-**Schema version：9.12.0。** 本文件是下游 Doris ADS 逻辑结构与业务命名的唯一真实来源；
+**Schema version：9.14.0。** 本文件是下游 Doris ADS 逻辑结构与业务命名的唯一真实来源；
 可执行物理 DDL 包括 `sql/doris/` 下的 Talent、Institution 基线文件及版本化
 `ads_schema_*` 迁移文件；新增公共学科维表的 DDL 为
 [`sql/doris/ads_schema_1_7_0_publication_profiles.sql`](sql/doris/ads_schema_1_7_0_publication_profiles.sql)；
@@ -19,6 +19,12 @@
 [`sql/doris/ads_schema_9_12_0_sz_gkx_industry_annual_plan.sql`](sql/doris/ads_schema_9_12_0_sz_gkx_industry_annual_plan.sql)，
 发布入口为
 [`scripts/publish_sz_gkx_industry_annual_plan_v1.sh`](scripts/publish_sz_gkx_industry_annual_plan_v1.sh)；
+技术趋势折线图确定性关键节点事件迁移为
+[`sql/doris/ads_schema_9_13_0_technology_milestone_event.sql`](sql/doris/ads_schema_9_13_0_technology_milestone_event.sql)，
+物化与发布入口继续复用[`app/technology_ads/service.py`](app/technology_ads/service.py)；
+论文Primary Source便利投影迁移为
+[`sql/doris/ads_schema_9_14_0_paper_primary_source_projection.sql`](sql/doris/ads_schema_9_14_0_paper_primary_source_projection.sql)，
+物化与发布入口继续复用[`scripts/publish_publication_ads.sh`](scripts/publish_publication_ads.sh)；
 荣誉详情双语名称与两院院士匹配发布迁移为
 [`sql/doris/ads_schema_9_9_0_talent_honor_bilingual_academician.sql`](sql/doris/ads_schema_9_9_0_talent_honor_bilingual_academician.sql)；
 15人科研诚信演示分迁移为
@@ -411,6 +417,7 @@ Topic论文全球国家当前快照迁移为
 | `ads_technology_institution` | 技术节点的一个关联机构 | `technology_node_id, institution_id` | 4.6.0新增并发布 |
 | `ads_technology_application_case` | 技术节点的一个项目案例 | `technology_node_id, application_case_id` | 4.6.0新增；仅科研项目代理 |
 | `ads_technology_yearly_metrics` | 技术节点一年 | `technology_node_id, statistics_year` | 4.6.0新增并发布 |
+| `ads_technology_milestone_event` | 技术节点的一类确定性关键事件 | `event_id` | 9.13.0新增；首版五类规则事件 |
 | `ads_technology_hotspot_signal` | 技术节点的一个语义信号 | `technology_node_id, signal_id` | 4.6.0新增并发布 |
 | `ads_technology_hotspot_snapshot` | 技术节点一个热点模型版本 | `technology_node_id, model_version` | 4.6.0新增并发布 |
 | `ads_technology_hotspot_yearly` | 技术节点一个自然年的热度曲线点 | `technology_node_id, statistics_year, model_version` | 6.18.0新增；论文按发表年、引用按收到引用年 |
@@ -2164,6 +2171,12 @@ Snapshot追溯必须读取本表。
 | 发布 | `paper_type` | `VARCHAR(64)` | OpenAlex论文类型 |
 | 发布 | `language` | `VARCHAR(32)` | 来源语言代码 |
 | 发布 | `primary_source_id` | `VARCHAR(64)` | OpenAlex Primary Source ID |
+| 发布来源 | `primary_source_name` | `VARCHAR(1024)` | 固定Source Snapshot中的原始优先名称；依次取原始、英文、中文名称 |
+| 发布来源 | `primary_source_name_zh` | `VARCHAR(1024)` | 来源明确提供的中文名称；不自动翻译 |
+| 发布来源 | `primary_source_type` | `VARCHAR(64)` | OpenAlex来源类型，如journal/conference/repository |
+| 发布来源 | `primary_source_issn_l` | `VARCHAR(64)` | Primary Source的ISSN-L |
+| 发布来源 | `primary_source_publisher` | `VARCHAR(1024)` | 来源明确提供的Publisher名称；不以Host Organization冒充 |
+| 发布来源 | `primary_source_is_core` | `TINYINT` | CWTS Core Sources标记；NULL表示状态未知，不等于JCR、影响因子或期刊等级 |
 | 学科 | `primary_topic_id` | `VARCHAR(64)` | 平台统一Primary Topic ID |
 | 学科 | `openalex_primary_topic_id` | `VARCHAR(64)` | OpenAlex Primary Topic ID |
 | 学科 | `topic_ids` | `ARRAY<VARCHAR(64)>` | 论文关联的平台Topic ID去重集合 |
@@ -2191,6 +2204,11 @@ Snapshot追溯必须读取本表。
 `primary_topic_id` 和 `topic_ids` 使用平台 Topic ID，可关联 `ads_discipline_topic`；OpenAlex ID
 只保留在 `openalex_primary_topic_id`。标题按中文、英文、原始标题、展示名、OpenAlex Work ID
 依次确定性兜底，保证 `title` 非空；该顺序不表示自动翻译。
+
+六个`primary_source_*`便利字段只从固定`dwd_source` Snapshot按`primary_source_id=source_id`左连接
+投影，不改变论文粒度。名称、中文名、类型、ISSN-L、Publisher和Core状态缺失时保持`NULL`；其中
+`primary_source_publisher`不得用Host Organization兜底，`primary_source_is_core`只表示CWTS Core
+Sources覆盖，不表示JCR分区、影响因子或期刊等级。
 
 摘要只从固定 MVP core 选择范围对应的 `dwd_work_abstract` 稀疏扩展表发布。没有可用来源摘要时三个
 摘要字段均为 `NULL`；不从标题生成摘要，不自动翻译，也不让 ADS 发布程序直接读取原始 Snapshot。
@@ -4200,6 +4218,7 @@ Key重复、Topic孤儿、人才孤儿、覆盖状态、数值范围、Top 20排
 | 技术节点下钻 | `ads_technology_profile` | `ads_technology_paper`, `ads_technology_patent`, `ads_technology_institution`, `ads_technology_application_case` | 按同一节点ID查代表论文、专利、机构/企业和项目案例 |
 | 语义热点提取 | `ads_technology_hotspot_signal` | `ads_technology_profile` | 当前是ETO标签关键词及年度代理，尚不是全文NLP新短语抽取 |
 | 热点趋势分析 | `ads_technology_hotspot_yearly` | `ads_technology_hotspot_snapshot`, `ads_technology_yearly_metrics` | Yearly提供2015—2026完整年度论文、新增引用和热度曲线；Snapshot保留当前状态/排名 |
+| 技术趋势关键节点 | `ads_technology_milestone_event` | `ads_technology_yearly_metrics`, `ads_technology_application_case` | 每技术每事件类型最多一条；提供起源、峰值、增长加速、首次专利和首次项目证据 |
 | 潜力评估 | `ads_technology_potential_assessment` | `ads_technology_potential_dimension`, `ads_technology_potential_evidence` | 综合表筛选，dimension解释分项，evidence回溯论文/专利/项目 |
 | 多技术对比 | `ads_technology_potential_dimension` | `ads_technology_potential_assessment` | 对选中节点按`dimension_code`透视生成雷达图；不保存临时对比 |
 | 阶段自动判定 | `ads_technology_stage_assessment` | `ads_technology_assessment_evidence` | 当前发布可复算规则基线，不冒充联网LLM判断 |
@@ -5084,6 +5103,47 @@ hotspot_score = 0.60 * paper_activity_score
 MARKET域没有注册的不可变市场事实来源时，普通技术保持`NOT_AVAILABLE`且市场热度字段为NULL。允许对明确
 标识的候选集写入`MODEL_ESTIMATED`模型估计；此状态不表示市场事实已接入，`evidence_count`保持0，且
 必须同时保留模型、Prompt、估计依据、置信度和生成时间。`coverage_note`保存面向展示的估计摘要。
+
+#### 24.12.23 `ads_technology_milestone_event`
+
+为技术趋势折线图保存可复算的简短关键节点。逻辑 Key：`event_id`；该ID由技术节点、事件类型和事件年
+确定性生成。每个技术点每种事件类型最多一条。首版不调用大模型，所有模型血缘字段为空；不得把规则
+节点展示为专家认定的重大突破、产业化成功或因果结论。
+
+| 字段组 | 字段 | Doris 类型 | 说明 |
+|---|---|---|---|
+| 身份与关联 | `event_id` | `VARCHAR(64) NOT NULL` | 技术节点、事件类型和年份生成的确定性ID |
+| 身份与关联 | `technology_node_id` | `VARCHAR(64) NOT NULL` | 关联技术点ID |
+| 时间 | `event_year` | `INT NOT NULL` | 事件对应真实观察年份 |
+| 时间 | `comparison_year` | `INT` | 增长事件的上一观察年份 |
+| 状态与口径 | `event_type` | `VARCHAR(32) NOT NULL` | 五类事件枚举 |
+| 展示与说明 | `event_title_zh`, `event_summary_zh` | `VARCHAR(128), STRING NOT NULL` | 简短标题及事实摘要 |
+| 状态与口径 | `event_nature` | `VARCHAR(32) NOT NULL` | 首版固定`DETERMINISTIC_DERIVATION` |
+| 指标 | `metric_name` | `VARCHAR(64) NOT NULL` | 触发事件的指标 |
+| 指标 | `metric_value`, `previous_metric_value` | `DOUBLE` | 当前值与对比值 |
+| 指标 | `growth_rate` | `DECIMAL(18,8)` | 相对上一观察年的增长率 |
+| 指标 | `significance_score` | `DECIMAL(9,6) NOT NULL` | 0—100展示排序启发式分，不是概率 |
+| 指标 | `confidence` | `DECIMAL(5,4) NOT NULL` | 规则识别稳定性，不是事实真实性概率 |
+| 溯源 | `source_table`, `source_record_id` | `VARCHAR NOT NULL` | 直接支撑事件的ADS表和逻辑记录 |
+| 溯源 | `evidence_title`, `evidence_coverage_status` | `STRING, VARCHAR` | 可用的项目标题及来源覆盖状态 |
+| 状态与口径 | `derivation_method` | `VARCHAR(128) NOT NULL` | 候选选择、门槛和并列规则版本 |
+| 审核 | `review_status` | `VARCHAR(32) NOT NULL` | 首版固定`AUTO_VALIDATED` |
+| 模型血缘 | `inference_provider`, `inference_model`, `inference_prompt_version` | `VARCHAR` | 首版均为空 |
+| 模型血缘 | `inference_input_hash`, `inference_generated_at` | `CHAR(64), DATETIME(3)` | 首版均为空 |
+| 版本与审计 | `metrics_as_of_date`, `metric_definition_version` | `DATE, VARCHAR(64) NOT NULL` | 截止日和事件口径版本 |
+| 版本与审计 | `data_version`, `update_time` | `BIGINT, DATETIME(3) NOT NULL` | 数据版本和UTC生成时间 |
+
+事件口径固定如下：
+
+- `ORIGIN`：最早`paper_count>0`的年份。
+- `PUBLICATION_PEAK`：论文数最大年份，并列时取最早年份。
+- `GROWTH_ACCELERATION`：上一观察年论文数大于0、当前不少于3篇且增长至少50%的候选中取增长率最高者。
+- `FIRST_PATENT`：最早`patent_count>0`的年份。
+- `FIRST_PROJECT`：按`effective_start_year, application_case_id`稳定选择最早科研项目证据；项目关联仍不等于市场应用。
+
+前端按`technology_node_id`和展示年份查询，使用`event_year`定位折线节点，展示
+`event_title_zh/event_summary_zh`；增长详情直接使用`comparison_year/previous_metric_value/metric_value/growth_rate`，
+不应从摘要文本反解析数值。
 
 ### 24.13 论文证据颠覆性技术候选基线（5.18.0）
 
