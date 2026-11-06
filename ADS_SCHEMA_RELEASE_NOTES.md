@@ -6,6 +6,40 @@
 - MINOR：向后兼容地新增表、字段或指标。
 - PATCH：不改变接口的说明、约束或索引修正。
 
+## 9.12.0 — 2026-11-06
+
+- 在`ads_sz_gkx_industry_cluster`原地补充2021—2025年度发展方案，不建立平行集群表，不修改DWD、
+  DWS、来源CSV或既有Iceberg对象。
+- 15个集群各发布5个年度；每年固定3项发展目标、5项具体任务和4项保障措施，共75个集群—年度、
+  225项目标、375项任务和300项保障措施，所有标题和明细必须有值。
+- 年度方案使用结构化大模型生成，保存模型、Prompt版本、输入Hash、发布ID和数据版本；值性质固定为
+  `LLM_SYNTHETIC`，不得解释为真实政策、历史事实或实施成效。
+- 发布前后对原有17个集群画像、统计和版本字段执行全量Hash保护；只允许新增年度方案字段发生变化。
+
+## 9.11.0 — 2026-11-06
+
+- 从`ads_technology_graph_edge`固定发布30条重点技术交叉关联，矩阵项直接补齐组合中文名、关联强度
+  等级与数值、2020—2022/2023—2025论文口径及增长率、全期论文数和证据约束协同说明。
+- 新增`ads_technology_graph_edge_institution`，每边发布5家同时覆盖两端技术的核心共同机构，并优先
+  展示首版26家重点机构；排名由两端论文、专利和项目证据共同决定。
+- 新增`ads_technology_graph_edge_patent`，从固定Iceberg snapshot恢复全部共同专利，不使用单节点
+  Top 20代表专利反推；每边明细数强制与`shared_patent_count`对账。
+- 新增`ads_technology_graph_edge_project`，只桥接已有`ads_technology_application_case`证据的首版重点
+  项目；无证据时允许为空，不按主题名称伪造项目关系。
+
+## 9.10.0 — 2026-11-06
+
+- 发布首版完美数据，覆盖15名人才、26家机构和38个项目；数据直接写入
+  `ads_talent_profile`、`ads_institution_profile`、`ads_project_profile`和`ads_talent_project`，
+  不创建平行展示表，不改变前端原表读取路径，也不反向更新DWD。
+- `ads_institution_profile.description`补齐200至300字中文简介，新增`typical_cases` JSON保存科学突破、
+  技术转化、重大科研平台、社会影响四类案例；派生与模拟回退性质在元素内部保留。
+- `ads_project_profile`新增研究目标、技术路线、阶段成果、成果摘要与关联专利字段；每项目固定3阶段、
+  5族关联专利。首版190条项目—专利关系均为`INFERRED_CANDIDATE`，金额保留来源或模拟性质。
+- `ads_talent_project`新增前端角色字段；49条关系前端显示项目成员，原
+  `funded_output_author/unverified`事实字段不变。四张原表统一增加完美数据发布与审核标记。
+- 原表写入和完整性校验通过后，精确移除历史试运行创建的7张`ads_showcase_*`表。
+
 ## 9.9.0 — 2026-11-05
 
 - `ads_talent_honor_detail` 新增 `organization_name_zh`、`honor_name_zh`，保留既有英文字段并为

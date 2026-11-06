@@ -2,7 +2,7 @@
 
 ## 1. 主体名称与边界
 
-**Schema version：9.9.0。** 本文件是下游 Doris ADS 逻辑结构与业务命名的唯一真实来源；
+**Schema version：9.12.0。** 本文件是下游 Doris ADS 逻辑结构与业务命名的唯一真实来源；
 可执行物理 DDL 包括 `sql/doris/` 下的 Talent、Institution 基线文件及版本化
 `ads_schema_*` 迁移文件；新增公共学科维表的 DDL 为
 [`sql/doris/ads_schema_1_7_0_publication_profiles.sql`](sql/doris/ads_schema_1_7_0_publication_profiles.sql)；
@@ -10,6 +10,15 @@
 [`sql/doris/ads_schema_6_32_0_talent_public_enrichment.sql`](sql/doris/ads_schema_6_32_0_talent_public_enrichment.sql)；
 经核验荣誉详情迁移为
 [`sql/doris/ads_schema_6_33_0_talent_honor_detail.sql`](sql/doris/ads_schema_6_33_0_talent_honor_detail.sql)；
+完美数据原表补充发布迁移为
+[`sql/doris/ads_schema_9_10_0_perfect_data_inplace.sql`](sql/doris/ads_schema_9_10_0_perfect_data_inplace.sql)，
+发布入口为[`scripts/publish_showcase_enrichment_v1.sh`](scripts/publish_showcase_enrichment_v1.sh)；
+重点技术交叉关联矩阵及完整下钻证据迁移为
+[`sql/doris/ads_schema_9_11_0_technology_cross_showcase.sql`](sql/doris/ads_schema_9_11_0_technology_cross_showcase.sql)；
+深圳GKX产业集群年度发展方案原表补充迁移为
+[`sql/doris/ads_schema_9_12_0_sz_gkx_industry_annual_plan.sql`](sql/doris/ads_schema_9_12_0_sz_gkx_industry_annual_plan.sql)，
+发布入口为
+[`scripts/publish_sz_gkx_industry_annual_plan_v1.sh`](scripts/publish_sz_gkx_industry_annual_plan_v1.sh)；
 荣誉详情双语名称与两院院士匹配发布迁移为
 [`sql/doris/ads_schema_9_9_0_talent_honor_bilingual_academician.sql`](sql/doris/ads_schema_9_9_0_talent_honor_bilingual_academician.sql)；
 15人科研诚信演示分迁移为
@@ -388,6 +397,9 @@ Topic论文全球国家当前快照迁移为
 | `ads_resource_optimization_recommendation_evidence` | 一条优化建议的一项来源短板指标证据 | `recommendation_id, metric_code, benchmark_version` | 6.28.0新增；可回溯目标、基准、差距和覆盖状态 |
 | `ads_technology_profile` | 一个技术点一行 | `technology_node_id` | 4.6.0新增；6.0.0确认为ETO Cluster技术点 |
 | `ads_technology_graph_edge` | 一条候选技术关系一行 | `edge_id` | 4.6.0新增并发布 |
+| `ads_technology_graph_edge_institution` | 一条重点技术关系的一家核心共同机构 | `edge_id, institution_id` | 9.11.0新增 |
+| `ads_technology_graph_edge_patent` | 一条重点技术关系的一件完整共同专利 | `edge_id, patent_id` | 9.11.0新增 |
+| `ads_technology_graph_edge_project` | 一条重点技术关系的一个既有重点项目 | `edge_id, project_id` | 9.11.0新增 |
 | `ads_technology_graph_node` | 一个可视化技术节点一行 | `technology_node_id` | 4.7.0新增，携带主簇群与演进摘要 |
 | `ads_technology_community` | 一个图算法技术簇群一行 | `community_id` | 4.7.0新增并发布 |
 | `ads_technology_community_member` | 技术簇群的一个成员节点 | `community_id, technology_node_id` | 4.7.0新增并发布 |
@@ -3499,6 +3511,140 @@ Grant ID 只通过 identity bridge 映射。开始年优先采用来源 `start_y
 索引支持 topic → project。当前旧 Awards Snapshot 没有来源 Topic，因此按关联 MVP 论文中
 Topic 的去重论文出现次数降序排名；第一名为 Primary Topic。并列时依次比较平均 Topic score，
 仍并列则使用 `grant_id + topic_id` 稳定哈希作确定性伪随机裁决，禁止真正随机导致跨批次漂移。
+
+### 18.2 完美数据原表补充发布（9.10.0）
+
+9.10.0将首版完美数据直接补充到既有`ads_talent_profile`、`ads_institution_profile`、
+`ads_project_profile`和`ads_talent_project`，不创建平行实体表，也不改变前端按原实体表读取详情的
+路径。发布ID为`perfect_data_v1_20261106`，固定覆盖15名人才、26家机构和38个项目。原有
+`relation_type`、`verified_status`及其他事实字段保持不变；新增字段只承载详情内容、前端标签和
+补充数据的后台治理信息。该发布不得反向更新DWD。
+
+四张原表统一增加`is_perfect_data`、`perfect_data_release_id`、
+`perfect_data_review_status`、`perfect_data_value_nature`和`perfect_data_version`。这些字段用于明确
+本批数据的名单、版本和策展/推测性质，不要求前端另行分流。首版审核状态为
+`APPROVED_FOR_SHOWCASE_BY_OPERATOR_RULE`，表示操作方批准补齐规则，不表示逐条人工事实核验。
+
+#### 18.2.1 人才与人才—项目角色
+
+15名人才直接在`ads_talent_profile`标记为完美数据。49条选定关系仍存于`ads_talent_project`；新增
+`frontend_role`与`frontend_role_label`。只有官方直接证据明确为负责人或共同负责人才分别写
+`lead`或`co_lead`，其余写`project_member/项目成员`。`funded_output_author`不得因此变为直接项目
+事实，`unverified`也不得自动提升。资助方与个人CV冲突时以资助方为准；当前网页与历史档案冲突时
+以当前网页为主；已结束项目保留历史角色，不按当前机构反推历史关系。
+
+#### 18.2.2 机构简介与典型案例
+
+26家机构使用`ads_institution_profile.description`保存一段200至300字中文简介，并在新增JSON字段
+`typical_cases`中保存固定四类案例：`SCIENTIFIC_BREAKTHROUGH`、`TECHNOLOGY_TRANSFER`、
+`MAJOR_RESEARCH_PROGRAM`和`SOCIAL_IMPACT`。每个案例均含标题、摘要、关联实体、来源URL、
+`relation_strength`与`is_synthetic`。优先从既有代表论文、代表专利、关联项目和机构新闻派生；缺失
+时允许`SYNTHETIC_FALLBACK`补齐，但必须在JSON内部保留标记。
+
+#### 18.2.3 项目详情、阶段成果与关联专利
+
+38个项目继续使用`ads_project_profile`。`name_zh`和`description_zh`分别承载中文名称与项目背景；
+新增`research_objectives_zh`、`technical_route_zh`、`result_summary_zh`保存研究目标、技术路线与
+成果摘要。`stage_results`为JSON数组，每项目固定三阶段：方案设计、研究实施和成果形成，各阶段均有
+期间、目标、成果和`evidence_nature`。
+
+`related_patents`为JSON数组，`related_patent_count`为对应计数。每项目固定5族代表专利，每个元素
+包含专利ID、标题、排序、后台关系类型、前端标签、关联理由、技术转化金额及金额性质。后台允许
+`DIRECT`、`SUPPORTED`和`INFERRED_CANDIDATE`，前端统一显示“关联专利”。首版190条均为
+`INFERRED_CANDIDATE`。金额缺失时按`project_id + patent_id`稳定哈希生成50万至500万元，并标记
+`SIMULATED_RULE_V1`；前端只能称为模拟技术转化金额。
+
+#### 18.2.4 完整性验收与旧表清理
+
+发布必须满足：15名人才、26家机构和38个项目均在原表可定位；机构简介字数为200至300且每家4个
+案例；项目名称、背景、目标、路线和成果摘要均非空；每项目3个阶段、5族专利；人才—项目前端角色
+非空。原地写入通过后，精确移除历史试运行创建的7张`ads_showcase_*`表，最终数据库中该前缀表数
+必须为0。配置、发布入口和最终完整名单分别为
+[`config/showcase_enrichment_v1.json`](config/showcase_enrichment_v1.json)、
+[`scripts/publish_showcase_enrichment_v1.sh`](scripts/publish_showcase_enrichment_v1.sh)和
+[`reports/perfect_data_v1_20261106/publication_report.md`](reports/perfect_data_v1_20261106/publication_report.md)。
+
+### 18.3 重点技术交叉关联矩阵与详情（9.11.0）
+
+9.11.0从`ads_technology_graph_edge`固定挑选30条重点技术交叉关联，覆盖首版完美数据的10个主题，
+每个主题3条。筛选只接受`evidence_level=HIGH`、共同专利3至50件、两端中文名称和年度论文数据完整
+且2020—2022基线论文数大于0的边；优先选择与既有38个重点项目或26家重点机构有真实ADS关联的
+候选，不为满足覆盖而伪造项目或机构关系。发布ID继续使用`perfect_data_v1_20261106`。
+
+矩阵直接读取`ads_technology_graph_edge`新增字段。`association_score`复制固定边的
+`relation_confidence_score`，便于前端稳定取数，但仍是同关系类型内可比较的启发式分数，不是事实概率。
+强度等级按分数确定：90及以上为`VERY_HIGH/极强`，75至90为`HIGH/强`，低于75的已选高证据边为
+`MEDIUM_HIGH/中高`。`paper_growth_rate=(recent_paper_count-baseline_paper_count)/
+baseline_paper_count`；基线和近期分别是两端技术在2020—2022、2023—2025三个完整自然年的论文数
+之和，因此前端显示百分比时乘100。`total_paper_count`为两端全观察期论文数之和，可能包含两端共同论文，
+不得解释为去重组合论文数。
+
+#### 18.3.1 `ads_technology_graph_edge`新增展示与治理字段
+
+| 字段 | Doris类型 | 说明 |
+|---|---|---|
+| `combination_name_zh` | `STRING` | `起点技术 × 终点技术`中文组合名 |
+| `cross_theme_code` | `VARCHAR(64)` | 首版完美数据主题代码 |
+| `association_strength_level` | `VARCHAR(16)` | `VERY_HIGH`、`HIGH`或`MEDIUM_HIGH` |
+| `association_strength_label_zh` | `VARCHAR(16)` | 极强、强或中高 |
+| `association_score` | `DECIMAL(9,6)` | 矩阵关联度；复制固定边置信分，不是概率 |
+| `baseline_paper_count` | `BIGINT` | 两端2020—2022论文数之和 |
+| `recent_paper_count` | `BIGINT` | 两端2023—2025论文数之和 |
+| `paper_growth_rate` | `DECIMAL(18,6)` | 近期三年相对基线三年的论文增长率 |
+| `total_paper_count` | `BIGINT` | 两端全观察期论文数之和，未跨端去重 |
+| `synergy_principle_zh` | `STRING` | 引用、共同专利和关系类型约束的协同说明 |
+| `core_institution_count` | `INT` | 已发布核心共同机构数；首版每边5家 |
+| `cooperation_patent_count` | `BIGINT` | 已发布共同专利明细数，必须等于`shared_patent_count` |
+| `related_featured_project_count` | `INT` | 有既有应用案例证据的首版重点项目数 |
+| `is_priority_cross_association` | `BOOLEAN` | 是否进入重点交叉关联矩阵 |
+| `perfect_data_release_id` | `VARCHAR(96)` | 完美数据发布ID |
+| `perfect_data_review_status` | `VARCHAR(64)` | 操作方规则审核状态 |
+| `perfect_data_value_nature` | `VARCHAR(32)` | 首版固定`OBSERVED_DERIVED` |
+| `perfect_data_version` | `BIGINT` | 完美数据版本 |
+
+#### 18.3.2 `ads_technology_graph_edge_institution`
+
+一条重点边的5家核心共同机构。只有同一`institution_id`同时出现在两端
+`ads_technology_institution`时才发布；先排已选重点机构，再按两端论文、专利、项目证据总数降序。
+
+| 字段组 | 字段 | Doris类型 | 说明 |
+|---|---|---|---|
+| Key | `edge_id`, `institution_id` | `VARCHAR(64)` | 重点边与平台机构 |
+| 展示 | `institution_name_zh`, `institution_name_original` | `STRING` | 名称快照 |
+| 分端证据 | `source_paper_count`, `target_paper_count` | `BIGINT` | 两端论文数 |
+| 分端证据 | `source_patent_count`, `target_patent_count` | `BIGINT` | 两端专利数 |
+| 分端证据 | `source_project_count`, `target_project_count` | `BIGINT` | 两端项目数 |
+| 排序 | `combined_evidence_count`, `institution_rank` | `BIGINT/INT` | 六项证据之和与边内排名 |
+| 关联 | `is_featured_institution` | `BOOLEAN` | 是否属于既有26家重点机构 |
+| 治理 | `evidence_nature` | `VARCHAR(32)` | 固定`COMMON_INSTITUTION_OBSERVED` |
+| 版本 | `perfect_data_release_id`, `data_version`, `update_time` | `VARCHAR/BIGINT/DATETIME(3)` | 发布与版本信息 |
+
+#### 18.3.3 `ads_technology_graph_edge_patent`
+
+重点边的完整共同专利明细，不使用仅含单节点Top 20的`ads_technology_patent`反推。来源固定为
+`eto_mvp_cluster_dws_v1_20261016.dws_research_cluster_patent` snapshot
+`3040518449308406315`，以同一`publication_id`同时关联两端research cluster为准。每边明细数必须和
+`ads_technology_graph_edge.shared_patent_count`逐条对账。
+
+| 字段组 | 字段 | Doris类型 | 说明 |
+|---|---|---|---|
+| Key | `edge_id`, `patent_id` | `VARCHAR(64)` | 重点边与平台专利 |
+| 专利 | `publication_number`, `country_code`, `kind_code`, `google_family_id` | `VARCHAR` | 公开号、地区、文献类型和专利族 |
+| 时间 | `priority_date`, `filing_date`, `publication_date`, `publication_year`, `grant_date` | `DATE/INT` | 专利日期 |
+| 展示 | `patent_title_original` | `STRING` | 原始标题 |
+| 证据 | `source_cited_seed_paper_count`, `target_cited_seed_paper_count` | `BIGINT` | 各端去重seed论文数 |
+| 排序 | `patent_rank` | `INT` | 公开年份倒序、专利ID升序 |
+| 治理 | `evidence_type`, `source_snapshot_id` | `VARCHAR/BIGINT` | 共同专利口径与固定snapshot |
+| 版本 | `perfect_data_release_id`, `data_version`, `update_time` | `VARCHAR/BIGINT/DATETIME(3)` | 发布与版本信息 |
+
+#### 18.3.4 `ads_technology_graph_edge_project`
+
+只保存30条重点边与既有38个重点项目之间已经存在于`ads_technology_application_case`的关系。
+`related_side`为`SOURCE`、`TARGET`或`BOTH`；没有既有证据的边允许0条项目记录，不使用主题相似度补写
+项目关系。`source_application_case_id`和`target_application_case_id`保留原应用案例Key，供详情页继续下钻。
+
+发布验收必须满足：重点边30条；每边组合名、强度、增长率、论文数和协同说明非空；每边5家核心共同
+机构；所有共同专利完整写入且逐边等于`shared_patent_count`；Key无重复；来源Iceberg snapshot只读。
 
 ## 19. 公共学科维表
 
@@ -6727,6 +6873,29 @@ PostgreSQL任务状态更新。实际结果和检查见
 | 统计版本 | `metric_definition_version` | `VARCHAR(64) NOT NULL` | 聚合与成果传播算法版本，当前为`sz_gkx_industry_subfield_inheritance_v1` |
 | 公共版本 | `data_version` | `BIGINT NOT NULL` | 当前状态行的单调数据版本 |
 | 公共版本 | `update_time` | `DATETIME(3) NOT NULL` | UTC生成时间 |
+
+9.12.0在本表原地补充2021—2025年度发展方案，不建立平行集群主表，也不修改DWD、DWS、来源CSV或
+既有Iceberg对象。每个集群固定包含5个年度；每年固定3项发展目标、5项具体任务和4项保障措施。首版
+覆盖15个集群、75个集群—年度、225项目标、375项任务和300项保障措施。内容由大模型根据现有集群、
+产业成员、Subfield和代表Topic上下文构造，只用于完整展示，不是真实政策、历史事实或实施成效。
+
+| 字段组 | 字段 | Doris类型 | 说明 |
+|---|---|---|---|
+| 年度方案 | `annual_plan_year_count` | `INT` | 固定为5；对应2021、2022、2023、2024、2025 |
+| 年度方案 | `annual_development_plan` | `JSON` | 根对象含集群快照及5个年度；每年保存数量和完整目标、任务、保障措施数组 |
+| 生成治理 | `annual_plan_release_id` | `VARCHAR(96)` | 年度方案不可变发布ID |
+| 生成治理 | `annual_plan_model` | `VARCHAR(128)` | 实际生成模型名称 |
+| 生成治理 | `annual_plan_prompt_version` | `VARCHAR(64)` | 结构化生成Prompt版本 |
+| 生成治理 | `annual_plan_input_hash` | `CHAR(64)` | 集群、产业、学科和Topic模型输入SHA-256 |
+| 生成治理 | `annual_plan_value_nature` | `VARCHAR(32)` | 首版固定`LLM_SYNTHETIC`，明确为大模型构造值 |
+| 生成治理 | `annual_plan_review_status` | `VARCHAR(64)` | 首版固定`APPROVED_FOR_SHOWCASE_BY_OPERATOR_RULE` |
+| 生成治理 | `annual_plan_version` | `BIGINT` | 年度方案单调数据版本 |
+| 生成治理 | `annual_plan_update_time` | `DATETIME(3)` | 年度方案发布时间 |
+
+在线迁移先增加可空物理列，发布验收要求上述10个字段在全部15行均有值；JSON内部禁止`null`、空字符串、
+空数组、`待补充`、`暂无`等占位内容。年度数组必须严格按2021至2025排列，数量字段必须与数组长度一致，
+条目序号必须从1连续编号。原有17个集群画像、计数、版本字段在发布前后执行全量Hash保护，不得随本次
+展示数据补充发生变化。
 
 `paper_count`和`patent_count`分别在各集群内去重，但同一成果可以进入多个集群，不能跨集群直接求和
 解释为全局去重成果数。需要可加总口径时使用对应`fractional_*_count`；分数计数用于归属分摊，不表示
