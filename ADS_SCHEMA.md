@@ -2,7 +2,7 @@
 
 ## 1. 主体名称与边界
 
-**Schema version：9.14.0。** 本文件是下游 Doris ADS 逻辑结构与业务命名的唯一真实来源；
+**Schema version：9.23.0。** 本文件是下游 Doris ADS 逻辑结构与业务命名的唯一真实来源；
 可执行物理 DDL 包括 `sql/doris/` 下的 Talent、Institution 基线文件及版本化
 `ads_schema_*` 迁移文件；新增公共学科维表的 DDL 为
 [`sql/doris/ads_schema_1_7_0_publication_profiles.sql`](sql/doris/ads_schema_1_7_0_publication_profiles.sql)；
@@ -13,8 +13,32 @@
 完美数据原表补充发布迁移为
 [`sql/doris/ads_schema_9_10_0_perfect_data_inplace.sql`](sql/doris/ads_schema_9_10_0_perfect_data_inplace.sql)，
 发布入口为[`scripts/publish_showcase_enrichment_v1.sh`](scripts/publish_showcase_enrichment_v1.sh)；
+完美机构官方报告迁移为
+[`sql/doris/ads_schema_9_15_0_institution_report.sql`](sql/doris/ads_schema_9_15_0_institution_report.sql)，
+发布入口为[`scripts/publish_institution_reports_v1.sh`](scripts/publish_institution_reports_v1.sh)；
+人才年度流向边当前单一原因展示字段迁移为
+[`sql/doris/ads_schema_9_16_0_talent_mobility_reason.sql`](sql/doris/ads_schema_9_16_0_talent_mobility_reason.sql)，
+物化与发布入口继续复用[`scripts/publish_talent_mobility_mvp_v1.sh`](scripts/publish_talent_mobility_mvp_v1.sh)；
+人才年度学术影响力代理分口径迁移为
+[`sql/doris/ads_schema_9_17_0_talent_yearly_academic.sql`](sql/doris/ads_schema_9_17_0_talent_yearly_academic.sql)，
+发布入口为[`scripts/publish_talent_yearly_academic_v1.sh`](scripts/publish_talent_yearly_academic_v1.sh)；
 重点技术交叉关联矩阵及完整下钻证据迁移为
 [`sql/doris/ads_schema_9_11_0_technology_cross_showcase.sql`](sql/doris/ads_schema_9_11_0_technology_cross_showcase.sql)；
+完美技术交叉关联论文与循证协同原理迁移为
+[`sql/doris/ads_schema_9_18_0_perfect_technology_edge.sql`](sql/doris/ads_schema_9_18_0_perfect_technology_edge.sql)；
+完美技术动态、模型内容与统一证据迁移为
+[`sql/doris/ads_schema_9_19_0_technology_dynamic.sql`](sql/doris/ads_schema_9_19_0_technology_dynamic.sql)，
+统一论文/专利ID、百分比投影与逐事件内容迁移为
+[`sql/doris/ads_schema_9_20_0_technology_dynamic_event_content.sql`](sql/doris/ads_schema_9_20_0_technology_dynamic_event_content.sql)，
+实体事件类型、时间点及关联ID迁移为
+[`sql/doris/ads_schema_9_21_0_technology_dynamic_entity_events.sql`](sql/doris/ads_schema_9_21_0_technology_dynamic_entity_events.sql)，
+技术动态证据表仅保留事件行的清理迁移为
+[`sql/doris/ads_schema_9_22_0_technology_dynamic_event_only.sql`](sql/doris/ads_schema_9_22_0_technology_dynamic_event_only.sql)，
+发布入口为[`scripts/publish_technology_dynamic_perfect_v1.sh`](scripts/publish_technology_dynamic_perfect_v1.sh)；
+人才社会影响与人才培养代理分迁移为
+[`sql/doris/ads_schema_9_23_0_talent_social_cultivation.sql`](sql/doris/ads_schema_9_23_0_talent_social_cultivation.sql)，
+发布入口为
+[`scripts/publish_talent_social_cultivation_v1.sh`](scripts/publish_talent_social_cultivation_v1.sh)；
 深圳GKX产业集群年度发展方案原表补充迁移为
 [`sql/doris/ads_schema_9_12_0_sz_gkx_industry_annual_plan.sql`](sql/doris/ads_schema_9_12_0_sz_gkx_industry_annual_plan.sql)，
 发布入口为
@@ -312,6 +336,7 @@ Topic论文全球国家当前快照迁移为
 | `ads_talent_taxonomy_metrics` | 一个 taxonomy release 的一个节点聚合一行 | `taxonomy_id, release_id, node_id` | 3.0.0新增 |
 | `ads_talent_experience` | 一名人才一段经历一行 | `talent_id, experience_id` | 1.8.0 已发布 ORCID 教育/工作经历 |
 | `ads_institution_news` | 一家正式履历机构一条官网新闻一行 | `release_id, institution_news_id` | 8.0.0 删除冗余人才/经历数组 |
+| `ads_institution_report` | 一份外部机构报告一行 | `report_id` | 9.15.0新增；首版覆盖26家完美机构 |
 | `ads_talent_research_achievement` | 一名人才一项代表成果一行 | `talent_id, achievement_id` | 已发布 |
 | `ads_talent_topic_profile` | 一名人才一个 Topic 一行 | `talent_id, topic_id` | 已发布 |
 | `ads_talent_collaborator` | 一条有向人才合作关系一行 | `talent_id, collaborator_talent_id` | 已发布 |
@@ -319,7 +344,7 @@ Topic论文全球国家当前快照迁移为
 | `ads_talent_yearly_metrics` | 一名人才一个自然年一行 | `talent_id, year` | 已发布 |
 | `ads_talent_yearly_discipline` | 一名人才一年一个Field一行 | `talent_id, statistics_year, field_id` | 4.5.0新增并发布 |
 | `ads_talent_mobility_event` | 一名人才一次严格识别的迁移事件一行 | `mobility_event_id` | 4.5.0新增并发布 |
-| `ads_talent_mobility_yearly_flow` | 一年一条地区/机构/Field有向流向边一行 | `flow_id` | 4.5.0新增并发布 |
+| `ads_talent_mobility_yearly_flow` | 一年一条地区/机构/Field有向流向边一行 | `flow_id` | 4.5.0新增；9.16.0增加当前单一原因展示字段 |
 | `ads_talent_mobility_flow_detail` | 一条流向边一个TopN明细项一行 | `flow_id, detail_type, detail_id, related_detail_id` | 4.5.0新增并发布 |
 | `ads_talent_institution_cooperation` | 一名人才一个合作机构一行 | `talent_id, institution_id` | 9.8.0发布企业合作MVP v1 |
 | `ads_talent_institution_cooperation_project` | 一名人才与一家机构的一个合作项目一行 | `talent_id, institution_id, project_id` | 9.8.0新增；同篇受资助论文证据 |
@@ -403,6 +428,7 @@ Topic论文全球国家当前快照迁移为
 | `ads_resource_optimization_recommendation_evidence` | 一条优化建议的一项来源短板指标证据 | `recommendation_id, metric_code, benchmark_version` | 6.28.0新增；可回溯目标、基准、差距和覆盖状态 |
 | `ads_technology_profile` | 一个技术点一行 | `technology_node_id` | 4.6.0新增；6.0.0确认为ETO Cluster技术点 |
 | `ads_technology_graph_edge` | 一条候选技术关系一行 | `edge_id` | 4.6.0新增并发布 |
+| `ads_technology_graph_edge_paper` | 一条完美技术关系的一篇组合级论文 | `edge_id, paper_id` | 9.18.0新增；首版物化一条edge |
 | `ads_technology_graph_edge_institution` | 一条重点技术关系的一家核心共同机构 | `edge_id, institution_id` | 9.11.0新增 |
 | `ads_technology_graph_edge_patent` | 一条重点技术关系的一件完整共同专利 | `edge_id, patent_id` | 9.11.0新增 |
 | `ads_technology_graph_edge_project` | 一条重点技术关系的一个既有重点项目 | `edge_id, project_id` | 9.11.0新增 |
@@ -418,6 +444,10 @@ Topic论文全球国家当前快照迁移为
 | `ads_technology_application_case` | 技术节点的一个项目案例 | `technology_node_id, application_case_id` | 4.6.0新增；仅科研项目代理 |
 | `ads_technology_yearly_metrics` | 技术节点一年 | `technology_node_id, statistics_year` | 4.6.0新增并发布 |
 | `ads_technology_milestone_event` | 技术节点的一类确定性关键事件 | `event_id` | 9.13.0新增；首版五类规则事件 |
+| `ads_technology_dynamic` | 一个发布中的一条完美技术动态 | `release_id, dynamic_id` | 9.19.0新增；首版15条 |
+| `ads_technology_dynamic_content` | 一条完美技术动态的DeepSeek循证内容 | `release_id, dynamic_id` | 9.19.0新增；事件、背景及行业影响 |
+| `ads_technology_dynamic_evidence` | 一条技术动态的一项关键事件 | `release_id, dynamic_id, evidence_type, evidence_id` | 9.22.0仅保存45条EVENT |
+| `ads_technology_dynamic_event_content` | 一条技术动态的一个事件的DeepSeek循证内容 | `release_id, dynamic_id, event_id` | 9.20.0新增；逐事件完整覆盖 |
 | `ads_technology_hotspot_signal` | 技术节点的一个语义信号 | `technology_node_id, signal_id` | 4.6.0新增并发布 |
 | `ads_technology_hotspot_snapshot` | 技术节点一个热点模型版本 | `technology_node_id, model_version` | 4.6.0新增并发布 |
 | `ads_technology_hotspot_yearly` | 技术节点一个自然年的热度曲线点 | `technology_node_id, statistics_year, model_version` | 6.18.0新增；论文按发表年、引用按收到引用年 |
@@ -561,6 +591,17 @@ Topic论文全球国家当前快照迁移为
 | 评分 | `h_index_score` | `DECIMAL(9,6)` | H指数0至100平均排名百分位分 |
 | 评分 | `collaboration_score` | `DECIMAL(9,6)` | 合作广度0至100平均排名百分位分 |
 | 评分 | `core_source_score` | `DECIMAL(9,6)` | 100乘CWTS Core论文占已知Core状态论文比例 |
+| 社会影响代理 | `social_impact_score` | `DECIMAL(9,6)` | 0至100社会影响代理分；v1严格等于当前学术力，不代表现实社会贡献 |
+| 社会影响代理 | `social_impact_score_version` | `VARCHAR(64)` | 当前投影的社会影响代理评分版本 |
+| 社会影响代理 | `social_impact_score_nature` | `VARCHAR(64)` | v1固定`ACADEMIC_IMPACT_PROXY` |
+| 社会影响代理 | `social_impact_metric_coverage` | `DECIMAL(5,4)` | 当前实际输入指标权重覆盖率；v1复制学术力覆盖率 |
+| 社会影响代理 | `social_impact_as_of_date` | `DATE` | 社会影响输入指标截止日；v1复制学术指标截止日 |
+| 人才培养代理 | `talent_cultivation_score` | `DECIMAL(9,6)` | 0至100人才培养代理分；只对固定领军人才分类适用 |
+| 人才培养代理 | `higher_education_teaching_years` | `DECIMAL(7,2)` | 经确认高校教职区间去重后的日历年数；不可计算时为NULL |
+| 人才培养代理 | `talent_cultivation_evidence_status` | `VARCHAR(32)` | `YEAR_PRECISION/BASE_ONLY_UNKNOWN_DURATION/NOT_APPLICABLE` |
+| 人才培养代理 | `talent_cultivation_score_version` | `VARCHAR(64)` | 当前投影的人才培养代理评分版本；非领军人才为NULL |
+| 人才培养代理 | `talent_cultivation_as_of_date` | `DATE` | 任教年限计算截止日；非领军人才为NULL |
+| 人才培养代理 | `talent_cultivation_score_reason` | `STRING` | 基础分、有效任教年限、公式和覆盖限制说明 |
 | 评分 | `talent_potential` | `DECIMAL(10,4)` | 当前潜力模型中同主学科、同科研年限组的0至100综合百分位投影 |
 | 评分 | `score_version` | `VARCHAR(32)` | 学术力评分模型版本；不得用于承载潜力模型版本 |
 | 评分 | `is_potential_talent` | `TINYINT` | 当前潜力模型百分位不低于90为1，已评估未命中为0，未评估为NULL |
@@ -760,6 +801,38 @@ custom_academic_capability = sum(w_i * score_i, i in S and score_i is not null)
 
 所有选中指标均为 NULL 或所有权重均为 0 时返回 NULL。自定义权重不改写
 `academic_capability`、`score_version` 或固定排名；需要保存的模型配置应另行版本化。
+
+### 4.0.1.1 人才社会影响与人才培养代理分 v1
+
+`social_impact_academic_proxy_v1`覆盖固定100,000人学术力基准总体，定义为：
+
+```text
+social_impact_score = academic_capability
+social_impact_metric_coverage = academic_metric_weight_coverage
+social_impact_as_of_date = metrics_as_of_date
+```
+
+该指标性质固定为`ACADEMIC_IMPACT_PROXY`，只表达当前论文证据下的学术影响代理，不表示现实社会贡献、
+政策影响、公众传播或经济影响。期刊质量分尚未进入v1；未来接入后必须提升评分版本，按学科和发表年份
+标准化，缺失时按可用权重归一，并避免与当前学术力中的CWTS Core来源分重复计算。
+
+`talent_cultivation_teaching_tenure_proxy_v1`只对
+`talent_classification_mvp_v5_2026-11-04/leading_talent`当前有效人才计算：
+
+```text
+talent_cultivation_score = min(100, 50 + 2.5 * min(higher_education_teaching_years, 20))
+```
+
+任教区间只接受`experience_type=2`、`institution_type_id='education'`、机构解析状态为confirmed类、
+职位明确属于教职且起始年非空的正式`ads_talent_experience`。结束年非空时使用结束年；只有
+`is_current=1`时才延伸到固定截止日2026-11-09。结束时间为空且`is_current`未知时不得推断当前在任。
+同一人才重叠或首尾相接的合格区间先求并集，再按包含起止年的日历年计数，避免重复累计。
+
+领军人才没有可计算区间时仍保留基础分50，年限为NULL并标记`BASE_ONLY_UNKNOWN_DURATION`；存在可计算
+区间时标记`YEAR_PRECISION`；非领军人才分数、年限、版本和截止日保持NULL，状态标记
+`NOT_APPLICABLE`。该指标只衡量经确认高校教职时长代理，不代表指导学生数量、学生发展结果或教学质量。
+发布配置、执行和质量验收见
+[`docs/talent_social_cultivation_v1.md`](docs/talent_social_cultivation_v1.md)。
 
 ### 4.0.2 人才潜力 MVP v1
 
@@ -1766,6 +1839,48 @@ ADS删除；不可变DWD历史保留审计。当前ADS只保留新发布的30条
 `talent_ids` 与 `experience_ids`：新闻以机构为主体，消费者按 `institution_id` 连接
 `ads_talent_experience` 获取人才与经历，避免在新闻行重复保存多值关系。
 
+## 5.2 `ads_institution_report`
+
+本表为机构画像的外部报告宽表，一份报告一行，逻辑主键为`report_id`。机构名称交互必须使用
+`institution_id`连接`ads_institution_profile`，不得使用展示名称反查。首版发布ID为
+`institution_reports_perfect_v1_20261106`，覆盖`perfect_data_v1_20261106`的全部26家机构，每家一条
+官方机构网站、官方知识库或官方报告页面记录。
+
+| 字段组 | 字段 | Doris类型 | 说明 |
+|---|---|---|---|
+| Key与发布 | `report_id, release_id` | `VARCHAR(64), VARCHAR(96)` | 稳定报告ID与不可变发布ID |
+| 外部标识 | `external_report_id, report_number` | `VARCHAR(256)` | 外部报告标识与来源报告编号；来源没有编号时为空 |
+| 标题与日期 | `title, title_zh` | `STRING` | 来源题名和中文展示题名 |
+| 标题与日期 | `published_date, published_date_precision, publication_year` | `DATE, VARCHAR(32), SMALLINT` | 日期及其精度；年度或财年报告不得把年末日期冒充精确发布日期 |
+| 作者 | `authors, corporate_authors` | `ARRAY<STRING>` | 个人作者与团体作者原文；不得把机构相关人才虚构为报告作者 |
+| 出版 | `publisher, publication_country` | `STRING, VARCHAR(128)` | 发布机构与出版国家/地区 |
+| 来源 | `canonical_url` | `STRING` | 官方报告、官方详情页或官方知识库直达链接 |
+| 摘要 | `abstract_en, abstract_zh, abstract_method` | `TEXT, TEXT, VARCHAR(64)` | 双语摘要及摘要方法 |
+| 关键词 | `keywords_en, keywords_zh` | `ARRAY<STRING>` | 双语关键词 |
+| 文件 | `page_count, file_type, file_path, file_checksum_sha256` | `INT, VARCHAR(32), STRING, VARCHAR(64)` | 页数、文件格式与受控文件信息；未下载时路径和校验和为空 |
+| 合同 | `contract_number` | `VARCHAR(256)` | 来源合同号、项目号或报告编号 |
+| 正文 | `content, content_scope` | `TEXT, VARCHAR(32)` | 可合法保存的正文或摘要；范围为FULL_TEXT/PARTIAL_TEXT/ABSTRACT_ONLY/METADATA_ONLY |
+| 分类 | `resource_type, classification_codes` | `VARCHAR(64), ARRAY<VARCHAR(128)>` | 报告资源类型与来源分类 |
+| 文献 | `related_references, related_reference_ids` | `JSON, ARRAY<VARCHAR(64)>` | 相关文献展示快照与平台论文ID |
+| 作者详情 | `related_authors, author_institutions` | `JSON` | 作者角色及作者—机构对应关系 |
+| 机构关系 | `institution_id, source_institution_name` | `VARCHAR(64), STRING` | 主机构ID及来源名称 |
+| 机构关系 | `related_institution_ids` | `ARRAY<VARCHAR(64)>` | 其他已解析相关机构ID；首版至少包含主机构 |
+| 人才关系 | `primary_talent_id, author_ids, related_author_ids` | `VARCHAR(64), ARRAY<VARCHAR(64)>` | 有来源署名支持时才关联平台人才 |
+| 匹配治理 | `author_match_status, institution_match_status` | `VARCHAR(32)` | 作者匹配与机构匹配状态 |
+| 来源治理 | `source_type, verification_status, collected_at` | `VARCHAR(48), VARCHAR(32), DATETIME(3)` | 来源渠道、核验状态和采集时间 |
+| 版本 | `data_version, update_time` | `BIGINT, DATETIME(3)` | Unique Key sequence版本与UTC更新时间 |
+
+首版26条均以机构或机构下属正式部门为团体作者，`institution_match_status=CONFIRMED`、
+`verification_status=SOURCE_CONFIRMED`。当前没有足够的报告署名证据将记录直接匹配到15名MVP人才，
+所以`primary_talent_id`为空、`author_ids=[]`、`author_match_status=UNMATCHED`。这表示作者匹配未知，
+不表示相关人才与机构或报告主题无关。
+
+发布必须检查：26家机构覆盖缺失数为0、报告必填字段为空数为0、孤儿机构数为0、重复外部报告ID数为0。
+前端从教育/工作经历点击机构后，可用相同`institution_id`分别查询机构画像、相关专家、机构报告与项目。
+配置和发布报告位于
+[`config/institution_reports_v1.json`](config/institution_reports_v1.json)及
+[`reports/institution_reports_perfect_v1_20261106/publication_report.md`](reports/institution_reports_perfect_v1_20261106/publication_report.md)。
+
 ## 6. `ads_talent_research_achievement`
 
 | 字段 | 类型 | 说明 |
@@ -1946,7 +2061,7 @@ similar_talent_id ASC` 保留 Top 3。候选不足时保留实际数量，不跨
 | 项目与合作 | `institution_count` | `BIGINT` | 当年任职或学习机构去重数 |
 | 项目与合作 | `institution_cooperation_count` | `BIGINT` | 当年合作机构去重数；可按机构类型筛选企业 |
 | 项目与合作 | `new_topic_count` | `BIGINT` | 该人才首次出现于当年的Topic数 |
-| 评分与版本 | `academic_capability` | `DECIMAL(10,4)` | 该年度学术力评分 |
+| 评分与版本 | `academic_capability` | `DECIMAL(10,4)` | 2015起三年滚动、学科内百分位的年度学术影响力代理分；2026为YTD |
 | 评分与版本 | `industrial_capability` | `DECIMAL(10,4)` | 该年度产业力评分 |
 | 评分与版本 | `score_version` | `VARCHAR(64)` | 评分版本 |
 | 评分与版本 | `metric_definition_version` | `VARCHAR(64)` | 年度指标口径版本 |
@@ -1956,6 +2071,21 @@ similar_talent_id ASC` 保留 Top 3。候选不足时保留实际数量，不跨
 
 年度论文数采用发布 MVP core 口径。`citation_count` 表示该人才论文在该自然年收到的引用数，
 不是该年发表论文截至当前的累计被引数。
+
+9.17.0起，`academic_capability`使用
+`score_version='talent_yearly_academic_impact_3y_field_percentile_v1'`填充2015—2026全部已有年度键。
+每年使用当年及前两年的指标和；2015、2016分别为一个和两个可用年度的短窗口，2017—2025为完整
+三年窗口，2026按`metrics_as_of_date=2026-09-18`解释为YTD。指标执行`ln(1+x)`后，以平均并列排名
+计算0—100百分位；原始指标为0时分项固定为0。
+
+有当年Primary Field的人才在`year, field_id`基准内比较，没有当年Primary Field时退回同年全体人才
+基准。总分固定为：年度收到引用数50%、论文数20%、第一作者与通讯作者角色次数20%、合作者数5%、
+首次出现Topic数5%。第一作者与通讯作者是角色次数，同一论文同时满足两种角色时计两次。
+
+该字段是固定MVP core观察集合内的学术影响力代理分，不是论文质量、完整全球影响力、官方人才认定或
+未来成果保证。发布使用Unique Key部分列更新，不得覆盖同一年度行已有论文、引用、项目或专利字段。
+完整固定输入、执行和验收见
+[`docs/talent_yearly_academic_v1.md`](docs/talent_yearly_academic_v1.md)。
 
 ## 11. `ads_talent_institution_cooperation`
 
@@ -3565,6 +3695,8 @@ Topic 的去重论文出现次数降序排名；第一名为 Primary Topic。并
 新增`research_objectives_zh`、`technical_route_zh`、`result_summary_zh`保存研究目标、技术路线与
 成果摘要。`stage_results`为JSON数组，每项目固定三阶段：方案设计、研究实施和成果形成，各阶段均有
 期间、目标、成果和`evidence_nature`。
+首版重点项目的`name_zh`只保留中文方向名称或已有中文专名，不在中文字段后拼接来源英文项目名；
+来源原名继续由`name`和`name_original`保留。同一方向下的多个项目允许共用同一中文展示名，身份仍以`project_id`为准。
 
 `related_patents`为JSON数组，`related_patent_count`为对应计数。每项目固定5族代表专利，每个元素
 包含专利ID、标题、排序、后台关系类型、前端标签、关联理由、技术转化金额及金额性质。后台允许
@@ -3657,9 +3789,32 @@ baseline_paper_count`；基线和近期分别是两端技术在2020—2022、202
 
 #### 18.3.4 `ads_technology_graph_edge_project`
 
-只保存30条重点边与既有38个重点项目之间已经存在于`ads_technology_application_case`的关系。
+保存30条重点边与项目之间已经存在于`ads_technology_application_case`的关系。9.11.0只选择既有38个
+重点项目；9.18.0允许完美技术边增加同时连接两端、且具有`RESEARCH_PROJECT_EVIDENCE`的非重点项目。
 `related_side`为`SOURCE`、`TARGET`或`BOTH`；没有既有证据的边允许0条项目记录，不使用主题相似度补写
 项目关系。`source_application_case_id`和`target_application_case_id`保留原应用案例Key，供详情页继续下钻。
+
+#### 18.3.5 完美技术交叉关联（9.18.0）
+
+首版完美技术边固定为`edge_6dc3fbe131eae3f9fe8b47055ffeb70a`，对应“用于汗液分析的可穿戴传感器
+贴片 × 用于组织液分析的微针生物传感器”。`ads_technology_graph_edge_paper`物化两端25篇代表论文，
+其中17篇参与18条跨技术seed论文引用；每篇保存所属端、跨边引用方向、对端论文ID、专利连接数、
+组合级确定性排名及固定Paper/Reference Snapshot。核心论文排名不使用大模型。
+
+该边在`ads_technology_graph_edge_project`发布3条`related_side='BOTH'`科研项目，关系均来自两端已有
+`FUNDED_SEED_OUTPUT`，不是市场采用或产业化案例。共同机构继续使用既有5行，`core_institution_id`
+投影`institution_rank=1`的机构，不改变机构表和排名。
+
+3条项目同时在`ads_project_profile.name_original/name_en`保存资助机构发布的官方英文名称，
+`name_zh`保存平台中文译名，`perfect_data_value_nature='PLATFORM_TRANSLATION'`明确中文并非资助机构
+官方译名；`ads_technology_graph_edge_project.project_name_zh`从该中文名重新物化。NIH项目的来源误写
+编号`R21DK13266`按NIH RePORTER校正为核心项目编号`R21DK132666`，不改变平台`project_id`。
+
+`ads_technology_graph_edge`新增`perfect_edge_paper_count`、`core_institution_id`及
+`synergy_principle_enriched_zh`。增强协同原理由DeepSeek读取固定论文、引用、共同专利、双端项目和
+共同机构证据后生成；同时保存`synergy_principle_generation_method`、模型Provider/版本、Prompt版本、
+输入Hash、证据JSON、审核状态和生成时间。模型不得创建输入外ID或把解释性推断写成观测事实；前端仅在
+审核状态通过时展示增强字段，否则回退到`synergy_principle_zh`规则说明。
 
 发布验收必须满足：重点边30条；每边组合名、强度、增长率、论文数和协同说明非空；每边5家核心共同
 机构；所有共同专利完整写入且逐边等于`shared_patent_count`；Key无重复；来源Iceberg snapshot只读。
@@ -4169,6 +4324,25 @@ Key重复、Topic孤儿、人才孤儿、覆盖状态、数值范围、Top 20排
 `flow_level` 分别使用 `COUNTRY/PROVINCE/CITY`、`INSTITUTION` 或 `FIELD`。同一人才同一年同一有向边
 只计一次，`talent_count` 为去重人才数，`mobility_event_count` 为去重事件数。`from_entity_id` 与
 `to_entity_id` 必须不同。不得跨边求和后解释为全局去重人才数。
+
+每条流向边当前只保存一个流向级主要原因。9.16.0固定使用
+`reason_code='PERSONAL_DEVELOPMENT'`、`reason_label='个人发展原因'`、
+`reason_analysis_method='BUSINESS_DEFAULT'`和
+`reason_model_version='talent_mobility_reason_default_v1'`。这是产品当前统一展示分类，不是对边内每名人才
+个人动机的事实认定。由于没有个人陈述、调查或其他原因证据，`reason_confidence`和`reason_evidence`
+保持空，`reason_coverage_status='DEFAULT_ASSIGNED'`。前台原因标题必须读取`reason_label`，说明文字读取
+`reason_description`；不得把`reason_code`直接展示给用户，也不得将默认分类改写成已验证的因果结论。
+
+| 原因字段 | Doris 类型 | 说明 |
+|---|---|---|
+| `reason_code` | `VARCHAR(64) NOT NULL` | 稳定原因代码；当前固定`PERSONAL_DEVELOPMENT` |
+| `reason_label` | `VARCHAR(128) NOT NULL` | 前台直接展示字段；当前固定“个人发展原因” |
+| `reason_description` | `STRING NOT NULL` | 前台可选说明及非因果语义限制 |
+| `reason_analysis_method` | `VARCHAR(32) NOT NULL` | 当前固定`BUSINESS_DEFAULT` |
+| `reason_confidence` | `DECIMAL(5,4)` | 证据分析置信度；当前默认分类为空 |
+| `reason_model_version` | `VARCHAR(64) NOT NULL` | 原因规则或模型版本 |
+| `reason_evidence` | `VARIANT` | 有界原因证据；当前为空 |
+| `reason_coverage_status` | `VARCHAR(32) NOT NULL` | 当前固定`DEFAULT_ASSIGNED` |
 
 `ads_geo_yearly_metrics.inbound_talent_count` 和 `outbound_talent_count` 不直接相加流向边人数，而从
 事件端点按 `location_id, event_year` 再次去重人才；同一人才同年从多个来源流入同一位置只计一人。
@@ -5144,6 +5318,46 @@ MARKET域没有注册的不可变市场事实来源时，普通技术保持`NOT_
 前端按`technology_node_id`和展示年份查询，使用`event_year`定位折线节点，展示
 `event_title_zh/event_summary_zh`；增长详情直接使用`comparison_year/previous_metric_value/metric_value/growth_rate`，
 不应从摘要文本反解析数值。
+
+#### 24.12.24 完美技术动态（9.22.0）
+
+首版发布`technology_dynamic_perfect_v1_20261108`，从已通过DeepSeek技术性筛选的
+`ads_technology_hotspot_signal`与可复算`ads_technology_milestone_event`中确定15条完整候选。
+候选必须具有非空中文技术名及热点名、至少5篇热点支持论文、2025年`RISING`趋势、正热度同比、
+专利和项目证据，并限制同一一级Domain最多3条、相同热点词最多1条。主事件限定为2021—2025年，
+优先增长加速、首次专利、首次项目和论文峰值。候选排序分只用于策展，不是技术价值或成功概率。
+
+`ads_technology_dynamic`是一条动态一行的头表，保存技术名称、热点名称、变化率、提及次数、领域标签、
+主关键事件、展示排名和证据计数。变化率固定为2025年`hotspot_score_yoy_rate`；提及次数固定为
+`HOTSPOT_SIGNAL_SUPPORTING_PAPER_COUNT`，即支持入选热点信号的去重论文数，不混加专利、项目和
+选择性媒体样本。`change_rate`按比例值存储，`2.6614583`表示`266.14583%`；前端可直接使用
+`change_rate_percent`，`change_rate_unit`固定为`RATIO`。
+
+`ads_technology_dynamic_content`保存DeepSeek基于固定证据包补全的`event_detail_zh`、
+`research_background_zh`和`industry_impact_zh`。每行保存Provider、Model、Prompt、输入Hash、生成时间、
+逐陈述证据映射和审核状态。首版15条均为`deepseek-openai-compatible/deepseek-flash`；
+`impact_nature`区分`EVIDENCE_SUPPORTED/POTENTIAL_IMPACT/INSUFFICIENT_EVIDENCE`。科研项目不得写成
+商业落地，专利数量不得写成市场规模或收入。
+
+`ads_technology_dynamic_event_content`是事件详情的正式消费表，每个`EVENT`证据严格对应一行，逐事件保存
+`event_detail_zh`、`research_background_zh`和`industry_impact_zh`及模型血缘。旧动态级content表保留用于
+兼容已有消费者，但不得再用作单个事件详情。DeepSeek输入严格缩减为技术动态标题，以及对应论文、专利、
+项目的标题和简介；模型不接收或决定实体ID，关联ID由程序确定性写入。
+
+`ads_technology_dynamic_evidence`只固化`EVENT`。每项动态保留三类代表性事件：排名第一论文的
+`PAPER_PUBLICATION`、排名第一专利的`PATENT_APPLICATION`、排名第一项目的`PROJECT_START`；不再把
+增长加速、论文峰值等聚合指标作为关键事件。`event_time_point/event_time_precision`保存事件时间点及精度，
+`related_paper_id/related_patent_id/related_project_id`中严格只有对应类型的一列非空，当前15条动态共45行。
+趋势不再复制到本表，直接按`technology_node_id`读取`ads_technology_hotspot_yearly`；相关成果列表分别读取
+`ads_technology_paper`、`ads_technology_patent`、`ads_technology_application_case`并联接profile表。
+`PAPER.evidence_id`统一为`ads_paper_profile.paper_id`，`PATENT.evidence_id`统一为
+`ads_patent_profile.patent_id`；技术关系表原始ID保存在`source_entity_id`。内容表的supporting ID与证据表
+使用同一组统一ID。所有证据标题在写入前移除HTML标签。论文链接优先使用来源落地页或DOI，
+专利链接使用Google Patents，项目使用来源URL；无来源URL时保持空，不生成伪链接。
+
+完整执行、口径与验收见
+[`docs/technology_dynamic_perfect_v1.md`](docs/technology_dynamic_perfect_v1.md)及
+[`reports/technology_dynamic_perfect_v1_20261108/publication_report.md`](reports/technology_dynamic_perfect_v1_20261108/publication_report.md)。
 
 ### 24.13 论文证据颠覆性技术候选基线（5.18.0）
 

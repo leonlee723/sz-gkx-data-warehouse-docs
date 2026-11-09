@@ -6,6 +6,104 @@
 - MINOR：向后兼容地新增表、字段或指标。
 - PATCH：不改变接口的说明、约束或索引修正。
 
+## 9.23.0 — 2026-11-09
+
+- `ads_talent_profile`新增社会影响代理分、人才培养代理分、高校教职年限、证据状态、版本、截止日和
+  解释字段；不改变人才主键、分类关系或既有学术力公式。
+- `social_impact_academic_proxy_v1`覆盖固定100,000人，分数严格等于当前`academic_capability`，明确标记
+  `ACADEMIC_IMPACT_PROXY`；期刊质量分尚未接入，不把该结果解释为现实社会贡献。
+- `talent_cultivation_teaching_tenure_proxy_v1`覆盖v5固定100名领军人才，基础分50，加经确认高校教职
+  日历年并集每年2.5分、20年封顶；结束时间为空且当前状态未知的经历不推断为在任。
+- 无可计算教职年限的领军人才保留基础分并标记`BASE_ONLY_UNKNOWN_DURATION`，非领军人才数值保持NULL并
+  标记`NOT_APPLICABLE`；发布器执行部分更新、版本固定和全量质量对账。
+
+## 9.22.0 — 2026-11-08
+
+- `ads_technology_dynamic_evidence`职责收敛为关键事件表，仅保留45条`EVENT`，每项动态各一条论文发表、
+  专利申请和项目启动事件；删除该发布内的`TREND_POINT/PAPER/PATENT/PROJECT`复制行。
+- 趋势改为直接读取`ads_technology_hotspot_yearly`；论文、专利和项目列表分别读取既有技术关系表并联接
+  profile表，不再在事件表重复保存。
+- 发布器和验收同步改为event-only，确保重复发布不会重新产生非事件行；动态内容引用限定为三条代表事件
+  对应的统一实体ID。
+
+## 9.21.0 — 2026-11-08
+
+- 技术动态`EVENT`清理为`PAPER_PUBLICATION`、`PATENT_APPLICATION`、`PROJECT_START`三类；每条动态
+  分别使用排名第一的论文、专利和项目形成三条一对一实体事件，不再发布增长加速或论文峰值聚合事件。
+- `ads_technology_dynamic_evidence`新增`event_type`、`event_time_point`、`event_time_precision`以及
+  `related_paper_id/related_patent_id/related_project_id`；项目缺少日期时以有效开始年份一月一日表示并标记
+  `YEAR`精度。
+- DeepSeek逐事件输入只包含技术动态标题及三项关联成果的标题与简介，不传实体ID；程序按事件序号确定性
+  回填统一ID和证据映射，避免模型生成或误配论文、专利、项目ID。
+- 新增事件类型、时间、profile主键联接和同动态证据存在性校验，确保每个事件关联正确实体。
+
+## 9.20.0 — 2026-11-08
+
+- 明确`ads_technology_dynamic.change_rate`为比例值，并新增可直接展示的`change_rate_percent`和固定为
+  `RATIO`的`change_rate_unit`；例如`2.6614583`表示`266.14583%`。
+- `PAPER/PATENT`证据ID分别统一为`ads_paper_profile.paper_id`和`ads_patent_profile.patent_id`，新增
+  `source_entity_id`保留技术关系表原始ID；动态内容引用同步为相同统一ID。
+- 发布时清理证据标题中的HTML标签，并增加数据库联接、内容引用一致性和HTML残留验收。
+- 新增`ads_technology_dynamic_event_content`，为每个时间线事件分别保存事件具体内容、研究背景和行业影响；
+  全部由`.env`配置的DeepSeek生成并保存模型血缘，旧动态级内容仅保留兼容用途。
+
+## 9.19.0 — 2026-11-08
+
+- 新增`ads_technology_dynamic`，从已筛选热点信号、2025年度热度趋势和2021—2025年确定性关键事件中
+  发布15条跨领域完整技术动态；变化率固定为热度同比率，提及次数固定为热点支持论文数。
+- 新增`ads_technology_dynamic_content`，使用`.env`中的DeepSeek配置生成事件具体内容、研究背景和
+  行业影响；15条均保存真实Provider、Model、Prompt、输入Hash、生成时间和逐陈述证据映射。
+- 新增`ads_technology_dynamic_evidence`，统一发布66个时间线事件、165个趋势点、75篇论文、60件专利
+  和43个项目，共409条可下钻证据。
+- 模型只能引用固定证据包内ID；行业影响区分事实支撑、潜在影响和证据不足，科研项目不得冒充商业落地。
+- 新增独立配置、发布脚本、运行文档、缓存、报告及单元测试；重复发布使用相同逻辑Key和数据版本。
+
+## 9.18.0 — 2026-11-08
+
+- 新增`ads_technology_graph_edge_paper`，为首条完美技术交叉关联物化25篇组合级代表论文；17篇参与
+  18条固定Snapshot跨技术引用，核心论文排名完全由可复算证据决定。
+- 为`edge_6dc3fbe131eae3f9fe8b47055ffeb70a`发布3条同时连接两端的科研项目，全部标记
+  `related_side='BOTH'`和`RESEARCH_PROJECT_EVIDENCE`；不复制其他edge项目。
+- 依据ACS、NSF和NIH官方记录补齐上述3个项目的`name_original/name_en`，以平台中文译名补齐
+  `name_zh`并标记`PLATFORM_TRANSLATION`；NIH核心项目编号由误写的`R21DK13266`校正为
+  `R21DK132666`，随后重新物化edge项目中文名。
+- 共同机构表保持5行不变，edge头部投影`institution_rank=1`的UCLA为核心机构。
+- 新增DeepSeek循证协同原理及Provider、Model、Prompt、输入Hash、证据JSON、审核状态和生成时间；
+  模型只能总结固定论文、引用、专利、项目和机构证据，不能创建输入外事实。
+
+## 9.17.0 — 2026-11-07
+
+- 启用`ads_talent_yearly_metrics.academic_capability`，为2015—2026已有的全部人才年度键发布三年滚动、
+  学科内百分位学术影响力代理分；无当年主学科时退回同年全体人才基准。
+- 分数固定使用年度收到引用数50%、论文数20%、第一/通讯作者角色次数20%、合作者数5%、新Topic数5%；
+  原始指标为0时对应分项为0。
+- 2015和2016标记为短窗口，2017—2025为完整三年窗口，2026为截至2026-09-18的YTD；不得将YTD与
+  完整年度直接排名解释。
+- 发布只部分更新年度表的评分与版本列，不覆盖论文、引用、项目、专利等既有字段；验收覆盖10万人，
+  并单独要求15名重点人才2015—2026共180条分数无空值。
+
+## 9.16.0 — 2026-11-07
+
+- `ads_talent_mobility_yearly_flow`向后兼容新增8个当前单一原因字段；不改变`flow_id`、流向边粒度、
+  人才去重口径或既有事件识别规则。
+- 当前所有流向边统一写入`reason_code='PERSONAL_DEVELOPMENT'`和
+  `reason_label='个人发展原因'`；前台原因标题直接读取`reason_label`，说明读取`reason_description`。
+- 当前原因是`BUSINESS_DEFAULT`产品展示分类，不是已核验的个人动机或因果分析；因此分析置信度和证据
+  保持空，覆盖状态明确标记为`DEFAULT_ASSIGNED`。
+- 既有Doris行通过非空字段默认值原位补齐；旧Iceberg Stage仍可加载公共列，新物化Stage会显式生成
+  全部原因字段，来源Snapshot和既有Iceberg对象均不改写。
+
+## 9.15.0 — 2026-11-06
+
+- 新增`ads_institution_report`，一份外部机构报告一行，以`institution_id`连接机构画像、正式履历、
+  专家和项目，不使用机构名称反查实体。
+- 首版`institution_reports_perfect_v1_20261106`为26家完美机构各发布一条官方报告、官方详情页或
+  官方知识库记录；机构覆盖、必填字段、孤儿机构和重复外部ID检查均必须为0。
+- 保存外部报告ID、编号、双语题名与摘要、日期精度、团体作者、出版信息、原文链接、关键词、文件、
+  正文范围、分类、相关文献/作者/机构ID及完整来源治理字段。
+- 26条首版记录均为团体作者。由于没有充分报告署名证据匹配当前15名MVP人才，人才作者ID保持空且
+  标记`UNMATCHED`，不以机构任职或主题相关性虚构作者关系。
+
 ## 9.14.0 — 2026-11-06
 
 - `ads_paper_profile`向后兼容新增`primary_source_name`、`primary_source_name_zh`、
