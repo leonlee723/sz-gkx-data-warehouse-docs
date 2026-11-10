@@ -6,6 +6,46 @@
 - MINOR：向后兼容地新增表、字段或指标。
 - PATCH：不改变接口的说明、约束或索引修正。
 
+## 9.26.0 — 2026-11-10
+
+- 新增`ads_city_domain_resource_yearly`和`ads_institution_domain_resource_yearly`，分别以
+  `city_location_id,statistics_year,domain_id`和`institution_id,statistics_year,domain_id`为逻辑Key。
+- 两张表从固定论文、年度引用、人才及项目机构关系证据按Domain独立重算；人才、项目重新去重，均值、
+  覆盖率和金额来源状态重新计算，不从Field或Subfield事实求和。
+- 城市表发布10城×11年×4个Domain完整网格440行；机构表发布64,836行，覆盖2,175家机构，深圳机构
+  补齐零值网格。
+- Domain表无重复Key、负指标或资金参与遗漏；全部440个城市Domain单元的去重人才数均小于对应Field
+  人才数之和，验证不得使用Field简单加总替代Domain重算。
+
+## 9.25.0 — 2026-11-10
+
+- 新增`ads_city_field_resource_yearly`和`ads_institution_field_resource_yearly`，分别以
+  `city_location_id,statistics_year,field_id`和`institution_id,statistics_year,field_id`为逻辑Key。
+- 两张表直接从固定论文、年度引用、人才及项目机构关系证据按Field独立重算，不从Subfield事实求和；
+  人才和项目在Field目标粒度重新去重，均值、覆盖率和金额来源状态重新计算。
+- 城市表发布10城×11年×26个Field完整网格2,860行；机构表发布238,289行，覆盖2,175家机构，深圳
+  机构补齐零值网格。
+- Field表无重复Key、负数或资金参与遗漏；2,442个城市Field单元的人才去重数小于Subfield人才数之和，
+  明确验证不得用Subfield简单加总替代Field重算。
+
+## 9.24.1 — 2026-11-09
+
+- 为`ads_paper_profile.title`新增`idx_paper_profile_title_multilingual`倒排全文索引，使用ICU多语言分词，
+  支持中文、英文、日文及其他Unicode文字的统一标题检索。
+- 索引启用小写归一、空停用词表、短语位置和V3字典压缩，并显式`BUILD INDEX`回填既有4,000,000篇论文。
+- 前台查询契约改为传入含显式`title:`字段的已转义DSL并调用`SEARCH(:title_search_dsl)`；调用方必须
+  转义SEARCH DSL特殊字符，不得把`LIKE '%关键词%'`误认为可由该倒排全文索引加速。
+
+## 9.24.0 — 2026-11-09
+
+- `ads_talent_profile`新增`impact_description`及内容性质、Provider、Model、Prompt版本、输入Hash、生成时间、
+  审核状态和证据快照字段，为15名重点人才提供可直接展示且可审计的中文影响描述。
+- 首版输入严格限定为人才主画像职称与论文指标、Top 10代表论文、已关联专利及已核验荣誉；DeepSeek不能
+  创建输入外事实，不得把引用量解释为现实社会贡献，也不得把授权专利表述为商业转化。
+- 每条描述至少引用3篇代表论文；存在专利或荣誉时必须分别引用至少1条对应ID。证据快照保存支撑ID、
+  不确定性说明和置信度，审核状态固定为`MODEL_GENERATED_NOT_HUMAN_VERIFIED`。
+- 发布只部分更新固定`perfect_data_v1_20261106`的15名人才，不影响其他画像字段或非重点人才。
+
 ## 9.23.0 — 2026-11-09
 
 - `ads_talent_profile`新增社会影响代理分、人才培养代理分、高校教职年限、证据状态、版本、截止日和

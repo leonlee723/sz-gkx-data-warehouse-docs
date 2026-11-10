@@ -2,7 +2,7 @@
 
 ## 1. 主体名称与边界
 
-**Schema version：9.23.0。** 本文件是下游 Doris ADS 逻辑结构与业务命名的唯一真实来源；
+**Schema version：9.26.0。** 本文件是下游 Doris ADS 逻辑结构与业务命名的唯一真实来源；
 可执行物理 DDL 包括 `sql/doris/` 下的 Talent、Institution 基线文件及版本化
 `ads_schema_*` 迁移文件；新增公共学科维表的 DDL 为
 [`sql/doris/ads_schema_1_7_0_publication_profiles.sql`](sql/doris/ads_schema_1_7_0_publication_profiles.sql)；
@@ -39,6 +39,10 @@
 [`sql/doris/ads_schema_9_23_0_talent_social_cultivation.sql`](sql/doris/ads_schema_9_23_0_talent_social_cultivation.sql)，
 发布入口为
 [`scripts/publish_talent_social_cultivation_v1.sh`](scripts/publish_talent_social_cultivation_v1.sh)；
+15名重点人才影响描述及模型血缘迁移为
+[`sql/doris/ads_schema_9_24_0_talent_impact_description.sql`](sql/doris/ads_schema_9_24_0_talent_impact_description.sql)，
+发布入口为
+[`scripts/publish_talent_impact_description_v1.sh`](scripts/publish_talent_impact_description_v1.sh)；
 深圳GKX产业集群年度发展方案原表补充迁移为
 [`sql/doris/ads_schema_9_12_0_sz_gkx_industry_annual_plan.sql`](sql/doris/ads_schema_9_12_0_sz_gkx_industry_annual_plan.sql)，
 发布入口为
@@ -49,6 +53,8 @@
 论文Primary Source便利投影迁移为
 [`sql/doris/ads_schema_9_14_0_paper_primary_source_projection.sql`](sql/doris/ads_schema_9_14_0_paper_primary_source_projection.sql)，
 物化与发布入口继续复用[`scripts/publish_publication_ads.sh`](scripts/publish_publication_ads.sh)；
+论文标题ICU多语言全文检索索引迁移为
+[`sql/doris/ads_schema_9_24_1_paper_title_multilingual_search_index.sql`](sql/doris/ads_schema_9_24_1_paper_title_multilingual_search_index.sql)；
 荣誉详情双语名称与两院院士匹配发布迁移为
 [`sql/doris/ads_schema_9_9_0_talent_honor_bilingual_academician.sql`](sql/doris/ads_schema_9_9_0_talent_honor_bilingual_academician.sql)；
 15人科研诚信演示分迁移为
@@ -144,6 +150,10 @@ MVP论文摘要扩展迁移为
 发布入口为[`scripts/publish_resource_shortage_v1.sh`](scripts/publish_resource_shortage_v1.sh)；
 科研资源统一项目金额与来源字段迁移为
 [`sql/doris/ads_schema_6_27_0_resource_shortage_unified_funding.sql`](sql/doris/ads_schema_6_27_0_resource_shortage_unified_funding.sql)；
+城市与机构年度Field科研资源独立重算表迁移为
+[`sql/doris/ads_schema_9_25_0_resource_field_yearly.sql`](sql/doris/ads_schema_9_25_0_resource_field_yearly.sql)；
+城市与机构年度Domain科研资源独立重算表迁移为
+[`sql/doris/ads_schema_9_26_0_resource_domain_yearly.sql`](sql/doris/ads_schema_9_26_0_resource_domain_yearly.sql)；
 科研资源优化建议及逐指标证据迁移为
 [`sql/doris/ads_schema_6_28_0_resource_optimization_recommendation.sql`](sql/doris/ads_schema_6_28_0_resource_optimization_recommendation.sql)，
 发布SQL为
@@ -423,6 +433,10 @@ Topic论文全球国家当前快照迁移为
 | `ads_resource_benchmark_city` | 一个基准版本的一座城市一行 | `benchmark_version, city_location_id` | 6.25.0新增并发布固定十城基准 |
 | `ads_city_subfield_resource_yearly` | 一座基准城市一年一个Subfield一行 | `city_location_id, statistics_year, subfield_id` | 6.25.0新增并发布2015—2025完整网格 |
 | `ads_institution_subfield_resource_yearly` | 一家十城机构一年一个有证据Subfield；深圳补齐零值网格 | `institution_id, statistics_year, subfield_id` | 6.25.0新增并发布 |
+| `ads_city_field_resource_yearly` | 一座基准城市一年一个Field一行 | `city_location_id, statistics_year, field_id` | 9.25.0新增并发布2015—2025完整网格 |
+| `ads_institution_field_resource_yearly` | 一家十城机构一年一个有证据Field；深圳补齐零值网格 | `institution_id, statistics_year, field_id` | 9.25.0新增并发布 |
+| `ads_city_domain_resource_yearly` | 一座基准城市一年一个Domain一行 | `city_location_id, statistics_year, domain_id` | 9.26.0新增并发布2015—2025完整网格 |
+| `ads_institution_domain_resource_yearly` | 一家十城机构一年一个有证据Domain；深圳补齐零值网格 | `institution_id, statistics_year, domain_id` | 9.26.0新增并发布 |
 | `ads_research_resource_shortage_yearly` | 一个城市或机构一年一个Subfield的一项资源指标 | `target_type, target_id, statistics_year, subfield_id, metric_code, benchmark_version` | 6.25.0新增；差距超过50%标关键短板 |
 | `ads_resource_optimization_recommendation` | 一个城市或机构一个年度一个Subfield一条聚合优化建议 | `recommendation_id` | 6.28.0新增；仅使用已评估、正值、关键短板 |
 | `ads_resource_optimization_recommendation_evidence` | 一条优化建议的一项来源短板指标证据 | `recommendation_id, metric_code, benchmark_version` | 6.28.0新增；可回溯目标、基准、差距和覆盖状态 |
@@ -565,6 +579,15 @@ Topic论文全球国家当前快照迁移为
 | 基础资料 | `email` | `VARCHAR(320)` | 邮箱 |
 | 基础资料 | `talent_bio` | `STRING` | 中文简介 |
 | 基础资料 | `talent_bio_en` | `STRING` | 英文简介 |
+| 影响描述 | `impact_description` | `STRING` | 基于固定论文、专利、职称和已核验荣誉证据生成的中文影响描述；不是人工核验事实 |
+| 影响描述 | `impact_description_nature` | `VARCHAR(64)` | 固定`LLM_EVIDENCE_GROUNDED_SYNTHESIS` |
+| 影响描述 | `impact_description_provider` | `VARCHAR(64)` | 实际模型服务提供方 |
+| 影响描述 | `impact_description_model` | `VARCHAR(128)` | 实际模型名称 |
+| 影响描述 | `impact_description_prompt_version` | `VARCHAR(96)` | 固定Prompt版本 |
+| 影响描述 | `impact_description_input_hash` | `VARCHAR(64)` | 规范化输入证据SHA-256 |
+| 影响描述 | `impact_description_generated_at` | `DATETIME(3)` | 模型内容生成时间UTC |
+| 影响描述 | `impact_description_review_status` | `VARCHAR(48)` | 当前固定`MODEL_GENERATED_NOT_HUMAN_VERIFIED` |
+| 影响描述 | `impact_description_evidence` | `VARIANT` | 支撑论文、专利、荣誉ID、证据计数、不确定性说明与置信度的有界快照 |
 | 当前机构 | `current_institution` | `VARIANT` | 当前机构完整展示快照 |
 | 当前机构 | `current_institution_ids` | `ARRAY<VARCHAR(64)>` | 当前机构ID；企业也属于机构，通过机构类型区分 |
 | 当前机构 | `country_location_id` | `VARCHAR(64)` | 当前已解析机构的平台国家位置ID |
@@ -1179,6 +1202,29 @@ taxonomy本身已经分别表达院士和会士分类，因此不创建`academic
 [`sql/doris/ads_talent_academician_fellow_taxonomies_mvp_v1.sql`](sql/doris/ads_talent_academician_fellow_taxonomies_mvp_v1.sql)，
 执行与验收见
 [`docs/talent_academician_fellow_taxonomies_mvp_v1.md`](docs/talent_academician_fellow_taxonomies_mvp_v1.md)。
+
+##### 院士来源补录、taxonomy v2 与主画像同步
+
+`talent_academician_mvp_v2_2026-11-09`补充只读两院院士名录记录`CAS-3412358`：李亚栋
+（`tal_212de193e131482f8da6c9597344112c`）于2011年当选中国科学院院士，来源为中国科学院学部官方
+个人页。该事实以独立不可变release
+`talent_academician_source_confirmation_v1_20261109`写入`ads_talent_honor_detail`；v1 taxonomy保留历史
+关系并标记`SUPERSEDED`，不得原地把`no_academician`改成正向关系。
+
+v2从全部`verification_status='verified' AND honor_type='academy_member'`详情确定性重建关系：中国院士
+75人、外国院士16人、两类重叠1人，并集90人，`no_academician`为99,910人；关系总数仍为100,001，
+去重人才和Primary均为100,000。李亚栋只进入`china_academician`，关系为当前、Primary、已核验，
+`selected_or_elected_year=2011`。
+
+`ads_talent_profile.is_academician`只投影当前`PUBLISHED`院士taxonomy中`is_current=TRUE AND
+verified_status='VERIFIED'`的`china_academician/foreign_academician`并集：正向关系写1。`no_academician`
+是未核验的固定发布补集，不是确认不存在院士身份，因此继续投影NULL而不是0。发布器必须校验荣誉详情、
+taxonomy关系、节点指标和主画像投影完全一致，并在发布前后核对来源文件path、size、mtime与SHA-256。
+
+发布SQL、执行入口和验收说明分别为
+[`sql/doris/publish_talent_academician_sync_v2.sql`](sql/doris/publish_talent_academician_sync_v2.sql)、
+[`scripts/publish_talent_academician_sync_v2.sh`](scripts/publish_talent_academician_sync_v2.sh)和
+[`docs/talent_academician_sync_v2.md`](docs/talent_academician_sync_v2.md)。
 
 #### 人才学科领域分类与科研活跃度分类 MVP v1
 
@@ -2342,6 +2388,32 @@ Sources覆盖，不表示JCR分区、影响因子或期刊等级。
 
 摘要只从固定 MVP core 选择范围对应的 `dwd_work_abstract` 稀疏扩展表发布。没有可用来源摘要时三个
 摘要字段均为 `NULL`；不从标题生成摘要，不自动翻译，也不让 ADS 发布程序直接读取原始 Snapshot。
+
+`title`使用`idx_paper_profile_title_multilingual`倒排全文索引。索引固定使用ICU多语言分词器，支持中文、
+英文、日文及其他Unicode文字，启用小写归一、空停用词表、短语位置和V3字典压缩。前台全文搜索必须将
+带显式字段的已转义DSL作为参数传入`SEARCH(:title_search_dsl)`，例如单词查询传`title:quantum`、多词
+任一命中传`title:ANY(quantum computing)`；不得继续使用`LIKE '%关键词%'`并假定倒排索引能够加速。
+调用方必须按SEARCH DSL规则转义用户输入，禁止把未转义输入直接拼接进SQL或DSL。`ignore_above`只约束
+不分词字符串索引，本分词索引不设置该属性。迁移显式执行`BUILD INDEX`，保证迁移前已经发布的固定
+4,000,000篇论文进入索引。
+
+已有环境执行：
+
+```bash
+./scripts/compose.sh exec -T doris-fe bash -lc \
+  'MYSQL_PWD="$DORIS_PASSWORD" mysql --protocol=TCP -h127.0.0.1 -P9030 -uroot --show-warnings' \
+  < sql/doris/ads_schema_9_24_1_paper_title_multilingual_search_index.sql
+```
+
+前台参数化查询示例：
+
+```sql
+SELECT paper_id, title, publication_year
+FROM ads_paper_profile
+WHERE SEARCH(:title_search_dsl)
+ORDER BY publication_year DESC, paper_id
+LIMIT :result_limit;
+```
 
 ## 13.2 `ads_patent_profile`
 
@@ -5888,6 +5960,12 @@ v2报告位于 `reports/technology_graph_ads_v2_20261029/`。
 | `ads_research_problem_provenance` | `provenance_id` | 分域来源表、来源行数、namespace与发布ID |
 | `ads_research_problem_change_log` | `change_id` | IDENTIFIED、APPROVED和AI_ENRICHED记录 |
 
+`ads_research_problem_profile`的Doris建表DDL必须为全部字段保留`COMMENT`，表注释固定说明其为基础研究
+问题画像。`future_directions`仅是`path_type='FUTURE_DIRECTION'`研究路径标题的有序快照，完整方向标题、
+说明、目标、方法、前提、证据、周期、不确定性、审核状态与模型血缘分别读取
+`ads_research_problem_research_path`和正式发布表`ads_research_problem_direction`，不得把画像数组解释为
+完整方向事实。
+
 关键口径：
 
 - `proposed_date/year` 来自最早 `DIRECT` 支持论文；来源机构是该论文全部可映射平台机构。
@@ -6019,23 +6097,24 @@ v2报告位于 `reports/technology_graph_ads_v2_20261029/`。
 
 ### 28.2 `ads_research_problem_direction`
 
-逻辑Key：`direction_id`。当前1,556行来自现有研究路径，只是审核候选，不是正式部署方向。
+逻辑Key：`direction_id`。当前1,556行来自现有研究路径，并已按操作方批量批准策略发布为正式方向；
+原模型审核状态和理由继续保留在`review_reason_zh`中用于审计。
 
 | 字段组 | 字段 | 类型 | 当前口径 |
 |---|---|---|---|
 | Key | `direction_id` | `VARCHAR(256) NOT NULL` | 稳定方向ID |
 | 关联 | `problem_id` | `STRING` | 基础问题ID |
-| 版本 | `direction_version` | `STRING` | 当前`direction_v1` |
+| 版本 | `direction_version` | `STRING` | 当前`direction_v2` |
 | 类型 | `direction_type` | `STRING` | 技术路线、未来方向或开放子问题 |
 | 内容 | `title_zh/title_en/description_zh/objective_zh` | `STRING` | 方向标题、说明和目标 |
 | 方法 | `methods_zh/prerequisites_zh/keyword_terms_zh` | `ARRAY<STRING>` | 方法、前提和关键词 |
 | 证据 | `evidence_paper_ids` | `ARRAY<STRING>` | 模型引用的论文证据ID |
 | 判断 | `horizon/uncertainty_zh/confidence/direction_rank` | `STRING/STRING/DOUBLE/INT` | 周期、不确定性、置信度与候选排序 |
 | 来源 | `source_type/source_id/source_model/source_prompt_version` | `STRING` | 候选来源及模型版本 |
-| 审核 | `is_official` | `BOOLEAN` | 当前全部为false；审核后方可置true |
-| 审核 | `review_status/reviewer/reviewed_at` | `STRING/STRING/DATETIME` | 正式方向审核信息 |
-| 有效期 | `effective_from/effective_to` | `DATE` | 正式方向有效期 |
-| 状态 | `supplement_status` | `STRING` | 当前`REQUIRES_HUMAN_APPROVAL` |
+| 审核 | `is_official` | `BOOLEAN` | 当前全部为true |
+| 审核 | `review_status/reviewer/reviewed_at` | `STRING/STRING/DATETIME` | 当前为操作方批量批准的正式方向审核信息 |
+| 有效期 | `effective_from/effective_to` | `DATE` | 正式方向有效期；当前结束日为空 |
+| 状态 | `supplement_status` | `STRING` | 当前`COMPLETE_AI_AUTO_REVIEW` |
 | 来源时间 | `source_generated_at` | `DATETIME(3)` | 候选生成时间 |
 | 治理 | `metrics_as_of_date/metric_definition_version/data_version/update_time` | `DATE/STRING/BIGINT/DATETIME` | 通用统计与发布版本 |
 
@@ -7484,7 +7563,47 @@ Primary Topic、Subfield和十城机构范围的项目都参与金额计算，`f
 年度新增引用、人才和资金语义与城市表一致；机构比较按`institution_type_id + statistics_year +
 subfield_id`建立九城同行总体，不把高校、企业、医院和政府科研机构混为同一基准。
 
-### 45.4 `ads_research_resource_shortage_yearly`
+### 45.4 `ads_city_field_resource_yearly`
+
+逻辑Key为`city_location_id, statistics_year, field_id`，固定发布10城×11年×26个Field完整网格。该表
+直接从固定论文、年度引用、人才和项目机构关系证据按Field重算，不从
+`ads_city_subfield_resource_yearly`求和。`talent_count`按城市、年度、Field、来源人才ID去重；
+`project_count`按城市、年度、Field、项目ID去重，避免同一项目在同城多家机构重复计数；
+`avg_citations_per_paper`和`avg_fwci`从Field论文集合重新计算。
+
+论文、引用、分数计数和统一资金的来源、观察范围与Subfield表一致。项目金额继续按全部项目机构关系
+权重分配，但项目数、估算项目数、真实项目数、覆盖率和来源状态均在Field目标粒度重新计算。首版发布
+2,860行；所有资金单元`funding_amount_project_count=project_count`且覆盖率为1。
+
+### 45.5 `ads_institution_field_resource_yearly`
+
+逻辑Key为`institution_id, statistics_year, field_id`。十城有论文、引用或人才证据的机构发布观察行；
+深圳机构额外补齐全部年度和Field零值网格。论文、引用、人才和项目均从证据层按机构、年度、Field
+独立重算，其中人才和项目分别按来源人才ID和项目ID去重，不得从Subfield指标求和；均值、覆盖率与
+来源状态也必须重新计算。首版发布238,289行，覆盖2,175家机构和26个Field。
+
+两张Field表当前用于Field筛选、趋势和资源总量查询，不改变既有Subfield短板表的粒度或基准规则。
+首版质量核验发现城市表2,442个Field单元的去重人才数小于对应Subfield人才数之和，证明Subfield
+简单相加会产生重复人才。
+
+### 45.6 `ads_city_domain_resource_yearly`
+
+逻辑Key为`city_location_id, statistics_year, domain_id`，固定发布10城×11年×4个Domain完整网格。
+该表直接从固定论文、年度引用、人才和项目机构关系证据按Domain重算，不从Field或Subfield事实表求和。
+`talent_count`按城市、年度、Domain、来源人才ID去重；`project_count`按城市、年度、Domain、项目ID去重；
+论文均值、资金覆盖率和来源状态也在Domain粒度重新计算。首版发布440行，资金项目参与覆盖率全部为1。
+
+### 45.7 `ads_institution_domain_resource_yearly`
+
+逻辑Key为`institution_id, statistics_year, domain_id`。十城有论文、引用或人才证据的机构发布观察行；
+深圳机构额外补齐全部年度和Domain零值网格。论文、引用、人才、项目、均值、覆盖率和来源状态均从
+证据层按机构、年度、Domain独立重算，不得从Field或Subfield指标求和。首版发布64,836行，覆盖
+2,175家机构和4个Domain；资金项目参与覆盖率全部为1。
+
+两张Domain表当前用于Domain筛选、趋势和资源总量查询，不改变既有Subfield短板表粒度。首版质量
+核验中全部440个城市Domain单元的去重人才数均小于对应Field人才数之和，证明Field简单相加会重复。
+
+### 45.8 `ads_research_resource_shortage_yearly`
 
 本表采用指标长表，`target_type`为`CITY/INSTITUTION`，`metric_code`当前为城市
 `PAPER_FRACTIONAL_COUNT/CITATION_COUNT/TALENT_COUNT/PROJECT_FUNDING_CNY`或机构
