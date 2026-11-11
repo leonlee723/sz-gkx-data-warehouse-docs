@@ -2,7 +2,7 @@
 
 ## 1. 主体名称与边界
 
-**Schema version：9.26.0。** 本文件是下游 Doris ADS 逻辑结构与业务命名的唯一真实来源；
+**Schema version：9.27.0。** 本文件是下游 Doris ADS 逻辑结构与业务命名的唯一真实来源；
 可执行物理 DDL 包括 `sql/doris/` 下的 Talent、Institution 基线文件及版本化
 `ads_schema_*` 迁移文件；新增公共学科维表的 DDL 为
 [`sql/doris/ads_schema_1_7_0_publication_profiles.sql`](sql/doris/ads_schema_1_7_0_publication_profiles.sql)；
@@ -55,6 +55,12 @@
 物化与发布入口继续复用[`scripts/publish_publication_ads.sh`](scripts/publish_publication_ads.sh)；
 论文标题ICU多语言全文检索索引迁移为
 [`sql/doris/ads_schema_9_24_1_paper_title_multilingual_search_index.sql`](sql/doris/ads_schema_9_24_1_paper_title_multilingual_search_index.sql)；
+人才、技术、机构、项目和技术热点信号多字段全文检索索引迁移为
+[`sql/doris/ads_schema_9_26_1_multifield_search_indexes.sql`](sql/doris/ads_schema_9_26_1_multifield_search_indexes.sql)；
+技术阶段典型任务、代表性案例示意及模型血缘迁移为
+[`sql/doris/ads_schema_9_27_0_technology_stage_content.sql`](sql/doris/ads_schema_9_27_0_technology_stage_content.sql)，
+发布入口为
+[`scripts/publish_technology_stage_content_v1.sh`](scripts/publish_technology_stage_content_v1.sh)；
 荣誉详情双语名称与两院院士匹配发布迁移为
 [`sql/doris/ads_schema_9_9_0_talent_honor_bilingual_academician.sql`](sql/doris/ads_schema_9_9_0_talent_honor_bilingual_academician.sql)；
 15人科研诚信演示分迁移为
@@ -5136,6 +5142,16 @@ hotspot_score = 0.60 * paper_activity_score
 | 指标 | `development_potential_score` | `DECIMAL(9,6)` | 引用的技术潜力综合分 |
 | 展示与说明 | `risk_summary` | `STRING` | 风险摘要 |
 | 展示与说明 | `action_recommendation` | `STRING` | 行动建议 |
+| 展示与说明 | `typical_task_content` | `STRING` | 当前技术与阶段的模型生成典型任务；编号纯文本 |
+| 展示与说明 | `representative_case_content` | `STRING` | 代表性案例示意；不是已核验商业成功案例 |
+| 状态与口径 | `generated_content_type` | `VARCHAR(32)` | 展示内容性质；首版固定`LLM_DEMONSTRATION` |
+| 模型血缘 | `content_provider` | `VARCHAR(64)` | 展示内容实际模型服务提供方 |
+| 模型血缘 | `content_model_version` | `VARCHAR(128)` | 展示内容实际模型名称或版本 |
+| 模型血缘 | `content_prompt_version` | `VARCHAR(64)` | 展示内容固定Prompt版本 |
+| 模型血缘 | `content_input_hash` | `VARCHAR(64)` | 规范化技术、阶段及证据输入SHA-256 |
+| 状态与口径 | `content_review_status` | `VARCHAR(48)` | 展示内容审核状态 |
+| 模型血缘 | `content_generated_at` | `DATETIME(3)` | 展示内容模型生成时间UTC |
+| 模型血缘 | `content_evidence` | `VARIANT` | 案例性质、支撑证据ID、不确定性和置信度快照 |
 | 版本与审计 | `model_version` | `VARCHAR(64)` | 评估模型版本 |
 | 版本与审计 | `prompt_version` | `VARCHAR(64)` | 生成式评估Prompt版本；规则基线为空 |
 | 指标 | `parameter_hash` | `VARCHAR(64)` | 参数哈希 |
@@ -8586,4 +8602,77 @@ DeepSeek语义相似度以既有`relation_confidence`加权平均；该分数只
 
 ```bash
 ./scripts/publish_media_smart_recommendations_v1.sh
+```
+
+## 58. 多实体多字段全文检索（9.26.1）
+
+本版本不新增名称拼接列，也不改写现有名称字段。Doris `SEARCH`的每一个参与字段都必须拥有可执行的倒排
+索引，因此在复用既有索引的基础上，为以下10个缺失字段补充ICU多语言全文索引：
+
+多字段`SEARCH`的SQL语法和查询示例见
+[`docs/ADS_MULTIFIELD_SEARCH_FRONTEND_GUIDE.md`](docs/ADS_MULTIFIELD_SEARCH_FRONTEND_GUIDE.md)。
+
+| 表 | `SEARCH`字段集合 | 本版本新增索引字段 |
+| --- | --- | --- |
+| `ads_talent_profile` | `name/name_zh/name_en/name_zh_candidate/name_original/name_pinyin` | `name/name_original` |
+| `ads_technology_profile` | `technology_name_original/technology_name_en/technology_name_zh` | `technology_name_original` |
+| `ads_institution_profile` | `name/name_zh/name_en/name_original` | `name_original` |
+| `ads_project_profile` | `name/name_zh/name_en/name_original` | `name_zh/name_en/name_original` |
+| `ads_technology_hotspot_signal` | `signal_text_original/signal_text_en/signal_text_zh` | 三个字段全部新增 |
+
+前台多字段查询使用参数化调用：
+
+```sql
+SELECT *
+FROM ads_talent_profile
+WHERE SEARCH(:escaped_query, :options_json)
+LIMIT :limit;
+```
+
+`options_json`由服务端按实体固定生成，例如人才查询为：
+
+```json
+{"fields":["name","name_zh","name_en","name_zh_candidate","name_original","name_pinyin"],"type":"best_fields","default_operator":"and"}
+```
+
+用户输入必须按SEARCH查询语法转义并通过绑定参数传入，不得直接拼接SQL。`name_aliases`、
+`name_search_variants`、机构`acronyms/aliases`等数组字段不加入全文索引，继续使用数组成员精确过滤；如需
+对数组内容做模糊全文检索，应另行设计规范化关系表，不在画像主表中增加不可审计的拼接文本。
+
+历史rowset索引回填脚本：
+
+```bash
+./scripts/compose.sh exec -T doris-fe bash -lc \
+  'MYSQL_PWD="$DORIS_PASSWORD" mysql --protocol=TCP -h127.0.0.1 -P9030 -uroot --show-warnings' \
+  < sql/doris/ads_schema_9_26_1_multifield_search_indexes.sql
+```
+
+## 59. 技术阶段典型任务与代表性案例内容（9.27.0）
+
+本版本直接扩展`ads_technology_stage_assessment`，不创建平行阶段表，也不改变八阶段判定。固定
+`model_version='technology_insight_mvp_v1'`的每条研判使用技术画像、当前阶段说明、堵点、风险、建议和最多
+5条`ads_technology_assessment_evidence`作为DeepSeek输入，生成3至5项中文典型任务和一段代表性案例示意。
+
+`typical_task_content`使用编号纯文本，供前端直接分行展示；`representative_case_content`只表达受约束的案例
+示意。模型引用论文、专利或科研项目证据时，`content_evidence.case_nature='EVIDENCE_DERIVED'`并保存输入内
+证据ID；无合适证据时为`LLM_DEMONSTRATION`。两种性质均不等于产品落地或商业成功事实。
+
+阶段判定的`model_version/prompt_version/parameter_hash`继续承担阶段研判血缘，新增的
+`content_provider/content_model_version/content_prompt_version/content_input_hash/content_generated_at`
+独立承担展示内容血缘，不得相互覆盖。首版内容状态固定为：
+
+```text
+generated_content_type = LLM_DEMONSTRATION
+content_review_status  = MODEL_GENERATED_NOT_HUMAN_VERIFIED
+```
+
+前端可以将`representative_case_content`放入需求中的“成功案例”区域，但标题或紧邻位置必须显示“AI生成案例
+示意，未经人工事实核验”。不得仅凭该字段创建企业、产品、客户、收入、融资、监管批准、市场采用或商业
+成功断言。真实成功案例仍需接入产品、试点、部署和市场来源事实后另行发布。
+
+完整执行命令及恢复、缓存和验收方法见
+[`docs/technology_stage_content_v1.md`](docs/technology_stage_content_v1.md)：
+
+```bash
+./scripts/publish_technology_stage_content_v1.sh
 ```
