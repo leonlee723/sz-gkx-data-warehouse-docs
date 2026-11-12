@@ -2,7 +2,7 @@
 
 ## 1. 主体名称与边界
 
-**Schema version：9.27.0。** 本文件是下游 Doris ADS 逻辑结构与业务命名的唯一真实来源；
+**Schema version：9.27.2。** 本文件是下游 Doris ADS 逻辑结构与业务命名的唯一真实来源；
 可执行物理 DDL 包括 `sql/doris/` 下的 Talent、Institution 基线文件及版本化
 `ads_schema_*` 迁移文件；新增公共学科维表的 DDL 为
 [`sql/doris/ads_schema_1_7_0_publication_profiles.sql`](sql/doris/ads_schema_1_7_0_publication_profiles.sql)；
@@ -2385,7 +2385,10 @@ Snapshot追溯必须读取本表。
 
 `primary_topic_id` 和 `topic_ids` 使用平台 Topic ID，可关联 `ads_discipline_topic`；OpenAlex ID
 只保留在 `openalex_primary_topic_id`。标题按中文、英文、原始标题、展示名、OpenAlex Work ID
-依次确定性兜底，保证 `title` 非空；该顺序不表示自动翻译。
+依次确定性兜底，保证 `title` 非空；该顺序不表示自动翻译。`title`作为展示与全文检索字段，发布时
+必须解码HTML字符实体、移除HTML/XML/MathML标签、隐藏脚本/样式内容和非法控制字符，并归一连续空白；
+标签内的可见文字、正常多语言Unicode字符及数学符号必须保留。清洗后为空时回退到OpenAlex Work ID；
+`title_original`继续保留来源原文用于溯源，不执行上述展示清洗。
 
 六个`primary_source_*`便利字段只从固定`dwd_source` Snapshot按`primary_source_id=source_id`左连接
 投影，不改变论文粒度。名称、中文名、类型、ISSN-L、Publisher和Core状态缺失时保持`NULL`；其中
@@ -7790,8 +7793,10 @@ evidence_hash
   = SHA-256(evidence entity ID, calculation inputs, mapping method when applicable)
 ```
 
-首次运行`previous_recommendation_run_id IS NULL`，因此只对入选论文发布`NEW/NEW_PUBLICATION`，
-不伪造`CHANGED`。完整业务原因字段分别由`selection_reason`或`recommendation_reason`
+首次运行`previous_recommendation_run_id IS NULL`，因此对3篇入选论文发布`NEW/NEW_PUBLICATION`；
+另从排名第1论文的署名机构中，按固定机构Snapshot的`works_count DESC, institution_id ASC`
+稳定选取1家，发布`INSTITUTION/NEW/NEW_PUBLICATION`。该机构信号表示机构新增一条入选论文关联，
+不是机构画像发生变化。首次运行不伪造`CHANGED`。完整业务原因字段分别由`selection_reason`或`recommendation_reason`
 承载；可机读溯源由`ads_recommendation_evidence.calculation_step`、
 `calculation_description`、`evidence_value_snapshot`和`source_snapshot_id`承载。
 
@@ -7927,7 +7932,7 @@ Technology卡须额外显示“基于Leading Topic代理映射，未经投资审
 uv run --frozen pytest -q tests/test_smart_recommendation_ads.py
 ```
 
-首版重跑后行数保持`1/3/3/3/78/87`（运行/论文信号/论文/人才与资源Topic/
+首版重跑后行数保持`1/4/3/3/3/78/87`（运行/更新信号/论文/人才/资源Topic/
 Technology/证据），逻辑Key重复、论文规则违反、人才门槛违反、Topic孤儿、Technology孤儿和
 无证据推荐均为0。
 

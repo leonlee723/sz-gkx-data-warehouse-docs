@@ -6,6 +6,23 @@
 - MINOR：向后兼容地新增表、字段或指标。
 - PATCH：不改变接口的说明、约束或索引修正。
 
+## 9.27.2 — 2026-11-12
+
+- `ads_paper_profile.title`发布时移除HTML、XML、MathML标签、隐藏脚本/样式内容及非法控制字符，解码
+  HTML字符实体并归一空白；保留标签内可见文字、多语言Unicode字符和数学符号。
+- 清洗结果为空时确定性回退到OpenAlex Work ID，继续保证`title`非空；`title_original`保留来源原文，
+  不改写只读来源或DWD事实。
+- 论文ADS数据版本提升为`202611120275`；使用`./scripts/publish_publication_ads.sh --paper-only`
+  可对既有Doris论文画像执行幂等全量修正。
+
+## 9.27.1 — 2026-11-11
+
+- `ads_scientific_update_signal`在智能推荐首版的3条论文信号之外，新增1条可追溯机构信号。
+- 机构从排名第1论文的署名机构中，按固定机构Snapshot的`works_count DESC, institution_id ASC`稳定选取；
+  当前结果为University of Oxford，信号语义为`INSTITUTION/NEW/NEW_PUBLICATION`。
+- 该信号仅表示机构新增一条入选论文关联，不表示机构画像变更；来源固定到署名机构关系与机构DWD
+  Snapshot，重复发布保持同一`signal_id`、快照与哈希。
+
 ## 9.27.0 — 2026-11-11
 
 - `ads_technology_stage_assessment`向后兼容新增典型任务、代表性案例示意、内容性质及独立模型血缘字段；
