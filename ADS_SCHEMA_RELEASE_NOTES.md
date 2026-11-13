@@ -6,6 +6,23 @@
 - MINOR：向后兼容地新增表、字段或指标。
 - PATCH：不改变接口的说明、约束或索引修正。
 
+### 9.27.3 V1 Serving退役补充 — 2026-11-13
+
+- 研究问题生成、技术阶段内容、技术图谱当前配置和智能推荐技术发布血缘全部切换到
+  `technology_insight_mvp_v2_eto_cluster_technology`或`technology_ads_v2_20261026`。
+- 增加V1退役工具，删除前强制核对V2各表行数、19,430条阶段展示内容和406条研究问题来源节点的
+  V2覆盖及热点结果等价性；按证据子表优先顺序物理删除Doris V1 Serving行并执行删除后零残留校验。
+- 历史研究问题内容不重新调用大模型；其原始生成报告和Iceberg V1 namespace作为不可变审计材料保留。
+
+## 9.27.3 — 2026-11-13
+
+- 技术阶段研判当前业务版本统一为`technology_insight_mvp_v2_eto_cluster_technology`；V1保留为历史审计
+  版本，不删除其19,430条研判或134,941条证据。
+- 经19,430个技术点全部阶段业务字段及134,941条证据逐项等价校验后，将既有DeepSeek典型任务和案例内容
+  按`technology_node_id`投影至V2，不重复调用模型，也不把两个版本混入无版本条件的当前查询。
+- V2投影使用独立`data_version`，并在`content_evidence.projection`保存来源/目标模型、来源assessment、
+  等价投影方法和时间；发布后校验任务、案例、Hash和审核状态全部非空。
+
 ## 9.27.2 — 2026-11-12
 
 - `ads_paper_profile.title`发布时移除HTML、XML、MathML标签、隐藏脚本/样式内容及非法控制字符，解码

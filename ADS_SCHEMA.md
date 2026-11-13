@@ -2,7 +2,7 @@
 
 ## 1. 主体名称与边界
 
-**Schema version：9.27.2。** 本文件是下游 Doris ADS 逻辑结构与业务命名的唯一真实来源；
+**Schema version：9.27.3。** 本文件是下游 Doris ADS 逻辑结构与业务命名的唯一真实来源；
 可执行物理 DDL 包括 `sql/doris/` 下的 Talent、Institution 基线文件及版本化
 `ads_schema_*` 迁移文件；新增公共学科维表的 DDL 为
 [`sql/doris/ads_schema_1_7_0_publication_profiles.sql`](sql/doris/ads_schema_1_7_0_publication_profiles.sql)；
@@ -8654,9 +8654,13 @@ LIMIT :limit;
 
 ## 59. 技术阶段典型任务与代表性案例内容（9.27.0）
 
-本版本直接扩展`ads_technology_stage_assessment`，不创建平行阶段表，也不改变八阶段判定。固定
+本版本直接扩展`ads_technology_stage_assessment`，不创建平行阶段表，也不改变八阶段判定。首轮固定
 `model_version='technology_insight_mvp_v1'`的每条研判使用技术画像、当前阶段说明、堵点、风险、建议和最多
 5条`ads_technology_assessment_evidence`作为DeepSeek输入，生成3至5项中文典型任务和一段代表性案例示意。
+9.27.3将业务当前版本固定为`technology_insight_mvp_v2_eto_cluster_technology`：经19,430条阶段字段和
+134,941条证据逐项等价校验后，以`technology_node_id`将内容投影到V2，并在`content_evidence.projection`
+保存来源模型、来源assessment、目标模型、方法和投影时间。9.27.3运维补充完成运行时依赖迁移后，从Doris物理删除
+V1 Serving行；历史生成报告和Iceberg物化快照继续作为不可变审计材料保留，不参与当前业务查询。
 
 `typical_task_content`使用编号纯文本，供前端直接分行展示；`representative_case_content`只表达受约束的案例
 示意。模型引用论文、专利或科研项目证据时，`content_evidence.case_nature='EVIDENCE_DERIVED'`并保存输入内
@@ -8675,9 +8679,24 @@ content_review_status  = MODEL_GENERATED_NOT_HUMAN_VERIFIED
 示意，未经人工事实核验”。不得仅凭该字段创建企业、产品、客户、收入、融资、监管批准、市场采用或商业
 成功断言。真实成功案例仍需接入产品、试点、部署和市场来源事实后另行发布。
 
+当前业务查询必须显式限定：
+
+```sql
+WHERE model_version = 'technology_insight_mvp_v2_eto_cluster_technology'
+```
+
 完整执行命令及恢复、缓存和验收方法见
 [`docs/technology_stage_content_v1.md`](docs/technology_stage_content_v1.md)：
 
 ```bash
 ./scripts/publish_technology_stage_content_v1.sh
 ```
+
+当前版本重新生成使用：
+
+```bash
+./scripts/publish_technology_stage_content_v2.sh
+```
+
+V1 Serving退役范围、前置校验和审计报告见
+[`docs/technology_insight_v1_retirement.md`](docs/technology_insight_v1_retirement.md)。
