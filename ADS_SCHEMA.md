@@ -2,7 +2,7 @@
 
 ## 1. 主体名称与边界
 
-**Schema version：9.27.3。** 本文件是下游 Doris ADS 逻辑结构与业务命名的唯一真实来源；
+**Schema version：9.28.0。** 本文件是下游 Doris ADS 逻辑结构与业务命名的唯一真实来源；
 可执行物理 DDL 包括 `sql/doris/` 下的 Talent、Institution 基线文件及版本化
 `ads_schema_*` 迁移文件；新增公共学科维表的 DDL 为
 [`sql/doris/ads_schema_1_7_0_publication_profiles.sql`](sql/doris/ads_schema_1_7_0_publication_profiles.sql)；
@@ -57,6 +57,10 @@
 [`sql/doris/ads_schema_9_24_1_paper_title_multilingual_search_index.sql`](sql/doris/ads_schema_9_24_1_paper_title_multilingual_search_index.sql)；
 人才、技术、机构、项目和技术热点信号多字段全文检索索引迁移为
 [`sql/doris/ads_schema_9_26_1_multifield_search_indexes.sql`](sql/doris/ads_schema_9_26_1_multifield_search_indexes.sql)；
+首页技术关键词、人才机构/简介及机构简介搜索扩展迁移为
+[`sql/doris/ads_schema_9_28_0_homepage_search.sql`](sql/doris/ads_schema_9_28_0_homepage_search.sql)，
+受控回滚草案为
+[`sql/doris/ads_schema_9_28_0_homepage_search_rollback.sql`](sql/doris/ads_schema_9_28_0_homepage_search_rollback.sql)；
 技术阶段典型任务、代表性案例示意及模型血缘迁移为
 [`sql/doris/ads_schema_9_27_0_technology_stage_content.sql`](sql/doris/ads_schema_9_27_0_technology_stage_content.sql)，
 发布入口为
@@ -596,6 +600,8 @@ Topic论文全球国家当前快照迁移为
 | 影响描述 | `impact_description_evidence` | `VARIANT` | 支撑论文、专利、荣誉ID、证据计数、不确定性说明与置信度的有界快照 |
 | 当前机构 | `current_institution` | `VARIANT` | 当前机构完整展示快照 |
 | 当前机构 | `current_institution_ids` | `ARRAY<VARCHAR(64)>` | 当前机构ID；企业也属于机构，通过机构类型区分 |
+| 当前机构 | `current_institution_name_zh` | `STRING` | 当前机构中文名称稳定投影；只取`ads_institution_profile.name_zh`，无可靠中文名时为空 |
+| 当前机构 | `current_institution_name_en` | `STRING` | 当前机构英文名称稳定投影；只取`ads_institution_profile.name_en`，无可靠英文名时为空 |
 | 当前机构 | `country_location_id` | `VARCHAR(64)` | 当前已解析机构的平台国家位置ID |
 | 当前机构 | `province_location_id` | `VARCHAR(64)` | 当前已解析机构的平台省级位置ID；无法可靠确定时为空 |
 | 当前机构 | `city_location_id` | `VARCHAR(64)` | 当前已解析机构的平台城市位置ID |
@@ -721,6 +727,11 @@ Topic论文全球国家当前快照迁移为
 `is_current` 为 NULL 时不得把结束时间缺失解释为当前在任。`current_institution_ids` 当前保存该
 唯一机构 ID；`current_institution` 保存机构展示字段、档案质量以及来源 `experience_id` 和经历
 时间，便于追溯。没有可用经历的人才保持 NULL，不从姓名或自由文本猜测机构身份。
+
+`current_institution_name_zh/current_institution_name_en`只通过`current_institution_ids`唯一平台机构ID
+关联`ads_institution_profile`投影。中文列不得从`current_institution.name`、经历自由文本、英文名或机器翻译
+推导；机构画像`name_zh`为空或空串时必须保持NULL。两列用于人才首页多字段`SEARCH`，不替代完整机构快照，
+也不改变`current_institution_ids`的关联职责。
 
 `country_location_id/province_location_id/city_location_id/district_location_id` 与
 `country_code/country_name/province/city/location_display` 都是当前机构所在地代理字段，不表示已经核验的
@@ -8641,8 +8652,9 @@ LIMIT :limit;
 ```
 
 用户输入必须按SEARCH查询语法转义并通过绑定参数传入，不得直接拼接SQL。`name_aliases`、
-`name_search_variants`、机构`acronyms/aliases`等数组字段不加入全文索引，继续使用数组成员精确过滤；如需
-对数组内容做模糊全文检索，应另行设计规范化关系表，不在画像主表中增加不可审计的拼接文本。
+`name_search_variants`、机构`acronyms/aliases`等身份与别名数组不加入全文索引，继续使用数组成员精确过滤。
+9.28.0明确纳入的`keywords_original ARRAY<STRING>`是技术关键词全文检索例外，直接索引原生数组，禁止
+CAST或拼接后检索。
 
 历史rowset索引回填脚本：
 
@@ -8700,3 +8712,26 @@ WHERE model_version = 'technology_insight_mvp_v2_eto_cluster_technology'
 
 V1 Serving退役范围、前置校验和审计报告见
 [`docs/technology_insight_v1_retirement.md`](docs/technology_insight_v1_retirement.md)。
+
+## 60. 首页关键词搜索扩展（9.28.0）
+
+首页关键词搜索在9.26.1名称字段基础上增加技术原始关键词、Domain/Field名称快照、人才当前机构双语名称、
+人才双语简介和机构简介。`technology_node_id/talent_id`不加入`SEARCH`，精确ID定位继续使用参数化等值条件。
+
+| 表 | 9.28.0新增`SEARCH`字段 |
+| --- | --- |
+| `ads_technology_profile` | `keywords_original/domains_raw/fields_raw` |
+| `ads_talent_profile` | `current_institution_name_zh/current_institution_name_en/talent_bio/talent_bio_en` |
+| `ads_institution_profile` | `description` |
+
+人才当前机构名称是平台机构画像的稳定投影，不直接索引整列`current_institution VARIANT`。回填和后续同步都
+要求`current_institution_ids`恰有一个ID，并以该ID关联机构画像；中文名缺失时保持NULL，不以默认名、英文名、
+经历文本或模型翻译补齐。前端检索人才时必须把姓名、当前机构双语名称和简介字段放在同一个多字段`SEARCH`
+表达式中，不得分别执行后在客户端拼接、去重或分页。
+
+历史rowset回填、受控回滚和完整查询示例分别见：
+
+- [`sql/doris/ads_schema_9_28_0_homepage_search.sql`](sql/doris/ads_schema_9_28_0_homepage_search.sql)
+- [`sql/doris/ads_schema_9_28_0_homepage_search_rollback.sql`](sql/doris/ads_schema_9_28_0_homepage_search_rollback.sql)
+- [`docs/ADS_MULTIFIELD_SEARCH_FRONTEND_GUIDE.md`](docs/ADS_MULTIFIELD_SEARCH_FRONTEND_GUIDE.md)
+- [`docs/HOMEPAGE_SEARCH_INDEX_RUNBOOK.md`](docs/HOMEPAGE_SEARCH_INDEX_RUNBOOK.md)

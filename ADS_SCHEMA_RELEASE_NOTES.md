@@ -6,6 +6,20 @@
 - MINOR：向后兼容地新增表、字段或指标。
 - PATCH：不改变接口的说明、约束或索引修正。
 
+## 9.28.0 — 2026-11-15
+
+- 首页关键词搜索不为`technology_node_id/talent_id`建立倒排索引；ID定位继续使用参数化精确等值条件，
+  不开放普通用户通配符ID查询。
+- `ads_talent_profile`新增`current_institution_name_zh/current_institution_name_en`稳定投影列，只通过唯一
+  `current_institution_ids`关联`ads_institution_profile.name_zh/name_en`回填和持续同步；中文名缺失时保持
+  NULL，不从VARIANT、经历自由文本、英文名或机器翻译推断。
+- 为技术原始关键词、Domain/Field名称快照、人才当前机构双语名称、人才双语简介和机构简介新增8个倒排
+  全文索引，并显式`BUILD INDEX`回填历史rowset；不再对`current_institution VARIANT`整列建立索引。
+- 人才首页查询把姓名、当前机构双语名称和双语简介放入同一个`best_fields`多字段`SEARCH`；技术与机构
+  查询同步扩展固定字段白名单。调用方不得自行添加字段或回退到多字段`LIKE`。
+- 提供受控前向与回滚SQL草案。实际执行前必须核目标环境、列型、既有列/索引、两份草案SHA-256、执行标识
+  和窗口；全部构建任务`FINISHED`且`Msg`为空并通过正反例验收后方可开放业务流量。
+
 ### 9.27.3 V1 Serving退役补充 — 2026-11-13
 
 - 研究问题生成、技术阶段内容、技术图谱当前配置和智能推荐技术发布血缘全部切换到
