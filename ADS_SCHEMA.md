@@ -2,7 +2,7 @@
 
 ## 1. 主体名称与边界
 
-**Schema version：9.28.0。** 本文件是下游 Doris ADS 逻辑结构与业务命名的唯一真实来源；
+**Schema version：9.29.0。** 本文件是下游 Doris ADS 逻辑结构与业务命名的唯一真实来源；
 可执行物理 DDL 包括 `sql/doris/` 下的 Talent、Institution 基线文件及版本化
 `ads_schema_*` 迁移文件；新增公共学科维表的 DDL 为
 [`sql/doris/ads_schema_1_7_0_publication_profiles.sql`](sql/doris/ads_schema_1_7_0_publication_profiles.sql)；
@@ -57,7 +57,7 @@
 [`sql/doris/ads_schema_9_24_1_paper_title_multilingual_search_index.sql`](sql/doris/ads_schema_9_24_1_paper_title_multilingual_search_index.sql)；
 人才、技术、机构、项目和技术热点信号多字段全文检索索引迁移为
 [`sql/doris/ads_schema_9_26_1_multifield_search_indexes.sql`](sql/doris/ads_schema_9_26_1_multifield_search_indexes.sql)；
-首页技术关键词、人才机构/简介及机构简介搜索扩展迁移为
+首页技术学科快照、人才机构/简介及机构简介搜索扩展迁移为
 [`sql/doris/ads_schema_9_28_0_homepage_search.sql`](sql/doris/ads_schema_9_28_0_homepage_search.sql)，
 受控回滚草案为
 [`sql/doris/ads_schema_9_28_0_homepage_search_rollback.sql`](sql/doris/ads_schema_9_28_0_homepage_search_rollback.sql)；
@@ -451,6 +451,7 @@ Topic论文全球国家当前快照迁移为
 | `ads_resource_optimization_recommendation` | 一个城市或机构一个年度一个Subfield一条聚合优化建议 | `recommendation_id` | 6.28.0新增；仅使用已评估、正值、关键短板 |
 | `ads_resource_optimization_recommendation_evidence` | 一条优化建议的一项来源短板指标证据 | `recommendation_id, metric_code, benchmark_version` | 6.28.0新增；可回溯目标、基准、差距和覆盖状态 |
 | `ads_technology_profile` | 一个技术点一行 | `technology_node_id` | 4.6.0新增；6.0.0确认为ETO Cluster技术点 |
+| `ads_technology_keyword` | 一个技术点的一个关键词数组位置一行 | `technology_node_id, keyword_order` | 9.29.0新增；逐元素双语全文检索 |
 | `ads_technology_graph_edge` | 一条候选技术关系一行 | `edge_id` | 4.6.0新增并发布 |
 | `ads_technology_graph_edge_paper` | 一条完美技术关系的一篇组合级论文 | `edge_id, paper_id` | 9.18.0新增；首版物化一条edge |
 | `ads_technology_graph_edge_institution` | 一条重点技术关系的一家核心共同机构 | `edge_id, institution_id` | 9.11.0新增 |
@@ -4749,7 +4750,23 @@ upper_cny = base_cny * 2.5
 监管/标准化1.1，产业化和早期商业化1.3，市场规模化1.5，未知阶段0.7。金额统一按人民币元计算并四舍
 五入到十万元。最新阶段和潜力记录按`data_version DESC, assessment_id DESC`确定。
 
-#### 24.12.2 `ads_technology_graph_edge`
+#### 24.12.2 `ads_technology_keyword`
+
+技术关键词逐元素搜索投影；每个`keywords_original`数组位置一行。逻辑 Key：
+`technology_node_id, keyword_order`。`keyword_order`从1开始，确保同一技术的重复词或翻译后同词不会合并。
+`keyword_en`来自`keywords_original`同位置元素；只有`keywords_zh`存在相同位置时才写入`keyword_zh`，
+不得用英文回填中文字段。英文和中文字段分别建立English与ICU全文倒排索引。
+
+| 字段组 | 字段 | Doris 类型 | 说明 |
+|---|---|---|---|
+| 身份与关联 | `technology_node_id` | `VARCHAR(64) NOT NULL` | 确定性技术点ID |
+| 身份与关联 | `keyword_order` | `INT NOT NULL` | 原始数组的一基稳定序号 |
+| 展示与说明 | `keyword_en` | `STRING NOT NULL` | 英文关键词 |
+| 展示与说明 | `keyword_zh` | `STRING` | 中文关键词；未翻译时为空 |
+| 版本与审计 | `data_version` | `BIGINT NOT NULL` | 同一业务Key的单调数据版本 |
+| 版本与审计 | `update_time` | `DATETIME(3) NOT NULL` | UTC生成时间 |
+
+#### 24.12.3 `ads_technology_graph_edge`
 
 候选技术节点之间的静态聚合关系；置信分不是概率。逻辑 Key：`edge_id`。
 
@@ -4778,7 +4795,7 @@ upper_cny = base_cny * 2.5
 | 版本与审计 | `data_version` | `BIGINT NOT NULL` | 同一业务Key的单调数据版本 |
 | 版本与审计 | `update_time` | `DATETIME(3) NOT NULL` | UTC生成时间 |
 
-#### 24.12.3 `ads_technology_paper`
+#### 24.12.4 `ads_technology_paper`
 
 候选技术节点的确定性Top 20代表论文。逻辑 Key：`technology_node_id, paper_id`。
 
@@ -4803,7 +4820,7 @@ upper_cny = base_cny * 2.5
 | 版本与审计 | `data_version` | `BIGINT NOT NULL` | 同一业务Key的单调数据版本 |
 | 版本与审计 | `update_time` | `DATETIME(3) NOT NULL` | UTC生成时间 |
 
-#### 24.12.4 `ads_technology_patent`
+#### 24.12.5 `ads_technology_patent`
 
 候选技术节点的确定性Top 20代表专利。逻辑 Key：`technology_node_id, patent_id`。
 
@@ -4833,7 +4850,7 @@ upper_cny = base_cny * 2.5
 | 版本与审计 | `data_version` | `BIGINT NOT NULL` | 同一业务Key的单调数据版本 |
 | 版本与审计 | `update_time` | `DATETIME(3) NOT NULL` | UTC生成时间 |
 
-#### 24.12.5 `ads_technology_institution`
+#### 24.12.6 `ads_technology_institution`
 
 候选技术节点关联机构及论文、专利、项目证据汇总。逻辑 Key：`technology_node_id, institution_id`。
 
@@ -4863,7 +4880,7 @@ upper_cny = base_cny * 2.5
 | 版本与审计 | `data_version` | `BIGINT NOT NULL` | 同一业务Key的单调数据版本 |
 | 版本与审计 | `update_time` | `DATETIME(3) NOT NULL` | UTC生成时间 |
 
-#### 24.12.6 `ads_technology_application_case`
+#### 24.12.7 `ads_technology_application_case`
 
 候选技术节点关联科研项目案例；不是已验证市场应用。逻辑 Key：`technology_node_id, application_case_id`。
 
@@ -4902,7 +4919,7 @@ upper_cny = base_cny * 2.5
 | 版本与审计 | `data_version` | `BIGINT NOT NULL` | 同一业务Key的单调数据版本 |
 | 版本与审计 | `update_time` | `DATETIME(3) NOT NULL` | UTC生成时间 |
 
-#### 24.12.7 `ads_technology_yearly_metrics`
+#### 24.12.8 `ads_technology_yearly_metrics`
 
 候选技术节点年度论文、人才、机构及专利指标。逻辑 Key：`technology_node_id, statistics_year`。
 
@@ -4929,7 +4946,7 @@ upper_cny = base_cny * 2.5
 | 版本与审计 | `data_version` | `BIGINT NOT NULL` | 同一业务Key的单调数据版本 |
 | 版本与审计 | `update_time` | `DATETIME(3) NOT NULL` | UTC生成时间 |
 
-#### 24.12.8 `ads_technology_hotspot_signal`
+#### 24.12.9 `ads_technology_hotspot_signal`
 
 候选技术节点的标签关键词热点信号。逻辑 Key：`technology_node_id, signal_id`。
 
@@ -4960,7 +4977,7 @@ upper_cny = base_cny * 2.5
 最多保留一项且允许全部拒绝；待执行流程、备份和恢复
 方法见[`docs/technology/TECHNOLOGY_HOTSPOT_SIGNAL_FILTER.md`](docs/technology/TECHNOLOGY_HOTSPOT_SIGNAL_FILTER.md)。
 
-#### 24.12.9 `ads_technology_hotspot_snapshot`
+#### 24.12.10 `ads_technology_hotspot_snapshot`
 
 候选技术节点的版本化热点评分与状态。逻辑 Key：`technology_node_id, model_version`。
 
@@ -5021,7 +5038,7 @@ risk_score = 100 - (
 技术转化不确定性指标。它不衡量技术安全危害、伦理、监管、投资损失、市场规模或商业成功概率，不得
 用于准入、投资建议或自动决策；前端必须同时读取`risk_coverage_status`并展示该边界。
 
-#### 24.12.9a `ads_technology_hotspot_yearly`
+#### 24.12.10a `ads_technology_hotspot_yearly`
 
 技术点年度论文、新增引用、热度指数及增长曲线。逻辑Key：
 `technology_node_id, statistics_year, model_version`。本表不改变
@@ -5071,7 +5088,7 @@ hotspot_score = 0.60 * paper_activity_score
 | 审计 | `data_version` | `BIGINT NOT NULL` | 行级数据版本 |
 | 审计 | `update_time` | `DATETIME(3) NOT NULL` | UTC生成时间 |
 
-#### 24.12.10 `ads_technology_potential_dimension`
+#### 24.12.11 `ads_technology_potential_dimension`
 
 候选技术产业化潜力的分维度评分。逻辑 Key：`technology_node_id, model_version, scenario_id, dimension_code`。
 
@@ -5092,7 +5109,7 @@ hotspot_score = 0.60 * paper_activity_score
 | 版本与审计 | `data_version` | `BIGINT NOT NULL` | 同一业务Key的单调数据版本 |
 | 版本与审计 | `update_time` | `DATETIME(3) NOT NULL` | UTC生成时间 |
 
-#### 24.12.11 `ads_technology_potential_assessment`
+#### 24.12.12 `ads_technology_potential_assessment`
 
 候选技术产业化潜力综合评估。逻辑 Key：`assessment_id`。
 
@@ -5113,7 +5130,7 @@ hotspot_score = 0.60 * paper_activity_score
 | 版本与审计 | `data_version` | `BIGINT NOT NULL` | 同一业务Key的单调数据版本 |
 | 版本与审计 | `update_time` | `DATETIME(3) NOT NULL` | UTC生成时间 |
 
-#### 24.12.12 `ads_technology_potential_evidence`
+#### 24.12.13 `ads_technology_potential_evidence`
 
 候选技术潜力评估的可追溯证据。逻辑 Key：`assessment_id, evidence_id`。
 
@@ -5134,7 +5151,7 @@ hotspot_score = 0.60 * paper_activity_score
 | 版本与审计 | `data_version` | `BIGINT NOT NULL` | 同一业务Key的单调数据版本 |
 | 版本与审计 | `update_time` | `DATETIME(3) NOT NULL` | UTC生成时间 |
 
-#### 24.12.13 `ads_technology_stage_assessment`
+#### 24.12.14 `ads_technology_stage_assessment`
 
 候选技术发展阶段的规则或模型研判。逻辑 Key：`assessment_id`。
 `stage_code` 必须引用 `ads_technology_transfer_stage.stage_code` 的八阶段代码域，不得使用
@@ -5175,7 +5192,7 @@ hotspot_score = 0.60 * paper_activity_score
 | 版本与审计 | `data_version` | `BIGINT NOT NULL` | 同一业务Key的单调数据版本 |
 | 版本与审计 | `update_time` | `DATETIME(3) NOT NULL` | UTC生成时间 |
 
-#### 24.12.14 `ads_technology_assessment_evidence`
+#### 24.12.15 `ads_technology_assessment_evidence`
 
 候选技术阶段研判的可追溯证据。逻辑 Key：`assessment_id, evidence_id`。
 
@@ -5196,7 +5213,7 @@ hotspot_score = 0.60 * paper_activity_score
 | 版本与审计 | `data_version` | `BIGINT NOT NULL` | 同一业务Key的单调数据版本 |
 | 版本与审计 | `update_time` | `DATETIME(3) NOT NULL` | UTC生成时间 |
 
-#### 24.12.15 `ads_technology_region_yearly_metrics`
+#### 24.12.16 `ads_technology_region_yearly_metrics`
 
 候选技术在城市位置的年度机构证据指标。逻辑 Key：`technology_node_id, location_id, statistics_year`。
 
@@ -5221,7 +5238,7 @@ hotspot_score = 0.60 * paper_activity_score
 | 版本与审计 | `data_version` | `BIGINT NOT NULL` | 同一业务Key的单调数据版本 |
 | 版本与审计 | `update_time` | `DATETIME(3) NOT NULL` | UTC生成时间 |
 
-#### 24.12.16 `ads_technology_region_institution`
+#### 24.12.17 `ads_technology_region_institution`
 
 候选技术在城市位置的关联机构证据汇总。逻辑 Key：`technology_node_id, location_id, institution_id`。
 
@@ -5245,7 +5262,7 @@ hotspot_score = 0.60 * paper_activity_score
 | 版本与审计 | `data_version` | `BIGINT NOT NULL` | 同一业务Key的单调数据版本 |
 | 版本与审计 | `update_time` | `DATETIME(3) NOT NULL` | UTC生成时间 |
 
-#### 24.12.17 `ads_technology_region_assessment`
+#### 24.12.18 `ads_technology_region_assessment`
 
 候选技术在城市位置的版本化潜力与阶段评估。逻辑 Key：`technology_node_id, location_id, model_version`。
 
@@ -5273,7 +5290,7 @@ hotspot_score = 0.60 * paper_activity_score
 | 版本与审计 | `data_version` | `BIGINT NOT NULL` | 同一业务Key的单调数据版本 |
 | 版本与审计 | `update_time` | `DATETIME(3) NOT NULL` | UTC生成时间 |
 
-#### 24.12.18 `ads_technology_policy_evidence`
+#### 24.12.19 `ads_technology_policy_evidence`
 
 候选技术在地区的政策证据；当前预留空表。逻辑 Key：`technology_node_id, location_id, policy_id`。
 
@@ -5294,7 +5311,7 @@ hotspot_score = 0.60 * paper_activity_score
 | 版本与审计 | `data_version` | `BIGINT NOT NULL` | 同一业务Key的单调数据版本 |
 | 版本与审计 | `update_time` | `DATETIME(3) NOT NULL` | UTC生成时间 |
 
-#### 24.12.19 `ads_technology_transfer_stage`
+#### 24.12.20 `ads_technology_transfer_stage`
 
 技术转化八阶段定义与展示顺序。逻辑 Key：`stage_code`。
 
@@ -5310,7 +5327,7 @@ hotspot_score = 0.60 * paper_activity_score
 | 版本与审计 | `data_version` | `BIGINT NOT NULL` | 同一业务Key的单调数据版本 |
 | 版本与审计 | `update_time` | `DATETIME(3) NOT NULL` | UTC生成时间 |
 
-#### 24.12.20 `ads_technology_bottleneck_assessment`
+#### 24.12.21 `ads_technology_bottleneck_assessment`
 
 候选技术在转化阶段的证据缺口评估。逻辑 Key：`assessment_id, stage_code, bottleneck_code`。
 
@@ -5332,7 +5349,7 @@ hotspot_score = 0.60 * paper_activity_score
 | 版本与审计 | `data_version` | `BIGINT NOT NULL` | 同一业务Key的单调数据版本 |
 | 版本与审计 | `update_time` | `DATETIME(3) NOT NULL` | UTC生成时间 |
 
-#### 24.12.21 `ads_technology_bottleneck_evidence`
+#### 24.12.22 `ads_technology_bottleneck_evidence`
 
 技术转化堵点评估的外部证据；当前预留空表。逻辑 Key：`assessment_id, stage_code, evidence_id`。
 
@@ -5350,7 +5367,7 @@ hotspot_score = 0.60 * paper_activity_score
 | 版本与审计 | `data_version` | `BIGINT NOT NULL` | 同一业务Key的单调数据版本 |
 | 版本与审计 | `update_time` | `DATETIME(3) NOT NULL` | UTC生成时间 |
 
-#### 24.12.22 `ads_technology_data_coverage`
+#### 24.12.23 `ads_technology_data_coverage`
 
 候选技术各数据域的覆盖状态与缺口说明。逻辑 Key：`technology_node_id, domain_code`。
 
@@ -5380,7 +5397,7 @@ MARKET域没有注册的不可变市场事实来源时，普通技术保持`NOT_
 标识的候选集写入`MODEL_ESTIMATED`模型估计；此状态不表示市场事实已接入，`evidence_count`保持0，且
 必须同时保留模型、Prompt、估计依据、置信度和生成时间。`coverage_note`保存面向展示的估计摘要。
 
-#### 24.12.23 `ads_technology_milestone_event`
+#### 24.12.24 `ads_technology_milestone_event`
 
 为技术趋势折线图保存可复算的简短关键节点。逻辑 Key：`event_id`；该ID由技术节点、事件类型和事件年
 确定性生成。每个技术点每种事件类型最多一条。首版不调用大模型，所有模型血缘字段为空；不得把规则
@@ -5421,7 +5438,7 @@ MARKET域没有注册的不可变市场事实来源时，普通技术保持`NOT_
 `event_title_zh/event_summary_zh`；增长详情直接使用`comparison_year/previous_metric_value/metric_value/growth_rate`，
 不应从摘要文本反解析数值。
 
-#### 24.12.24 完美技术动态（9.22.0）
+#### 24.12.25 完美技术动态（9.22.0）
 
 首版发布`technology_dynamic_perfect_v1_20261108`，从已通过DeepSeek技术性筛选的
 `ads_technology_hotspot_signal`与可复算`ads_technology_milestone_event`中确定15条完整候选。
@@ -8653,8 +8670,9 @@ LIMIT :limit;
 
 用户输入必须按SEARCH查询语法转义并通过绑定参数传入，不得直接拼接SQL。`name_aliases`、
 `name_search_variants`、机构`acronyms/aliases`等身份与别名数组不加入全文索引，继续使用数组成员精确过滤。
-9.28.0明确纳入的`keywords_original ARRAY<STRING>`是技术关键词全文检索例外，直接索引原生数组，禁止
-CAST或拼接后检索。
+`keywords_original ARRAY<STRING>`在目标Doris 4.1.0-rc03中不支持带parser的倒排索引，因此不加入
+9.28.0画像表全文`SEARCH`字段；同时禁止CAST或拼接后伪造检索列。9.29.0通过按数组位置展开的
+`ads_technology_keyword`子表解决逐元素分词检索，不改变画像数组字段。
 
 历史rowset索引回填脚本：
 
@@ -8715,12 +8733,12 @@ V1 Serving退役范围、前置校验和审计报告见
 
 ## 60. 首页关键词搜索扩展（9.28.0）
 
-首页关键词搜索在9.26.1名称字段基础上增加技术原始关键词、Domain/Field名称快照、人才当前机构双语名称、
+首页关键词搜索在9.26.1名称字段基础上增加技术Domain/Field名称快照、人才当前机构双语名称、
 人才双语简介和机构简介。`technology_node_id/talent_id`不加入`SEARCH`，精确ID定位继续使用参数化等值条件。
 
 | 表 | 9.28.0新增`SEARCH`字段 |
 | --- | --- |
-| `ads_technology_profile` | `keywords_original/domains_raw/fields_raw` |
+| `ads_technology_profile` | `domains_raw/fields_raw` |
 | `ads_talent_profile` | `current_institution_name_zh/current_institution_name_en/talent_bio/talent_bio_en` |
 | `ads_institution_profile` | `description` |
 
@@ -8735,3 +8753,15 @@ V1 Serving退役范围、前置校验和审计报告见
 - [`sql/doris/ads_schema_9_28_0_homepage_search_rollback.sql`](sql/doris/ads_schema_9_28_0_homepage_search_rollback.sql)
 - [`docs/ADS_MULTIFIELD_SEARCH_FRONTEND_GUIDE.md`](docs/ADS_MULTIFIELD_SEARCH_FRONTEND_GUIDE.md)
 - [`docs/HOMEPAGE_SEARCH_INDEX_RUNBOOK.md`](docs/HOMEPAGE_SEARCH_INDEX_RUNBOOK.md)
+
+## 61. 技术关键词逐元素搜索投影（9.29.0）
+
+`ads_technology_keyword`按`keywords_original`数组位置展开97,122行，覆盖全部19,430个技术点。
+`keyword_order`从1开始；英文原词完整写入`keyword_en`，中文只按同位置`keywords_zh`写入。首批已有
+20个技术点、100个中文关键词元素，其余中文字段保持NULL。
+
+`keyword_en`使用English parser，`keyword_zh`使用ICU parser。调用方先在子表内执行双字段`SEARCH`并
+取得去重`technology_node_id`，再关联技术画像；画像字段与子表字段不能放在同一个`SEARCH`表达式中。
+建表、历史数据展开和索引构建脚本为
+[`ads_schema_9_29_0_technology_keyword.sql`](sql/doris/ads_schema_9_29_0_technology_keyword.sql)，查询示例见
+[`ADS_MULTIFIELD_SEARCH_FRONTEND_GUIDE.md`](docs/ADS_MULTIFIELD_SEARCH_FRONTEND_GUIDE.md)。

@@ -6,6 +6,16 @@
 - MINOR：向后兼容地新增表、字段或指标。
 - PATCH：不改变接口的说明、约束或索引修正。
 
+## 9.29.0 — 2026-11-16
+
+- 新增`ads_technology_keyword`逐元素搜索投影，以`technology_node_id, keyword_order`为逻辑Key，保持
+  `keywords_original/keywords_zh`数组的稳定顺序与位置对应；重复词和翻译后同词不会被去重丢失。
+- `keyword_en`写入全部97,122个英文数组元素；`keyword_zh`只在画像中文数组存在相同位置时写入，首批
+  100行非空，其余保持NULL，不以英文冒充中文。
+- 为`keyword_zh`建立ICU全文倒排索引，为`keyword_en`建立English全文倒排索引；历史rowset显式构建后
+  才允许通过子表按关键词召回技术点。
+- 后续技术关键词翻译装载必须同步更新画像数组和本子表，并按技术ID、数组序号、原文和译文逐项对账。
+
 ## 9.28.0 — 2026-11-15
 
 - 首页关键词搜索不为`technology_node_id/talent_id`建立倒排索引；ID定位继续使用参数化精确等值条件，
@@ -13,8 +23,10 @@
 - `ads_talent_profile`新增`current_institution_name_zh/current_institution_name_en`稳定投影列，只通过唯一
   `current_institution_ids`关联`ads_institution_profile.name_zh/name_en`回填和持续同步；中文名缺失时保持
   NULL，不从VARIANT、经历自由文本、英文名或机器翻译推断。
-- 为技术原始关键词、Domain/Field名称快照、人才当前机构双语名称、人才双语简介和机构简介新增8个倒排
-  全文索引，并显式`BUILD INDEX`回填历史rowset；不再对`current_institution VARIANT`整列建立索引。
+- 为技术Domain/Field名称快照、人才当前机构双语名称、人才双语简介和机构简介新增7个倒排全文索引，并
+  显式`BUILD INDEX`回填历史rowset；不再对`current_institution VARIANT`整列建立索引。
+- 目标Doris 4.1.0-rc03不支持对`ARRAY<STRING>`配置parser，故`keywords_original`不加入全文SEARCH，
+  也不通过CAST或拼接绕过；后续须升级验证原生ARRAY分词能力或另行批准稳定STRING投影设计。
 - 人才首页查询把姓名、当前机构双语名称和双语简介放入同一个`best_fields`多字段`SEARCH`；技术与机构
   查询同步扩展固定字段白名单。调用方不得自行添加字段或回退到多字段`LIKE`。
 - 提供受控前向与回滚SQL草案。实际执行前必须核目标环境、列型、既有列/索引、两份草案SHA-256、执行标识
